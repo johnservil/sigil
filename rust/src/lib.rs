@@ -9,8 +9,10 @@
 //! ```
 //!
 //! The specification is the repository's README.md ("The encoding"): the data,
-//! joined by a check (BLAKE3 of the data), is written in base N = 1,353, one
-//! character more than the data needs, the check taking all the room left.
+//! multiplied by a prime K larger than N, is written in base N = 1,353, in the
+//! fewest characters that leave room for such a K. Decoding checks that the
+//! value is a multiple of K, which catches every changed character and every
+//! swap of neighbours.
 //! The data is written in order, unjumbled; README.md's "Why Sigil writes the
 //! data in order" says why. Decoding skips white space and default-ignorable
 //! characters and reads a letter's uppercase as the letter. python/sigilcode.py
@@ -96,145 +98,6 @@ impl fmt::Display for DecodeError {
 
 impl std::error::Error for DecodeError {}
 
-// BLAKE3 (github.com/BLAKE3-team/BLAKE3-specs) and its derive-key mode, which
-// the check uses.
-
-const IV: [u32; 8] = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19];
-const PERMUTATION: [usize; 16] = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8];
-const CHUNK_START: u32 = 1;
-const CHUNK_END: u32 = 2;
-const PARENT: u32 = 4;
-const ROOT: u32 = 8;
-const DERIVE_KEY_CONTEXT: u32 = 32;
-const DERIVE_KEY_MATERIAL: u32 = 64;
-
-fn g(s: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize, x: u32, y: u32) {
-    s[a] = s[a].wrapping_add(s[b]).wrapping_add(x);
-    s[d] = (s[d] ^ s[a]).rotate_right(16);
-    s[c] = s[c].wrapping_add(s[d]);
-    s[b] = (s[b] ^ s[c]).rotate_right(12);
-    s[a] = s[a].wrapping_add(s[b]).wrapping_add(y);
-    s[d] = (s[d] ^ s[a]).rotate_right(8);
-    s[c] = s[c].wrapping_add(s[d]);
-    s[b] = (s[b] ^ s[c]).rotate_right(7);
-}
-
-fn compress(cv: &[u32; 8], block: &[u32; 16], counter: u64, block_len: u32, flags: u32) -> [u32; 16] {
-    let mut s = [
-        cv[0], cv[1], cv[2], cv[3], cv[4], cv[5], cv[6], cv[7], IV[0], IV[1], IV[2], IV[3],
-        counter as u32, (counter >> 32) as u32, block_len, flags,
-    ];
-    let mut m = *block;
-    for r in 0..7 {
-        g(&mut s, 0, 4, 8, 12, m[0], m[1]);
-        g(&mut s, 1, 5, 9, 13, m[2], m[3]);
-        g(&mut s, 2, 6, 10, 14, m[4], m[5]);
-        g(&mut s, 3, 7, 11, 15, m[6], m[7]);
-        g(&mut s, 0, 5, 10, 15, m[8], m[9]);
-        g(&mut s, 1, 6, 11, 12, m[10], m[11]);
-        g(&mut s, 2, 7, 8, 13, m[12], m[13]);
-        g(&mut s, 3, 4, 9, 14, m[14], m[15]);
-        if r < 6 {
-            m = PERMUTATION.map(|i| m[i]);
-        }
-    }
-    let mut out = [0u32; 16];
-    for i in 0..8 {
-        out[i] = s[i] ^ s[i + 8];
-        out[i + 8] = s[i + 8] ^ cv[i];
-    }
-    out
-}
-
-fn words(block: &[u8]) -> [u32; 16] {
-    let mut b = [0u8; 64];
-    b[..block.len()].copy_from_slice(block);
-    std::array::from_fn(|i| u32::from_le_bytes([b[4 * i], b[4 * i + 1], b[4 * i + 2], b[4 * i + 3]]))
-}
-
-fn first8(w: [u32; 16]) -> [u32; 8] {
-    std::array::from_fn(|i| w[i])
-}
-
-/// A node's inputs: chaining value, block, counter, block length, flags.
-type Node = ([u32; 8], [u32; 16], u64, u32, u32);
-
-/// BLAKE3's output for `data` under key words `key` and mode `flags`,
-/// written into all of `out`.
-fn blake3_into(data: &[u8], key: &[u32; 8], flags: u32, out: &mut [u8]) {
-    // The last block of chunk `index`, after its earlier blocks are compressed.
-    let chunk = |index: usize| -> Node {
-        let start = 1024 * index;
-        let end = data.len().min(start + 1024);
-        let blocks = ((end - start + 63) / 64).max(1);
-        let mut cv = *key;
-        for b in 0..blocks - 1 {
-            let f = flags | if b == 0 { CHUNK_START } else { 0 };
-            cv = first8(compress(&cv, &words(&data[start + 64 * b..start + 64 * b + 64]), index as u64, 64, f));
-        }
-        let last = &data[start + 64 * (blocks - 1)..end];
-        let f = flags | if blocks == 1 { CHUNK_START } else { 0 } | CHUNK_END;
-        (cv, words(last), index as u64, last.len() as u32, f)
-    };
-    let cv_of = |n: &Node| first8(compress(&n.0, &n.1, n.2, n.3, n.4));
-    let parent = |l: [u32; 8], r: [u32; 8]| -> Node {
-        let mut block = [0u32; 16];
-        block[..8].copy_from_slice(&l);
-        block[8..].copy_from_slice(&r);
-        (*key, block, 0, 64, flags | PARENT)
-    };
-    let chunks = data.len().div_ceil(1024).max(1);
-    // Subtrees' chaining values, at most one per bit of the chunk count.
-    let mut stack = [[0u32; 8]; 54];
-    let mut depth = 0;
-    for index in 0..chunks - 1 {
-        let mut cv = cv_of(&chunk(index));
-        let mut total = index + 1;
-        while total & 1 == 0 {
-            depth -= 1;
-            cv = cv_of(&parent(stack[depth], cv));
-            total >>= 1;
-        }
-        stack[depth] = cv;
-        depth += 1;
-    }
-    let mut node = chunk(chunks - 1);
-    while depth > 0 {
-        depth -= 1;
-        node = parent(stack[depth], cv_of(&node));
-    }
-    for (counter, block) in out.chunks_mut(64).enumerate() {
-        let w = compress(&node.0, &node.1, counter as u64, node.3, node.4 | ROOT);
-        for (i, b) in block.iter_mut().enumerate() {
-            *b = (w[i / 4] >> (8 * (i % 4))) as u8;
-        }
-    }
-}
-
-fn blake3(data: &[u8], key: &[u32; 8], flags: u32, length: usize) -> Vec<u8> {
-    let mut out = vec![0u8; length];
-    blake3_into(data, key, flags, &mut out);
-    out
-}
-
-/// BLAKE3's hash of `data`, `length` bytes of it.
-pub fn blake3_hash(data: &[u8], length: usize) -> Vec<u8> {
-    blake3(data, &IV, 0, length)
-}
-
-/// BLAKE3's derive-key mode: `length` bytes from key material under a context string.
-pub fn blake3_derive_key(context: &str, material: &[u8], length: usize) -> Vec<u8> {
-    let context_key = blake3(context.as_bytes(), &IV, DERIVE_KEY_CONTEXT, 32);
-    let key: [u32; 8] = std::array::from_fn(|i| u32::from_le_bytes(context_key[4 * i..4 * i + 4].try_into().unwrap()));
-    blake3(material, &key, DERIVE_KEY_MATERIAL, length)
-}
-
-/// The derive-key context key of the check's context string,
-/// `Sigil 2026-10-22 check` (BLAKE3 hashes a derive-key context string into a
-/// key before it reads the key material), computed once; `test_check_key`
-/// derives it again.
-const CHECK_KEY: [u32; 8] = [0x43c3f22e, 0x2294cd61, 0x520f2bcd, 0x2cbb0c2d, 0x9da1f453, 0x82e29243, 0x2d71014a, 0xd27243ae];
-
 /// A natural number: 32-bit words, least significant first, no high zero word.
 struct Nat(Vec<u32>);
 
@@ -266,35 +129,50 @@ impl Nat {
         }
         r as u32
     }
+    /// `self / 2^shift`, rounded down, or `u64::MAX` if that does not fit.
+    fn shr_saturating(&self, shift: usize) -> u64 {
+        let bits = self.bits();
+        if bits <= shift {
+            return 0;
+        }
+        if bits - shift > 64 {
+            return u64::MAX;
+        }
+        let (word, bit) = (shift / 32, shift % 32);
+        let at = |i: usize| self.0.get(i).map_or(0u128, |&w| w as u128);
+        let x = at(word) | at(word + 1) << 32 | at(word + 2) << 64;
+        (x >> bit) as u64
+    }
     fn bits(&self) -> usize {
         self.0.last().map_or(0, |&top| 32 * (self.0.len() - 1) + 32 - top.leading_zeros() as usize)
     }
 }
 
-/// (n, c) for data of `length` bytes (at least 1): the sigil's characters,
-/// one more than the fewest that hold 8 * length bits, and the check's bits,
-/// all the room left.
-pub fn layout(length: usize) -> (usize, usize) {
-    assert!(length >= 1, "Sigil encodes at least one byte");
-    let mut power = Nat(vec![1]);
-    let mut m = 0;
-    while power.bits() <= 8 * length {
-        power.mul_add(N, 0);
-        m += 1;
-    }
-    // N^m >= 2^(8 * length) once N^m has more than 8 * length bits, since N is
-    // not a power of two.
-    power.mul_add(N, 0);
-    let c = power.bits() - 1 - 8 * length;
-    assert!(c < 32, "the check fits in a word");
-    (m + 1, c)
+fn is_prime(k: u32) -> bool {
+    k > 1 && (2..).take_while(|p| p * p <= k).all(|p| k % p != 0)
 }
 
-/// The check: the first c bits of BLAKE3, in derive-key mode, over the data.
-fn check(data: &[u8], c: usize) -> u32 {
-    let mut h = [0u8; 8];
-    blake3_into(data, &CHECK_KEY, DERIVE_KEY_MATERIAL, &mut h);
-    (u64::from_be_bytes(h) >> (64 - c)) as u32
+/// The smallest prime larger than N: K must exceed N (README.md, "Why the
+/// check catches what it does").
+const LEAST_K: u32 = 1361;
+
+/// (n, K) for data of `length` bytes (at least 1): the sigil's characters,
+/// the fewest whose room R = floor(N^n / 2^(8 * length)) holds a prime larger
+/// than N, and K, the largest prime at most R.
+pub fn layout(length: usize) -> (usize, u32) {
+    assert!(length >= 1, "Sigil encodes at least one byte");
+    let mut power = Nat(vec![1]);
+    let mut n = 0;
+    while power.shr_saturating(8 * length) < LEAST_K as u64 {
+        power.mul_add(N, 0);
+        n += 1;
+    }
+    // The first room at least LEAST_K is below LEAST_K * N, under 2^32.
+    let mut k = power.shr_saturating(8 * length) as u32;
+    while !is_prime(k) {
+        k -= 1;
+    }
+    (n, k)
 }
 
 /// `data`'s sigil: `layout(data.len()).0` characters of the alphabet.
@@ -302,12 +180,12 @@ fn check(data: &[u8], c: usize) -> u32 {
 /// secure hash's output, a key, a random identifier): jumble structured data
 /// before encoding it (README.md, "Structured data: jumble it first").
 pub fn encode(data: &[u8]) -> String {
-    let (n, c) = layout(data.len());
+    let (n, k) = layout(data.len());
     let mut w = Nat(Vec::new());
     for &b in data {
         w.mul_add(256, b as u32);
     }
-    w.mul_add(1 << c, check(data, c));
+    w.mul_add(k, 0);
     let a = alphabet();
     let mut digits = vec![0u32; n];
     for d in digits.iter_mut().rev() {
@@ -327,22 +205,22 @@ fn digit(a: &Alphabet, ch: char) -> Option<u32> {
     a.digits.binary_search_by_key(&ch, |&(x, _)| x).ok().map(|j| a.digits[j].1)
 }
 
-/// The data that `n` digits encode under layout (n, c), or why they encode none.
-fn decode_digits(digits: &[u32], length: usize, c: usize) -> Result<Vec<u8>, DecodeError> {
+/// The data that `n` digits encode under layout (n, k), or why they encode none.
+fn decode_digits(digits: &[u32], length: usize, k: u32) -> Result<Vec<u8>, DecodeError> {
     let mut w = Nat(Vec::with_capacity(digits.len() / 3 + 2));
     for &d in digits {
         w.mul_add(N, d);
     }
-    if w.bits() > 8 * length + c {
+    let r = w.div_rem(k);
+    if w.bits() > 8 * length {
         return Err(DecodeError::Range);
     }
-    let t = w.div_rem(1 << c);
+    if r != 0 {
+        return Err(DecodeError::Check);
+    }
     let mut data = vec![0u8; length];
     for b in data.iter_mut().rev() {
         *b = w.div_rem(256) as u8;
-    }
-    if t != check(&data, c) {
-        return Err(DecodeError::Check);
     }
     Ok(data)
 }
@@ -351,7 +229,7 @@ fn decode_digits(digits: &[u32], length: usize, c: usize) -> Result<Vec<u8>, Dec
 /// space and default-ignorable characters in it are skipped, and a letter's
 /// uppercase reads as the letter.
 pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
-    let (n, c) = layout(length);
+    let (n, k) = layout(length);
     let a = alphabet();
     let mut digits = Vec::with_capacity(n);
     for (i, ch) in sigil.chars().enumerate() {
@@ -374,7 +252,7 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
     if digits.len() != n {
         return Err(DecodeError::Length { found: digits.len(), expected: n });
     }
-    decode_digits(&digits, length, c)
+    decode_digits(&digits, length, k)
 }
 
 /// Every data of `length` bytes that some reading decodes to, for a reader
@@ -382,7 +260,7 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
 /// character's possible readings, the likeliest first. One result is the
 /// answer; more mean the readings leave the sigil ambiguous.
 pub fn decode_readings(readings: &[&str], length: usize) -> Vec<Vec<u8>> {
-    let (n, c) = layout(length);
+    let (n, k) = layout(length);
     let a = alphabet();
     // Each position's readings as digits, those outside the alphabet dropped.
     let options: Vec<Vec<u32>> = readings.iter().map(|r| r.chars().filter_map(|ch| digit(a, ch)).collect()).collect();
@@ -393,7 +271,7 @@ pub fn decode_readings(readings: &[&str], length: usize) -> Vec<Vec<u8>> {
     let mut choice = vec![0usize; n];
     let mut digits: Vec<u32> = options.iter().map(|o| o[0]).collect();
     loop {
-        if let Ok(data) = decode_digits(&digits, length, c) {
+        if let Ok(data) = decode_digits(&digits, length, k) {
             if !found.contains(&data) {
                 found.push(data);
             }
@@ -417,31 +295,9 @@ pub fn decode_readings(readings: &[&str], length: usize) -> Vec<Vec<u8>> {
 
 #[cfg(test)]
 mod test {
-    /// `CHECK_KEY` is the context key of the check's context string.
+    /// `LEAST_K` is the smallest prime larger than N.
     #[test]
-    fn test_check_key() {
-        let k = super::blake3(b"Sigil 2026-10-22 check", &super::IV, super::DERIVE_KEY_CONTEXT, 32);
-        let words: Vec<u32> = k.chunks(4).map(|w| u32::from_le_bytes(w.try_into().unwrap())).collect();
-        assert_eq!(words, super::CHECK_KEY);
-    }
-
-    /// BLAKE3 across chunk and tree boundaries: the hash of 0, 1, 1024, 1025,
-    /// 2048, 3073 and 8193 bytes (i mod 251) against BLAKE3's official vectors.
-    #[test]
-    fn test_blake3_lengths() {
-        let want = [
-            (0, "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"),
-            (1, "2d3adedff11b61f14c886e35afa036736dcd87a74d27b5c1510225d0f592e213"),
-            (1024, "42214739f095a406f3fc83deb889744ac00df831c10daa55189b5d121c855af7"),
-            (1025, "d00278ae47eb27b34faecf67b4fe263f82d5412916c1ffd97c8cb7fb814b8444"),
-            (2048, "e776b6028c7cd22a4d0ba182a8bf62205d2ef576467e838ed6f2529b85fba24a"),
-            (3073, "7124b49501012f81cc7f11ca069ec9226cecb8a2c850cfe644e327d22d3e1cd3"),
-            (8193, "bab6c09cb8ce8cf459261398d2e7aef35700bf488116ceb94a36d0f5f1b7bc3b"),
-        ];
-        for (len, hex) in want {
-            let data: Vec<u8> = (0..len).map(|i| (i % 251) as u8).collect();
-            let got: String = super::blake3_hash(&data, 32).iter().map(|b| format!("{b:02x}")).collect();
-            assert_eq!(got, hex, "{len} bytes");
-        }
+    fn test_least_k() {
+        assert!(super::is_prime(super::LEAST_K) && (super::N + 1..super::LEAST_K).all(|k| !super::is_prime(k)));
     }
 }

@@ -1,6 +1,7 @@
 // The TypeScript implementation against vectors.json (run from the repository's root).
 import { readFileSync } from "node:fs";
-import { blake3Hash, decode, decodeReadings, DecodeError, encode, layout } from "./sigilcode.js";
+import { ALPHABET } from "./alphabet.js";
+import { decode, decodeReadings, DecodeError, encode, layout } from "./sigilcode.js";
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 const bytes = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
@@ -24,7 +25,7 @@ for (const b of v.bad) {
   }
   if (kind !== b.error) throw new Error(`${b.text}: ${kind}, not ${b.error}`);
 }
-if (layout(32).join() !== "26,14") throw new Error("layout(32)");
+if (layout(32).join() !== "26,22381") throw new Error("layout(32)");
 {
   const g = v.good.find((x: { data: string }) => x.data.length === 64);
   const chars = Array.from(g.text as string);
@@ -32,5 +33,11 @@ if (layout(32).join() !== "26,14") throw new Error("layout(32)");
   const found = decodeReadings(readings, 32);
   if (found.length !== 1 || hex(found[0]) !== g.data) throw new Error("decodeReadings");
 }
-if (hex(blake3Hash(new Uint8Array(0))) !== "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262") throw new Error("BLAKE3");
+{
+  // One unread character: every character of the alphabet in its place.
+  const g = v.good.find((x: { data: string }) => x.data.length === 64);
+  const readings = Array.from(g.text as string).map((ch, i) => (i === 11 ? ALPHABET : ch));
+  const found = decodeReadings(readings, 32);
+  if (found.length !== 1 || hex(found[0]) !== g.data) throw new Error("decodeReadings, one unread");
+}
 console.log(`vectors: ${v.good.length} good, ${v.variants.length} variants and ${v.bad.length} bad agree`);

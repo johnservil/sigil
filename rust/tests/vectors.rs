@@ -53,7 +53,7 @@ fn vectors() {
         }
     }
     assert_eq!((good, variants, bad), (220, 528, 352));
-    assert_eq!(sigilcode::layout(32), (26, 14));
+    assert_eq!(sigilcode::layout(32), (26, 22381));
 }
 
 #[test]

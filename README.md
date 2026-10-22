@@ -7,7 +7,7 @@ picture. A 256-bit hash becomes 26 characters, no two of which look alike.
 ```
 BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64 rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            as a sigil ᑖɬđዴᔕħɂᗔʐᓪcᣕጔэⶈᓄᕖχɐᖃⷁሾቹᒱaጹ
+            as a sigil ᕖᣇጎʗƾኖᣊⷈeᑭɨᣫѯᖣቀⷃᣡᗯᕜᑡᔮᣥዲᑮᘜᒬ
 ```
 
 Its 1,353 characters are digits and letters of five scripts: Latin, Greek,
@@ -88,19 +88,29 @@ let sigil = sigilcode::encode(&digest);
 let back = sigilcode::decode(&sigil, 32)?;  // Err(DecodeError)
 ```
 
-**Structured data: jumble it first.** Sigil writes the data in order, and
-its protection against look-alikes holds for data that looks random: a
-secure hash's output, a key, a random identifier. If your data has
-structure (fields, several keys or hashes together, a counter or a
-timestamp), jumble it before you encode it and unjumble it after you decode
-it, with F4Jumble (Zcash's ZIP 316) or a few Feistel rounds of a secure
-hash such as BLAKE3. The jumble must be built from a secure hash: a forger
-solves a simpler mix (a linear one, say) for the bytes they control.
-"Telling sigils apart" says why.
+**Data with structure: hash it, or jumble it.** Sigil writes the data in
+order, and its protection against look-alikes holds for data that looks
+random. Data with structure (fields, several keys or hashes together, a
+counter, a timestamp) needs one step first, chosen by whether the sigil must
+carry the data or only identify it:
+
+| your data | do this |
+|---|---|
+| a secure hash's output, a key, a random identifier | encode it as it is |
+| anything the reader has or can fetch (a file, a document, a public key) | **encode its hash** |
+| structured data that decoding must give back (an address made of several keys, a payment request) | **jumble it, then encode** |
+
+A hash protects any data, even data a forger chooses entirely, and keeps
+the sigil at 26 characters for data of any length; when in doubt, hash.
+Jumbling keeps the data recoverable (anyone can unjumble), and protects data
+only where a forger cannot choose all of it. Jumble with F4Jumble (Zcash's
+ZIP 316, for 38 bytes to 4 MiB) or a few Feistel rounds of a secure hash
+such as BLAKE3: a forger solves a simpler mix (a linear one, say) for the
+bytes they control. "Telling sigils apart" says why.
 
 A decode error has one of four kinds: `length` (the wrong number of
 characters), `character` (one outside the alphabet), `range` (a value too
-large for the length) and `check` (the check fails). The last two mean a
+large for the length) and `check` (the value fails the check). The last two mean a
 character was misread or changed.
 
 ## Telling sigils apart
@@ -149,10 +159,10 @@ every bit. What jumbling would do depends on what a forger controls:
   must try their own part until the ends match: 10.4 bits for each compared
   character.
 
-Most of Sigil's data is the first kind. Jumbling inside Sigil would cost
-every call five BLAKE3 compressions where one serves (38% of encoding's
-time in the Rust), and every implementation its rounds, their inverse and
-their tests, for data that gains nothing. So Sigil leaves jumbling to the
+Most of Sigil's data is the first kind. Jumbling inside Sigil would give
+every implementation a BLAKE3, its rounds, their inverse and their tests,
+and cost every call four BLAKE3 compressions (0.36 µs of a 0.94 µs encoding
+in the Rust, when Sigil had it), for data that gains nothing. So Sigil leaves jumbling to the
 callers whose data is the third kind: they jumble it before encoding.
 </details>
 
@@ -168,45 +178,72 @@ recognition (OCR). Three properties serve it:
   looks like a sequence of others (as `m` looks like `rn`), by Unicode's
   table of look-alikes (UTS #39). A reader that recognizes the shapes can
   tell every character apart.
-- **The check confirms a reading.** A sigil carries a check, 14 bits for a
-  256-bit value, so a wrong reading almost always fails to decode. A reader
-  unsure of a character passes its few likeliest readings to
-  `decode_readings`, which returns the data that the one valid reading
-  encodes. With three readings for one character, the right data comes back
-  alone practically always (200 of 200 in the tests); with one character
-  unread altogether, every character tried in its place, about 92 times in
-  100.
+- **The check confirms a reading.** Every misread character, and every
+  swap of neighbours, fails to decode; other errors fail all but once in
+  22,381 times for a 256-bit value. A reader unsure of a character passes
+  its possible readings to `decode_readings`, which returns the data that
+  the one valid reading encodes. Exactly one reading of a character decodes,
+  so `decode_readings` recovers any one character, even one unread
+  altogether, with every character of the alphabet tried in its place.
 
 ## The encoding
 
 Sigil encodes data of L bytes, L ≥ 1:
 
-1. **Layout.** Let m be the fewest characters that hold 8L bits, the
-   smallest m with N^m ≥ 2^(8L), where N = 1,353. The sigil has n = m + 1
-   characters, and its check has c bits, all the room left: the most c with
-   2^(8L + c) ≤ N^n.
-2. **Check.** t is the first c bits of BLAKE3 in derive-key mode, with
-   context string `Sigil 2026-10-22 check`, over the data.
-3. **Write.** The value w = d · 2^c + t, where d is the data as a number,
-   most significant byte first, written in base N with exactly n digits,
-   most significant first. Digit d is the d-th character of the
-   alphabet (`alphabet.txt`, in ascending code point order).
+1. **Layout.** The room of n characters is R = ⌊N^n / 2^(8L)⌋, where
+   N = 1,353. The sigil has n characters, the fewest whose room holds a
+   prime larger than N (that is, R ≥ 1,361), and K is the largest prime at
+   most R. One character more than the data needs suffices at almost every
+   length: up to 1,024 bytes, at every length but 537 bytes, which takes
+   two.
+2. **Write.** The value w = d · K, where d is the data as a number, most
+   significant byte first, is written in base N with exactly n digits, most
+   significant first. Digit k is the k-th character of the alphabet
+   (`alphabet.txt`, in ascending code point order).
 
 | L (bytes) | 16 | 20 | 32 | 48 | 64 |
 |---|---|---|---|---|---|
 | n (characters) | 14 | 17 | 26 | 38 | 51 |
-| c (check bits) | 17 | 16 | 14 | 11 | 18 |
+| K | 202,441 | 116,747 | 22,381 | 2,473 | 370,529 |
 
 A decoder told L first drops every character that Unicode 14.0 marks
 White_Space or Default_Ignorable_Code_Point (the ranges in `ignored.txt`).
 It reads each remaining character as its digit, a letter's uppercase
 (`uppercase.txt`, in the alphabet's order) as the letter. It requires
 exactly n characters, each in the alphabet or its uppercase, and a value w
-below 2^(8L + c) whose low c bits are the check of the rest, the data.
+below K · 2^(8L) (else the error is `range`) that is a multiple of K (else
+`check`). The data is w / K.
 
-The layout gives every length a check of at least one character's worth,
-and the alphabet's size is chosen for 256-bit data: 25 characters hold it,
-and the 26th gives the check its 14 bits.
+The alphabet's size is chosen for 256-bit data: 25 characters hold it, and
+the 26th leaves room for K = 22,381.
+
+<details>
+<summary>Why the check catches what it does</summary>
+
+Multiplying by K makes every sigil's value a multiple of K, and spreads
+that property over every character. Changing one character adds d · N^i for
+some 0 < |d| < N; swapping neighbours a and b adds (a − b) · N^i · (N − 1),
+and swapping characters two apart adds (a − b) · N^i · (N² − 1). K is a
+prime larger than N, so it divides none of these (N = 3 · 11 · 41,
+N − 1 = 2³ · 13², N + 1 = 2 · 677), and the value fails the check. Any other
+change leaves a multiple of K about once in K tries. This is the classic
+arithmetic code of coding theory, an AN code.
+
+Since one character's possible values differ by less than N, at most one of
+them gives a multiple of K: that is why `decode_readings` recovers any one
+character. The largest prime that fits uses all the room, so random errors
+pass once in about R tries, the least any code of this size allows.
+
+No code does more with one extra character. Correcting one misread
+character of a 256-bit sigil, without knowing which, means telling apart
+26 · 1,352 = 35,152 possible errors, 15.1 bits, and leaves room for 2^255.4
+values, fewer than 2^256. Catching every pair of errors leaves room for at
+most N^24 values, 2^249.6. A 27th character would make room for either.
+
+Knowing the length in advance does two more things. It saves the padding
+and end markers other encodings need. And it turns truncation into an error:
+a sigil missing a character has the wrong length.
+</details>
 
 ## The alphabet
 
@@ -278,17 +315,16 @@ machine. Each rule keeps the characters that pass it:
 - **The encoding:** all three implementations pass `vectors.json` (or its
   twin, `vectors.tsv`): 220 encodings, 528 variants (copies with white space
   or invisible characters inserted, or letters in uppercase) and 352 errors,
-  each of the kind it must give. Each implementation's BLAKE3 agrees with
-  BLAKE3's official test vectors, hashing and deriving keys (the Python
-  tests check all 35).
-- **Readings:** with three readings for one character of a 256-bit sigil,
-  `decode_readings` returned the right data alone in 200 of 200 tests; with
-  one character unread, in 37 of 40.
+  each of the kind it must give.
+- **The check** (`python/test.py`): in 20 random 256-bit sigils, each of
+  the 703,040 single changed characters and 978 swaps of characters one or
+  two apart fails to decode, and one unread character comes back alone every time; at every
+  length to 1,024 bytes, K is a prime above N in the fewest characters.
 - **A specification in Lean** (`lean/`): "The encoding" as Lean
-  definitions, over C2SP's BLAKE3 specification and the alphabet that
-  `alphabet/alphabet.py` writes; it passes `vectors.tsv` too.
+  definitions, over the alphabet that `alphabet/alphabet.py` writes; it
+  passes `vectors.tsv` too.
 - **Speed** (`rust/examples/bench.rs`): the Rust encodes a 256-bit value in
-  0.58 µs and decodes it in 0.69 µs, in a Linux virtual machine on an Apple
+  0.63 µs and decodes it in 0.75 µs, in a Linux virtual machine on an Apple
   M4 Max.
 - **Selection** (`copytest.html`): a double-click selects whole sigils in
   Chromium. Open the page in any browser to see its answer.
@@ -322,7 +358,7 @@ machine. Each rule keeps the characters that pass it:
 ```sh
 python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data; alphabet.txt, uppercase.txt and ignored.txt are its output
 python3 python/vectors.py --check             # vectors.json and vectors.tsv are the reference's output
-python3 python/test.py [BLAKE3_TEST_VECTORS]  # the reference implementation
+python3 python/test.py                        # the reference implementation
 (cd typescript && tsc -p .) && node typescript/dist/test.js
 (cd rust && cargo test && cargo run --release --example bench)
 (cd lean && lake build && lake exe tests ../vectors.tsv)   # the specification, with Lean 4.31

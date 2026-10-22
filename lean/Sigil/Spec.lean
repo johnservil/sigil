@@ -1,14 +1,11 @@
-import Sigil.Blake3
 import Sigil.Alphabet
 
 /-! # Sigil: the specification
 
-This file is README.md's "The encoding" in Lean, over the BLAKE3 of `Sigil/Blake3.lean` (C2SP's
-specification, `c2sp/BLAKE3/Blake3.lean` of github.com/johnservil/BLAKE3 at commit d4f75f1,
-unchanged: SHA-256 ef233d0586e1ba85ea3634be9fefb6721937504579ec50d73b47f300d092fd65, BLAKE3
-0d17626c61d735db104858545e5dfc9607704e72b0a6b824e1215254c75db183) and the alphabet that `alphabet/alphabet.py` generates from Unicode's
-data (`Sigil/Alphabet.lean`). Data is a list of at least one byte; a sigil is a list of code
-points. `Tests.lean` runs it on `vectors.tsv`, the vectors every implementation passes. -/
+This file is README.md's "The encoding" in Lean, over the alphabet that `alphabet/alphabet.py`
+generates from Unicode's data (`Sigil/Alphabet.lean`). Data is a list of at least one byte; a sigil
+is a list of code points. `Tests.lean` runs it on `vectors.tsv`, the vectors every implementation
+passes. -/
 
 namespace Sigil
 
@@ -35,38 +32,42 @@ def toDigits (w : Nat) : Nat → List Nat
 
 /-! ## The layout -/
 
-/-- The first `m` from `m₀` at which `target ≤ N^m`, trying at most `fuel` of them. -/
-def firstFrom (target : Nat) : (fuel m₀ : Nat) → Nat
-  | 0, m => m
-  | fuel + 1, m => if target ≤ N ^ m then m else firstFrom target fuel (m + 1)
+/-- Whether no `p` from `p₀` divides `k`, for `p` up to `√k`, trying at most `fuel` of them. -/
+def noDivisorFrom (k : Nat) : (fuel p₀ : Nat) → Bool
+  | 0, _ => true
+  | fuel + 1, p => k < p * p || (k % p ≠ 0 && noDivisorFrom k fuel (p + 1))
 
-/-- The fewest characters that hold `8 * L` bits: the least `m` with `2^(8L) ≤ N^m`, found among
-`0` to `8L`, since `2^(8L) ≤ N^(8L)`. -/
-def fewest (L : Nat) : Nat := firstFrom (2 ^ (8 * L)) (8 * L) 0
+/-- Whether `k` is prime, by trial division. -/
+def isPrime (k : Nat) : Bool := 2 ≤ k && noDivisorFrom k k 2
 
-/-- `(n, c)` for data of `L` bytes: the sigil's characters, one more than the fewest that hold
-`8 * L` bits, and the check's bits, all the room left: the most `c` with `2^(8L + c) ≤ N^n`. -/
+/-- The largest prime at most `r`, or `0` if there is none. -/
+def primeAtMost : Nat → Nat
+  | 0 => 0
+  | r + 1 => if isPrime (r + 1) then r + 1 else primeAtMost r
+
+/-- The room of `n` characters for data of `L` bytes: `⌊N^n / 2^(8L)⌋`, the factor that `n`
+characters leave beside the data. -/
+def room (L n : Nat) : Nat := N ^ n / 2 ^ (8 * L)
+
+/-- The first `n` from `n₀` whose room holds a prime larger than `N`, trying at most `fuel`. -/
+def firstFrom (L : Nat) : (fuel n₀ : Nat) → Nat
+  | 0, n => n
+  | fuel + 1, n => if N < primeAtMost (room L n) then n else firstFrom L fuel (n + 1)
+
+/-- `(n, K)` for data of `L` bytes: the sigil's characters, the fewest whose room holds a prime
+larger than `N` (found among `0` to `8L + 1`, whose room is at least `N^(8L + 1) / 2^(8L)`), and
+`K`, the largest prime at most that room. -/
 def layout (L : Nat) : Nat × Nat :=
-  let n := fewest L + 1
-  (n, Nat.log2 (N ^ n) - 8 * L)
-
-/-! ## The check -/
-
-/-- BLAKE3's derive-key output of `len` bytes, under context string `context`, for `material`. -/
-def deriveKey (context : String) (material : List UInt8) (len : Nat) : List UInt8 :=
-  (Blake3.derive_key context.toUTF8 ⟨material.toArray⟩ len).data.toList
-
-/-- The check: the first `c` bits of BLAKE3's derive-key output over the data `d`. -/
-def check (d : List UInt8) (c : Nat) : Nat :=
-  ofBytes (deriveKey "Sigil 2026-10-22 check" d 8) / 2 ^ (64 - c)
+  let n := firstFrom L (8 * L + 2) 0
+  (n, primeAtMost (room L n))
 
 /-! ## Encoding -/
 
-/-- The sigil of `d`, as code points: `w = d · 2^c + check`, written as `n` base-N digits, digit
-`k` as `alphabet[k]`. -/
+/-- The sigil of `d`, as code points: `w = d · K`, written as `n` base-N digits, digit `k` as
+`alphabet[k]`. -/
 def encode (d : List UInt8) : List Nat :=
-  let (n, c) := layout d.length
-  let w := ofBytes d * 2 ^ c + check d c
+  let (n, K) := layout d.length
+  let w := ofBytes d * K
   (toDigits w n).map (alphabet[·]!)
 
 /-! ## Decoding -/
@@ -80,7 +81,7 @@ inductive DecodeError where
   | character (position codePoint : Nat)
   /-- The value is too large for the length. -/
   | range
-  /-- The check fails. -/
+  /-- The value is not a multiple of `K`. -/
   | check
   deriving DecidableEq, Repr
 
@@ -93,16 +94,15 @@ def digit? (p : Nat) : Option Nat := alphabet.idxOf? p <|> uppercase.idxOf? p
 
 /-- The `L` bytes that sigil `s` encodes, or why it encodes none. -/
 def decode (s : List Nat) (L : Nat) : Except DecodeError (List UInt8) := do
-  let (n, c) := layout L
+  let (n, K) := layout L
   let kept := (s.zipIdx 1).filter fun (p, _) => !ignored p
   if kept.length ≠ n then throw (.length kept.length n)
   let ds ← kept.mapM fun (p, i) => match digit? p with
     | some k => pure k
     | none => throw (.character i p)
   let w := ofDigits ds
-  if 2 ^ (8 * L + c) ≤ w then throw .range
-  let d := toBytes (w / 2 ^ c) L
-  if w % 2 ^ c ≠ check d c then throw .check
-  pure d
+  if K * 2 ^ (8 * L) ≤ w then throw .range
+  if w % K ≠ 0 then throw .check
+  pure (toBytes (w / K) L)
 
 end Sigil

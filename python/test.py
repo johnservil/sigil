@@ -1,13 +1,11 @@
-"""The reference implementation against vectors.json, BLAKE3's official test
-vectors, and the claims of README.md.
+"""The reference implementation against vectors.json and the claims of
+README.md.
 
-    python3 python/test.py [BLAKE3_TEST_VECTORS_JSON]
-
-The BLAKE3 vectors are test_vectors/test_vectors.json in github.com/BLAKE3-team/BLAKE3;
-without the argument, the BLAKE3 checks use the two hashes README.md quotes.
+    python3 python/test.py
 """
 import hashlib
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -26,16 +24,6 @@ def error(text, length):
 
 
 def main():
-    # BLAKE3, which the check uses.
-    assert B.blake3_hash(b"").hex() == "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
-    if len(sys.argv) > 1:
-        tv = json.loads(Path(sys.argv[1]).read_text())
-        for c in tv["cases"]:
-            data = bytes(i % 251 for i in range(c["input_len"]))
-            assert B.blake3_hash(data, len(c["hash"]) // 2).hex() == c["hash"], c["input_len"]
-            assert B.blake3_derive_key(tv["context_string"], data, len(c["derive_key"]) // 2).hex() == c["derive_key"]
-        print(f"BLAKE3: {len(tv['cases'])} official vectors agree, hashing and deriving keys")
-
     v = json.loads((ROOT / "vectors.json").read_text(encoding="utf-8"))
     for g in v["good"]:
         data = bytes.fromhex(g["data"])
@@ -47,28 +35,54 @@ def main():
         assert error(b["text"], b["length"]) == b["error"], b
     print(f"vectors: {len(v['good'])} good, {len(v['variants'])} variants and {len(v['bad'])} bad agree")
 
-    assert B.layout(32) == (26, 14)
-    print("layouts (characters, check bits):", {length: B.layout(length) for length in (1, 8, 16, 20, 32, 48, 64)})
+    assert B.LEAST_K == 1361 and B.layout(32) == (26, 22381)
+    for length in range(1, 1025):
+        n, k = B.layout(length)
+        assert B.N < k and B.is_prime(k) and k << 8 * length <= B.N ** n and B.N ** (n - 1) < B.LEAST_K << 8 * length, length
+    print("layouts (characters, K):", {length: B.layout(length) for length in (1, 8, 16, 20, 32, 48, 64)},
+          "; at every length to 1024 bytes K is a prime above N and n the fewest characters that hold one")
 
-    # Readings: one character read three ways (the right one among them), and
-    # one character unread (every character a candidate).
-    import random
+    # The guarantees, on 256-bit values: every changed character and every
+    # swap of characters one or two apart fails to decode, and one unread
+    # character comes back.
     rng = random.Random(1)
-    three = unread = 0
+    changed = swapped = recovered = 0
+    for i in range(20):
+        data = hashlib.sha256(b"guarantees" + bytes([i])).digest()
+        sigil = B.encode(data)
+        for j in range(len(sigil)):
+            for c in B.ALPHABET:
+                if c != sigil[j]:
+                    assert error(sigil[:j] + c + sigil[j + 1:], 32) in ("range", "check")
+                    changed += 1
+            for gap in (1, 2):
+                if j + gap < len(sigil) and sigil[j] != sigil[j + gap]:
+                    t = list(sigil)
+                    t[j], t[j + gap] = t[j + gap], t[j]
+                    assert error("".join(t), 32) in ("range", "check")
+                    swapped += 1
+        j = rng.randrange(len(sigil))
+        readings = list(sigil)
+        readings[j] = B.ALPHABET
+        assert B.decode_readings(readings, 32) == [data]
+        recovered += 1
+    print(f"every one of {changed} changed characters and {swapped} swaps of characters one or two apart fails to decode; "
+          f"one unread character comes back alone in {recovered} of {recovered}")
+
+    # Readings: one character read three ways, the right one among them.
+    three = 0
     for i in range(200):
         data = hashlib.sha256(b"readings" + i.to_bytes(2, "big")).digest()
         sigil = B.encode(data)
         j = rng.randrange(len(sigil))
         guesses = [sigil[j]] + rng.sample([c for c in B.ALPHABET if c != sigil[j]], 2)
         rng.shuffle(guesses)
-        readings = [c for c in sigil]
+        readings = list(sigil)
         readings[j] = "".join(guesses)
-        three += B.decode_readings(readings, 32) == [data]
-        if i < 40:
-            readings[j] = B.ALPHABET
-            unread += B.decode_readings(readings, 32) == [data]
-    print(f"one character read three ways: the right data alone in {three} of 200; "
-          f"one character unread: alone in {unread} of 40")
+        assert B.decode_readings(readings, 32) == [data]
+        three += 1
+    print(f"one character read three ways: the right data alone in {three} of 200")
+
 
 if __name__ == "__main__":
     main()
