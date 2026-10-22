@@ -4,5 +4,5 @@
   "type": "module",
   "main": "dist/sigilcode.js",
   "types": "dist/sigilcode.d.ts",
-  "license": "CC0-1.0 OR Apache-2.0"
+  "license": "(MIT OR Apache-2.0 OR TGPPL-1.0 OR LicenseRef-BOSL-1.0)"
 }

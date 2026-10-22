@@ -291,5 +291,9 @@ python3 python/test.py [BLAKE3_TEST_VECTORS]  # the reference implementation
 
 ## License
 
-Sigil is yours under either the CC0 1.0 dedication (`LICENSE_CC0`) or the
-Apache License 2.0 (`LICENSE_A2`), at your choice.
+You may use Sigil under the terms of any of these four Free and Open Source Software licences:
+
+* MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+* Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+* Transitive Grace Period Public License 1.0 ([LICENSE-TGPPL](LICENSE-TGPPL) or https://spdx.org/licenses/TGPPL-1.0.html)
+* Bootstrap Open Source License v1.0 ([LICENSE-BOSL.txt](LICENSE-BOSL.txt))

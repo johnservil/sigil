@@ -3,7 +3,7 @@ name = "sigilcode"
 version = "0.1.0"
 edition = "2021"
 description = "Bytes of a known length as a sigil: one word of letters and digits, 26 for a 256-bit hash, selected whole by a double-click, no two characters alike, with a check that picks the right one of several readings"
-license = "CC0-1.0 OR Apache-2.0"
+license = "MIT OR Apache-2.0 OR TGPPL-1.0" # OR BOSL-1.0, see LICENSE-BOSL.txt
 repository = "https://github.com/johnservil/sigil"
 
 [dependencies]
