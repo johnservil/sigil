@@ -1,19 +1,22 @@
-//! base11585: bytes of a known length as text, one of 11,585 CJK ideographs a
-//! character, every one-character error and every swap of neighbours caught.
+//! base1160: bytes of a known length as a codeword, one word of letters from
+//! Ethiopic and Canadian syllabics, which a double-click selects whole; every
+//! one-character error and every swap of neighbours is caught.
 //!
 //! ```
-//! let text = base11585::encode(&[0xff; 32]);
-//! assert_eq!(text.chars().count(), 20);
-//! assert_eq!(base11585::decode(&text, 32).unwrap(), [0xff; 32]);
+//! let codeword = base1160::encode(&[0xff; 32]);
+//! assert_eq!(codeword.chars().count(), 27);
+//! assert_eq!(base1160::decode(&codeword, 32).unwrap(), [0xff; 32]);
 //! ```
 //!
-//! The specification is the repository's README.md ("The encoding"):
-//! L bytes are a number v below 2^(8L); the text is v * K in base N = 11,585,
+//! Decoding skips white space and default-ignorable characters, which copying
+//! and line breaking insert. The specification is the repository's README.md
+//! ("The encoding"): L bytes are a number v below 2^(8L); the codeword is v * K in base N = 1,160,
 //! exactly n digits, most significant first, digit d the alphabet's d-th
-//! character (alphabet.txt, ascending), where n is the fewest digits that
-//! leave room for a prime K larger than N and K is the largest prime at most
-//! N^n / 2^(8L). python/base11585.py is the reference implementation and
-//! vectors.tsv the tests every implementation passes.
+//! character (alphabet.txt, ascending), where n is the fewest digits that leave
+//! room for a prime K larger than N and K is the largest prime at most
+//! N^n / 2^(8L).
+//! python/base1160.py is the reference implementation and vectors.tsv the
+//! tests every implementation passes.
 
 use std::fmt;
 use std::sync::OnceLock;
@@ -24,7 +27,7 @@ const ALPHABET_TEXT: &str = include_str!("../alphabet.txt");
 /// breaking insert.
 const IGNORED_TEXT: &str = include_str!("../ignored.txt");
 /// The alphabet's size.
-pub const N: u32 = 11585;
+pub const N: u32 = 1160;
 
 /// The alphabet's characters, and each code point's digit (by its offset
 /// from the first character), built once.
@@ -39,7 +42,7 @@ fn alphabet() -> &'static Alphabet {
     static ALPHABET: OnceLock<Alphabet> = OnceLock::new();
     ALPHABET.get_or_init(|| {
         let chars: Vec<char> = ALPHABET_TEXT.chars().collect();
-        assert_eq!(chars.len(), N as usize, "the alphabet has 11,585 characters");
+        assert_eq!(chars.len(), N as usize, "the alphabet has 1,160 characters");
         let first = chars[0] as u32;
         let mut digits = vec![u32::MAX; (chars[chars.len() - 1] as u32 - first + 1) as usize];
         for (d, &c) in chars.iter().enumerate() {
@@ -56,7 +59,7 @@ fn alphabet() -> &'static Alphabet {
     })
 }
 
-/// A text that encodes no data of the length asked for.
+/// A codeword that encodes no data of the length asked for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DecodeError {
     /// The wrong number of characters.
@@ -85,7 +88,7 @@ impl fmt::Display for DecodeError {
             DecodeError::Character { position, character } => {
                 write!(f, "character {position} (U+{:04X}) is not in the alphabet", *character as u32)
             }
-            DecodeError::Corrupt => write!(f, "the check fails: the text was changed"),
+            DecodeError::Corrupt => write!(f, "the check fails: the codeword was changed"),
         }
     }
 }
@@ -171,7 +174,7 @@ fn is_prime(k: u64) -> bool {
 /// (n, K) for data of `length` bytes (at least 1): the text's length, and
 /// the prime the value is multiplied by.
 pub fn layout(length: usize) -> (usize, u32) {
-    assert!(length >= 1, "base11585 encodes at least one byte");
+    assert!(length >= 1, "base1160 encodes at least one byte");
     let bits = 8 * length as u64;
     let mut power = Nat::small(1);
     let mut n = 0;
@@ -192,7 +195,7 @@ pub fn layout(length: usize) -> (usize, u32) {
     (n, u32::try_from(k).expect("K is below N^2 + N"))
 }
 
-/// `data` as text: `layout(data.len()).0` characters of the alphabet.
+/// `data`'s codeword: `layout(data.len()).0` characters of the alphabet.
 pub fn encode(data: &[u8]) -> String {
     let (n, k) = layout(data.len());
     let mut w = Nat(Vec::new());
@@ -209,12 +212,12 @@ pub fn encode(data: &[u8]) -> String {
     digits.iter().map(|&d| a.chars[d as usize]).collect()
 }
 
-/// The `length` bytes that `text` encodes, or why it encodes none. White
-/// space and default-ignorable characters in `text` are skipped.
-pub fn decode(text: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
+/// The `length` bytes that `codeword` encodes, or why it encodes none.
+/// White space and default-ignorable characters in it are skipped.
+pub fn decode(codeword: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
     let (n, k) = layout(length);
     let a = alphabet();
-    let chars: Vec<(usize, char)> = text
+    let chars: Vec<(usize, char)> = codeword
         .chars()
         .enumerate()
         .filter(|&(_, c)| !a.ignored.iter().any(|&(lo, hi)| lo <= c as u32 && c as u32 <= hi))

@@ -1,4 +1,4 @@
-"""The base11585 alphabet, from Unicode 14.0.0's data, by the rules below.
+"""The base1160 alphabet, from Unicode 14.0.0's data, by the rules below.
 
     sh alphabet/fetch.sh DATA                  # Unicode 14.0.0's data files, into DATA
     python3 alphabet/alphabet.py DATA          # writes alphabet.txt, ignored.txt, typescript/alphabet.ts
@@ -11,10 +11,8 @@ any machine. README.md explains each rule.
 """
 import collections
 import hashlib
-import io
 import sys
 import unicodedata
-import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -36,12 +34,14 @@ FILES = {
                      "3ebb57bf840489327983d011cfb1e4b39e52462142f1e406816789925fee3e78"),
     "Scripts.txt": ("52db475c4ec445e73b0b16915448c357614946ad7062843c563e00d7535c6510",
                     "7d13a1c7e88acc3cd2efdde82de5cf64338bbdf9e48a5af450afb3c80175a83d"),
-    "Unihan.zip": ("2ae4519b2b82cd4d15379c17e57bfb12c33c0f54da4977de03b2b04bcf11852d",
-                   "239820ec391c43858fa975111870b37c4330a333ddbd6ca99cb6651b805fe5e1"),
+    "LineBreak.txt": ("9e06e9f35c6959fb91dcc7993f90d58523c3079bc62c6b25f828b4cdebc5d70c",
+                      "9119eb1c4d405f6f6a9a805a28d70925007be6cfd3bcd18e16a051eef1daba82"),
+    "WordBreakProperty.txt": ("7716752aad296d4ab23ff4ed0a2746fc5328750ff84e9e7d6f3828ee9eaef742",
+                              "54ad33216c49a8d47c4b323c546143d91810ff4cee04da7b8c0d97e882d0a1ae"),
 }
 
-UNIHAN_VARIANTS = ("kTraditionalVariant", "kSimplifiedVariant", "kZVariant", "kSemanticVariant",
-                   "kSpecializedSemanticVariant", "kSpoofingVariant")
+# The scripts whose fonts every major platform ships (README.md, "Fonts").
+SCRIPTS = ("Ethiopic", "Canadian_Aboriginal")
 
 
 def checked(data, name):
@@ -84,27 +84,14 @@ def properties(data):
     p["maybe"] = {c for f in lines(read(data, "DerivedNormalizationProps.txt"))
                   if f[1] in ("NFC_QC", "NFKC_QC") and len(f) > 2 and f[2] == "M" for c in code_points(f[0])}
     p["joining"] = {c: f[2] for f in lines(read(data, "ArabicShaping.txt")) for c in code_points(f[0])}
-    unihan = collections.defaultdict(dict)
-    with zipfile.ZipFile(io.BytesIO(checked(data, "Unihan.zip"))) as z:
-        for member in ("Unihan_Variants.txt", "Unihan_IRGSources.txt"):
-            for line in z.read(member).decode("utf-8").splitlines():
-                if line.startswith("U+"):
-                    cp, key, value = line.split("\t")
-                    unihan[int(cp[2:], 16)][key] = value
-    p["unihan"] = unihan
+    p["line_break"] = {c: f[1] for f in lines(read(data, "LineBreak.txt")) for c in code_points(f[0])}
+    p["word_break"] = {c: f[1] for f in lines(read(data, "WordBreakProperty.txt")) for c in code_points(f[0])}
     return p
 
 
 def rules(p):
     """The rules, in order: (name, the test a character must pass)."""
     hangul_jamo = [(0x1100, 0x11FF), (0xA960, 0xA97F), (0xD7B0, 0xD7FF)]
-
-    def variants(c):
-        listed = " ".join(p["unihan"][c].get(k, "") for k in UNIHAN_VARIANTS).split()
-        return {int(v.split("<")[0][2:], 16) for v in listed} - {c}
-
-    def strokes(c):
-        return int(p["unihan"][c].get("kTotalStrokes", "0").split()[0])
 
     return [
         ("in the Basic Multilingual Plane", lambda c: c <= 0xFFFF),
@@ -122,11 +109,12 @@ def rules(p):
         ("not a Hangul jamo", lambda c: not any(a <= c <= b for a, b in hangul_jamo)),
         ("non-joining (joining type U)", lambda c: p["joining"].get(c, "U") == "U"),
         ("not a logical-order exception", lambda c: c not in p["proplist"]["Logical_Order_Exception"]),
-        ("one of Unicode 1.1's CJK Unified Ideographs (U+4E00..U+9FA5)",
-         lambda c: 0x4E00 <= c <= 0x9FA5 and p["script"].get(c) == "Han" and p["age"].get(c) == "1.1"),
-        ("no variant of any kind in Unihan (traditional, simplified, z-, semantic, "
-         "specialized semantic, spoofing)", lambda c: not variants(c)),
-        ("at least 3 strokes (kTotalStrokes)", lambda c: strokes(c) >= 3),
+        ("a letter that joins its neighbours into one word (word break ALetter)",
+         lambda c: p["word_break"].get(c) == "ALetter"),
+        ("never a line break beside a neighbour of its kind (line break AL)",
+         lambda c: p["line_break"].get(c) == "AL"),
+        ("in a script whose fonts every major platform ships (Ethiopic, Canadian syllabics)",
+         lambda c: p["script"].get(c) in SCRIPTS),
     ]
 
 

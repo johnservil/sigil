@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import base11585 as B
+import base1160 as B
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -36,7 +36,7 @@ def main():
     print(f"vectors: {len(v['good'])} good, {len(v['spaced'])} spaced and {len(v['bad'])} bad agree")
 
     n, k = B.layout(32)
-    assert (n, k) == (20, 16369)
+    assert (n, k) == (27, 474983)
     print("layouts:", {length: B.layout(length) for length in (16, 20, 32, 48, 64)})
 
     rng = random.Random(1)

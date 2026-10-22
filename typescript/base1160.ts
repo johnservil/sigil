@@ -1,18 +1,20 @@
-// base11585: bytes of a known length as text, one of 11,585 CJK ideographs a
-// character, every one-character error and every swap of neighbours caught.
-// The specification is README.md ("The encoding"); python/base11585.py is the
-// reference implementation, and vectors.json the tests every implementation
-// passes.
+// base1160: bytes of a known length as a codeword, one word of letters from
+// Ethiopic and Canadian syllabics, which a double-click selects whole; every
+// one-character error and every swap of neighbours is caught.
+// Decoding skips white space and default-ignorable characters, which copying
+// and line breaking insert. The specification is README.md ("The encoding");
+// python/base1160.py is the reference implementation, and vectors.json the
+// tests every implementation passes.
 
 import { ALPHABET, IGNORED } from "./alphabet.js";
 
 const CHARS: string[] = Array.from(ALPHABET);
 export const N = CHARS.length;
-if (N !== 11585) throw new Error("the alphabet must have 11,585 characters");
+if (N !== 1160) throw new Error("the alphabet must have 1,160 characters");
 const DIGIT = new Map<string, number>(CHARS.map((c, d) => [c, d]));
 const BN = BigInt(N);
 
-/** A text that encodes no data of the length asked for: `kind` is "length"
+/** A codeword that encodes no data of the length asked for: `kind` is "length"
  * (the wrong number of characters), "character" (one outside the alphabet),
  * or "corrupt" (the check fails). */
 export class DecodeError extends Error {
@@ -29,7 +31,7 @@ function isPrime(k: bigint): boolean {
 
 /** [n, K] for data of `length` bytes (at least 1). */
 export function layout(length: number): [number, bigint] {
-  if (!(Number.isInteger(length) && length >= 1)) throw new RangeError("base11585 encodes at least one byte");
+  if (!(Number.isInteger(length) && length >= 1)) throw new RangeError("base1160 encodes at least one byte");
   const bits = BigInt(8 * length);
   let n = 1;
   while (BN ** BigInt(n) >> bits <= BN) n++;
@@ -57,9 +59,9 @@ function ignored(c: string): boolean {
   return IGNORED.some(([a, b]) => a <= p && p <= b);
 }
 
-export function decode(text: string, length: number): Uint8Array {
+export function decode(codeword: string, length: number): Uint8Array {
   const [n, k] = layout(length);
-  const chars = Array.from(text)
+  const chars = Array.from(codeword)
     .map((c, i): [string, number] => [c, i])
     .filter(([c]) => !ignored(c));
   if (chars.length !== n) throw new DecodeError("length", `${chars.length} characters; ${length} bytes take ${n}`);
@@ -70,9 +72,9 @@ export function decode(text: string, length: number): Uint8Array {
       throw new DecodeError("character", `character ${i + 1} (U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}) is not in the alphabet`);
     w = w * BN + BigInt(d);
   });
-  if (w % k !== 0n) throw new DecodeError("corrupt", "the check fails: the text was changed");
+  if (w % k !== 0n) throw new DecodeError("corrupt", "the check fails: the codeword was changed");
   let v = w / k;
-  if (v >> BigInt(8 * length) !== 0n) throw new DecodeError("corrupt", "the check fails: the text was changed");
+  if (v >> BigInt(8 * length) !== 0n) throw new DecodeError("corrupt", "the check fails: the codeword was changed");
   const out = new Uint8Array(length);
   for (let i = length - 1; i >= 0; i--) {
     out[i] = Number(v & 0xffn);

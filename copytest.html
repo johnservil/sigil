@@ -1,12 +1,16 @@
-<!doctype html><meta charset="utf-8"><title>Which encodings does a double-click select whole?</title><body style="font-size:20px;font-family:sans-serif"><h3>Double-click (or long-press) the token in each line: does the whole token select?</h3><p style="color:#666">Below the lines, this browser's own answer (by Selection.modify, the same word boundaries).</p><p style="margin:1.2em 0" data-name="hex">copy this <span>5a136dcdd10b6681ade206a0a5063d59dadae38ecac1125a4ce9893a8bd93053</span> please</p><p style="margin:1.2em 0" data-name="base58">copy this <span>74csoJzvhHpnxiTnSHFxLzAcTcdVHw5VMVg4AyvL5uMC</span> please</p><p style="margin:1.2em 0" data-name="base64url">copy this <span>WhNtzdELZoGt4gagpQY9Wdra447KwRJaTOmJOovZMFM</span> please</p><p style="margin:1.2em 0" data-name="base32">copy this <span>LIJW3TORBNTIDLPCA2QKKBR5LHNNVY4OZLAREWSM5GETVC6ZGBJQ</span> please</p><p style="margin:1.2em 0" data-name="base11585 (CJK)">copy this <span>朽巿堨雫嘶葙匡昦嗮饄筵咍彉髷澺沄敭劬呇妗</span> please</p><p style="margin:1.2em 0" data-name="Ethiopic">copy this <span>ሀህሊሏሔሙሞሣረርሲሷሼሁሆላሐሕሚሟ</span> please</p><p style="margin:1.2em 0" data-name="Canadian syllabics">copy this <span>ᐁᐈᐏᐖᐝᐤᐫᐲᐹᑀᑇᑎᑕᑜᑣᑪᑱᑸᑿᒆ</span> please</p><p style="margin:1.2em 0" data-name="Yi">copy this <span>ꀀꀇꀎꀕꀜꀣꀪꀱꀸꀿꁆꁍꁔꁛꁢꁩꁰꁷꁾꂅ</span> please</p><p style="margin:1.2em 0" data-name="Katakana">copy this <span>アゥエカギケゴシズソダッテドヌハヒフヘホ</span> please</p><p style="margin:1.2em 0" data-name="Ethiopic and Canadian mixed">copy this <span>ᐁሃᐗሉᐭሏᑃሕᑙማᑯሡᒅሧᒛርᒱሳᓇሹ</span> please</p>
+<!doctype html><meta charset="utf-8"><title>Which encodings does a double-click select whole?</title>
+<body style="font-size:20px;font-family:sans-serif;max-width:46em;margin:1em auto">
+<h3>Double-click (or long-press) the token in each line: does the whole token select?</h3>
+<p style="color:#666">Below the lines, this browser's own answer, by Selection.modify, which follows the same word boundaries.</p>
+<p style="margin:1.2em 0" data-name="hex">copy this <span>5a136dcdd10b6681ade206a0a5063d59dadae38ecac1125a4ce9893a8bd93053</span> please</p><p style="margin:1.2em 0" data-name="base32">copy this <span>LIJW3TORBNTIDLPCA2QKKBR5LHNNVY4OZLAREWSM5GETVC6ZGBJQ</span> please</p><p style="margin:1.2em 0" data-name="base64">copy this <span>WhNtzdELZoGt4gagpQY9Wdra447KwRJaTOmJOovZMFM</span> please</p><p style="margin:1.2em 0" data-name="base58">copy this <span>74csoJzvhHpnxiTnSHFxLzAcTcdVHw5VMVg4AyvL5uMC</span> please</p><p style="margin:1.2em 0" data-name="base1160">copy this <span>ᑃኸᣖሯጲᓓᣓዷᗘᓄᓃⷈᔮተᖍꬃᣧᐮᔊᖝዽᘤጚᑿቃᙀᔨ</span> please</p><p style="margin:1.2em 0" data-name="CJK ideographs, for comparison">copy this <span>一壙掲溋祤落輖駯匢巻棔玭纆襟鐸鼑塄挝淶磏</span> please</p>
 <pre id="out"></pre><script>
-const out = [];
+const out = [navigator.userAgent, ''];
 for (const p of document.querySelectorAll('p[data-name]')) {
-  const span = p.querySelector('span'); const t = span.firstChild; const s = getSelection();
+  const t = p.querySelector('span').firstChild; const s = getSelection();
   s.collapse(t, Math.floor(t.length / 2));
   s.modify('move', 'backward', 'word'); s.modify('extend', 'forward', 'word');
   const got = s.toString().trim();
-  out.push(navigator.userAgent.split(') ').pop() + ' | ' + p.dataset.name + ': ' + (got === t.data ? 'WHOLE' : 'part: ' + got.length + ' of ' + [...t.data].length + ' (' + got + ')'));
+  out.push(p.dataset.name + ': ' + (got === t.data ? 'WHOLE' : 'part: ' + [...got].length + ' of ' + [...t.data].length));
 }
 document.getElementById('out').textContent = out.join('\n');
 </script>

@@ -1,20 +1,23 @@
-"""base11585: bytes of a known length as text, one of 11,585 CJK ideographs a
-character, every one-character error and every swap of neighbours caught.
+"""base1160: bytes of a known length as a codeword, one word of letters from
+Ethiopic and Canadian syllabics, which a double-click selects whole; every
+one-character error and every swap of neighbours is caught.
 
-    encode(data) -> str
-    decode(text, length) -> bytes      # or raises DecodeError; white space is skipped
+    encode(data) -> str                     # the codeword
+    decode(codeword, length) -> bytes       # or raises DecodeError
 
-The specification is README.md ("The encoding"): L bytes are a number v
-below 2^(8L); the text is v * K in base N = 11,585, exactly n digits, most
-significant first, digit d the alphabet's d-th character (alphabet.txt,
-ascending), where n is the fewest digits that leave room for a prime K
-larger than N and K is the largest prime at most N^n / 2^(8L).
+Decoding skips white space and default-ignorable characters (ignored.txt),
+which copying and line breaking insert. The specification is README.md
+("The encoding"): L bytes are a number v below 2^(8L); the codeword is v * K in base N = 1,160,
+exactly n digits, most significant first, digit d the alphabet's d-th
+character (alphabet.txt, ascending), where n is the fewest digits that leave
+room for a prime K larger than N and K is the largest prime at most
+N^n / 2^(8L).
 """
 from pathlib import Path
 
 ALPHABET = (Path(__file__).resolve().parent.parent / "alphabet.txt").read_text(encoding="utf-8")
 N = len(ALPHABET)
-assert N == 11585
+assert N == 1160
 DIGIT = {c: d for d, c in enumerate(ALPHABET)}
 # The code points decoding ignores (ignored.txt): white space and the
 # default-ignorable characters, which copying and line breaking insert.
@@ -27,7 +30,7 @@ def ignored(c):
 
 
 class DecodeError(ValueError):
-    """A text that encodes no data of the length asked for. `kind` is
+    """A codeword that encodes no data of the length asked for. `kind` is
     "length" (the wrong number of characters), "character" (one outside the
     alphabet), or "corrupt" (the check fails)."""
     def __init__(self, kind, message):
@@ -48,7 +51,7 @@ def is_prime(k):
 
 def layout(length):
     """(n, K) for data of `length` bytes (at least 1)."""
-    assert length >= 1, "base11585 encodes at least one byte"
+    assert length >= 1, "base1160 encodes at least one byte"
     n = 1
     while (N ** n >> 8 * length) <= N:
         n += 1
@@ -68,10 +71,11 @@ def encode(data: bytes) -> str:
     return "".join(reversed(out))
 
 
-def decode(text: str, length: int) -> bytes:
-    """`text`'s white space and default-ignorable characters are skipped."""
+def decode(codeword: str, length: int) -> bytes:
+    """The `length` bytes `codeword` encodes; its white space and
+    default-ignorable characters are skipped."""
     n, k = layout(length)
-    chars = [(i, c) for i, c in enumerate(text) if not ignored(c)]
+    chars = [(i, c) for i, c in enumerate(codeword) if not ignored(c)]
     if len(chars) != n:
         raise DecodeError("length", f"{len(chars)} characters; {length} bytes take {n}")
     w = 0
@@ -81,5 +85,5 @@ def decode(text: str, length: int) -> bytes:
         w = w * N + DIGIT[c]
     v, r = divmod(w, k)
     if r or v >> 8 * length:
-        raise DecodeError("corrupt", "the check fails: the text was changed")
+        raise DecodeError("corrupt", "the check fails: the codeword was changed")
     return v.to_bytes(length, "big")

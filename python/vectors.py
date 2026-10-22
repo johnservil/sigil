@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import base11585 as B
+import base1160 as B
 
 ROOT = Path(__file__).resolve().parent.parent
 LENGTHS = list(range(1, 41)) + [48, 64, 100, 128]
@@ -24,7 +24,7 @@ def value(length, i):
     out = b""
     j = 0
     while len(out) < length:
-        out += hashlib.sha256(f"base11585 vector {length} {i} {j}".encode()).digest()
+        out += hashlib.sha256(f"base1160 vector {length} {i} {j}".encode()).digest()
         j += 1
     return out[:length]
 

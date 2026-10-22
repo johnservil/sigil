@@ -1,9 +1,9 @@
 [package]
-name = "base11585"
+name = "base1160"
 version = "0.1.0"
 edition = "2021"
-description = "Bytes of a known length as text: one of 11,585 CJK ideographs a character, every one-character error and every swap of neighbours caught"
+description = "Bytes of a known length as text: one of 1,160 Ethiopic and Canadian syllabics letters a character, every one-character error and every swap of neighbours caught"
 license = "CC0-1.0 OR Apache-2.0"
-repository = "https://github.com/johnservil/base11585"
+repository = "https://github.com/johnservil/base1160"
 
 [dependencies]

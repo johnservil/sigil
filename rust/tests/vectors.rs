@@ -34,18 +34,18 @@ fn vectors() {
             "good" => {
                 let data = bytes(f[1]);
                 let text = unescape(f[2]);
-                assert_eq!(base11585::encode(&data), text, "encode {}", f[1]);
-                assert_eq!(base11585::decode(&text, data.len()).unwrap(), data, "decode {}", f[2]);
+                assert_eq!(base1160::encode(&data), text, "encode {}", f[1]);
+                assert_eq!(base1160::decode(&text, data.len()).unwrap(), data, "decode {}", f[2]);
                 good += 1;
             }
             "spaced" => {
                 let data = bytes(f[1]);
-                assert_eq!(base11585::decode(&unescape(f[2]), data.len()).unwrap(), data, "decode spaced {}", f[2]);
+                assert_eq!(base1160::decode(&unescape(f[2]), data.len()).unwrap(), data, "decode spaced {}", f[2]);
                 spaced += 1;
             }
             "bad" => {
                 let length: usize = f[1].parse().unwrap();
-                let err = base11585::decode(&unescape(f[3]), length).unwrap_err();
+                let err = base1160::decode(&unescape(f[3]), length).unwrap_err();
                 assert_eq!(err.kind(), f[2], "{}", f[3]);
                 bad += 1;
             }
@@ -53,5 +53,5 @@ fn vectors() {
         }
     }
     assert_eq!((good, spaced, bad), (220, 440, 308));
-    assert_eq!(base11585::layout(32), (20, 16369));
+    assert_eq!(base1160::layout(32), (27, 474983));
 }
