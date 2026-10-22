@@ -26,7 +26,7 @@ def error(text, length):
 
 
 def main():
-    # BLAKE3, which the jumbling uses.
+    # BLAKE3, which the check uses.
     assert B.blake3_hash(b"").hex() == "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
     if len(sys.argv) > 1:
         tv = json.loads(Path(sys.argv[1]).read_text())
@@ -50,11 +50,6 @@ def main():
     assert B.layout(32) == (26, 14)
     print("layouts (characters, check bits):", {length: B.layout(length) for length in (1, 8, 16, 20, 32, 48, 64)})
 
-    for length in range(1, 70):
-        data = hashlib.sha256(bytes([length])).digest() * 3
-        assert B.unjumble(B.jumble(data[:length])) == data[:length]
-    print("unjumble inverts jumble at every length from 1 to 69 bytes")
-
     # Readings: one character read three ways (the right one among them), and
     # one character unread (every character a candidate).
     import random
@@ -74,20 +69,6 @@ def main():
             unread += B.decode_readings(readings, 32) == [data]
     print(f"one character read three ways: the right data alone in {three} of 200; "
           f"one character unread: alone in {unread} of 40")
-
-    # Diffusion: one changed bit of the data changes characters at both ends.
-    ends = flipped = 0
-    for i in range(256):
-        data = hashlib.sha256(i.to_bytes(2, "big")).digest()
-        a = B.encode(data)
-        changed = bytearray(data)
-        changed[16] ^= 1 << (i % 8)
-        b = B.encode(bytes(changed))
-        ends += a[:4] != b[:4] and a[-4:] != b[-4:]
-        flipped += sum(x != y for x, y in zip(a, b))
-    print(f"one middle bit changed in 256 values: the first and the last four characters both change in {ends}; "
-          f"{flipped / 256:.1f} of 26 characters change on average")
-
 
 if __name__ == "__main__":
     main()

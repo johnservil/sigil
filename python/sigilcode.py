@@ -6,11 +6,10 @@ a check that confirms a reading or picks the right one of several.
     decode(sigil, length) -> bytes               # or raises DecodeError
     decode_readings(readings, length) -> list    # every reading that decodes
 
-The specification is README.md ("The encoding"). The data is jumbled (four
-Feistel rounds of BLAKE3, so that every character of the sigil depends on
-every bit of the data), joined by a check, and written in base N = 1,353:
-one character more than the data needs, the check taking all the room left
-(for 32 bytes, 26 characters and a 14-bit check). Decoding skips white space
+The specification is README.md ("The encoding"). The data, joined by a
+check (BLAKE3 of the data), is written in base N = 1,353: one character
+more than the data needs, the check taking all the room left (for 32 bytes,
+26 characters and a 14-bit check). Decoding skips white space
 and default-ignorable characters (ignored.txt) and reads a letter's
 uppercase as the letter.
 """
@@ -35,9 +34,8 @@ class DecodeError(ValueError):
         self.kind = kind
 
 
-# BLAKE3 (github.com/BLAKE3-team/BLAKE3-specs), its derive-key mode and its
-# extended output, which the jumbling uses. test.py checks it against BLAKE3's
-# official test vectors.
+# BLAKE3 (github.com/BLAKE3-team/BLAKE3-specs) and its derive-key mode, which
+# the check uses. test.py checks it against BLAKE3's official test vectors.
 
 IV = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19]
 PERMUTATION = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
@@ -125,35 +123,6 @@ def blake3_derive_key(context, material, length=32):
     return _blake3(material, key, DERIVE_KEY_MATERIAL, length)
 
 
-# The jumbling: four Feistel rounds over the data's two halves, each XORing
-# one half with BLAKE3's derive-key output from the other.
-
-def _round(i, x, length):
-    return blake3_derive_key(f"Sigil 2026-10-22 jumble round {i}", x, length)
-
-
-def _xor(a, b):
-    return bytes(x ^ y for x, y in zip(a, b))
-
-
-def jumble(data: bytes) -> bytes:
-    a, b = data[:len(data) // 2], data[len(data) // 2:]
-    b = _xor(b, _round(0, a, len(b)))
-    a = _xor(a, _round(1, b, len(a)))
-    b = _xor(b, _round(2, a, len(b)))
-    a = _xor(a, _round(3, b, len(a)))
-    return a + b
-
-
-def unjumble(data: bytes) -> bytes:
-    a, b = data[:len(data) // 2], data[len(data) // 2:]
-    a = _xor(a, _round(3, b, len(a)))
-    b = _xor(b, _round(2, a, len(b)))
-    a = _xor(a, _round(1, b, len(a)))
-    b = _xor(b, _round(0, a, len(b)))
-    return a + b
-
-
 def layout(length):
     """(n, c) for data of `length` bytes (at least 1): the sigil's
     characters, one more than the fewest that hold 8 * length bits, and the
@@ -167,16 +136,15 @@ def layout(length):
     return n, c
 
 
-def check(jumbled, c):
+def check(data, c):
     """The check: the first c bits of BLAKE3, in derive-key mode, over the
-    jumbled data."""
-    return int.from_bytes(blake3_derive_key("Sigil 2026-10-22 check", jumbled, 8), "big") >> (64 - c)
+    data."""
+    return int.from_bytes(blake3_derive_key("Sigil 2026-10-22 check", data, 8), "big") >> (64 - c)
 
 
 def encode(data: bytes) -> str:
     n, c = layout(len(data))
-    jumbled = jumble(data)
-    w = int.from_bytes(jumbled, "big") << c | check(jumbled, c)
+    w = int.from_bytes(data, "big") << c | check(data, c)
     out = []
     for _ in range(n):
         w, d = divmod(w, N)
@@ -203,10 +171,10 @@ def decode(sigil: str, length: int) -> bytes:
         w = w * N + DIGIT[ch]
     if w >> (8 * length + c):
         raise DecodeError("range", f"its value is too large for {length} bytes: a character was misread or changed")
-    jumbled = (w >> c).to_bytes(length, "big")
-    if w & ((1 << c) - 1) != check(jumbled, c):
+    data = (w >> c).to_bytes(length, "big")
+    if w & ((1 << c) - 1) != check(data, c):
         raise DecodeError("check", "the check fails: a character was misread or changed")
-    return unjumble(jumbled)
+    return data
 
 
 def decode_readings(readings, length):

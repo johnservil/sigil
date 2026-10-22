@@ -7,7 +7,7 @@ picture. A 256-bit hash becomes 26 characters, no two of which look alike.
 ```
 BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64 rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            as a sigil ᔓⶲውሖካᗠⶓⷜᓞƈɽᐾʔᗞᖋᒤኜጎᑔሿᑪዤⷎዺፎጺ
+            as a sigil ᑖɬđዴᔕħɂᗔʐᓪcᣕጔэⶈᓄᕖχɐᖃⷁሾቹᒱaጹ
 ```
 
 Its 1,353 characters are digits and letters of five scripts: Latin, Greek,
@@ -35,10 +35,10 @@ Its properties work together:
   copying it carries nothing else. Decoding skips any white space or
   invisible characters that a line break or a copy inserts, and reads
   letters in either case.
-- **Hard to imitate.** No two characters look alike, and every character
-  depends on every bit of the data, so each character a person compares
-  costs a forger 10.4 bits ("Telling sigils apart"): 83 bits for the first
-  and last four, where hex's first and last four cost 32.
+- **Hard to imitate.** No two characters look alike, so for a hash or a key
+  each character a person compares costs a forger 10.4 bits ("Telling
+  sigils apart"): 83 bits for the first and last four, where hex's first
+  and last four cost 32.
 - **Read back by machines.** Fonts on the major platforms draw every
   character, no character or sequence of characters looks like another, and
   a check confirms a reading or picks the right one of several ("Reading
@@ -98,19 +98,20 @@ character was misread or changed.
 People compare sigils by eye, often only their first and last few
 characters. Someone who wants a sigil that looks like yours must produce
 data whose sigil looks like it: for a hash, they can only try inputs until
-one hashes to a look-alike. Each character a person compares makes them
-match that character exactly, since no two characters of the alphabet look
-alike: a chance of 1 in 1,353, or 10.4 bits, for every compared character.
+one hashes to a look-alike, and for a key, generate keys. Each character a
+person compares makes them match that character exactly, since no two
+characters of the alphabet look alike: a chance of 1 in 1,353, or 10.4
+bits, for every compared character. Fewer characters, each carrying more
+information, make every sigil harder to imitate.
 
-Jumbling makes this hold for any data, including data a forger partly
-chooses. A plain positional encoding writes the data's first bytes in the
-first characters and its last bytes in the last ones, so a forger who
-controls the middle of some data can change it freely and keep the ends.
-Sigil jumbles the data first, so every character depends on every bit:
-changing any one bit changes, on average, all 26 characters.
-
-Fewer characters, each carrying more information, make every sigil harder
-to imitate.
+This holds for data that looks random: hashes, keys, and identifiers drawn
+at random. Sigil writes the data's first bytes in the first characters and
+its last bytes in the last ones, so data with structure shows it. Counters
+and timestamps give sigils that share their first characters. A forger who
+controls the middle of some data can change it and keep the ends. A caller
+with such data encodes its hash, or jumbles it first, as Zcash's F4Jumble
+does for its unified addresses, so that every character depends on every
+bit.
 
 ## Reading sigils by machine
 
@@ -141,16 +142,11 @@ Sigil encodes data of L bytes, L ≥ 1:
    smallest m with N^m ≥ 2^(8L), where N = 1,353. The sigil has n = m + 1
    characters, and its check has c bits, all the room left: the most c with
    2^(8L + c) ≤ N^n.
-2. **Jumble.** Split the data into a, its first ⌊L/2⌋ bytes, and b, the rest.
-   Then b ⊕= R₀(a), a ⊕= R₁(b), b ⊕= R₂(a), a ⊕= R₃(b), where Rᵢ(x) is BLAKE3
-   in derive-key mode, with context string `Sigil 2026-10-22 jumble round i`
-   and key material x, extended to the length of the half it changes. The
-   jumbled data is a ‖ b.
-3. **Check.** t is the first c bits of BLAKE3 in derive-key mode, with
-   context string `Sigil 2026-10-22 check`, over the jumbled data.
-4. **Write.** The value w = j · 2^c + t, where j is the jumbled data as a
-   number, most significant byte first, written in base N with exactly n
-   digits, most significant first. Digit d is the d-th character of the
+2. **Check.** t is the first c bits of BLAKE3 in derive-key mode, with
+   context string `Sigil 2026-10-22 check`, over the data.
+3. **Write.** The value w = d · 2^c + t, where d is the data as a number,
+   most significant byte first, written in base N with exactly n digits,
+   most significant first. Digit d is the d-th character of the
    alphabet (`alphabet.txt`, in ascending code point order).
 
 | L (bytes) | 16 | 20 | 32 | 48 | 64 |
@@ -163,8 +159,7 @@ White_Space or Default_Ignorable_Code_Point (the ranges in `ignored.txt`).
 It reads each remaining character as its digit, a letter's uppercase
 (`uppercase.txt`, in the alphabet's order) as the letter. It requires
 exactly n characters, each in the alphabet or its uppercase, and a value w
-below 2^(8L + c) whose low c bits are the check of the rest. It unjumbles
-the rest by the four rounds in reverse order.
+below 2^(8L + c) whose low c bits are the check of the rest, the data.
 
 The layout gives every length a check of at least one character's worth,
 and the alphabet's size is chosen for 256-bit data: 25 characters hold it,
@@ -245,10 +240,13 @@ machine. Each rule keeps the characters that pass it:
   tests check all 35).
 - **Readings:** with three readings for one character of a 256-bit sigil,
   `decode_readings` returned the right data alone in 200 of 200 tests; with
-  one character unread, in 39 of 40.
-- **Jumbling:** changing one bit in the middle of 256 values changed the
-  first and the last four characters every time, and 26.0 of 26 characters
-  on average.
+  one character unread, in 37 of 40.
+- **A specification in Lean** (`lean/`): "The encoding" as Lean
+  definitions, over C2SP's BLAKE3 specification and the alphabet that
+  `alphabet/alphabet.py` writes; it passes `vectors.tsv` too.
+- **Speed** (`rust/examples/bench.rs`): the Rust encodes a 256-bit value in
+  0.58 µs and decodes it in 0.69 µs, in a Linux virtual machine on an Apple
+  M4 Max.
 - **Selection** (`copytest.html`): a double-click selects whole sigils in
   Chromium. Open the page in any browser to see its answer.
 - **Fonts** (`fonttest.html`): the page draws every character and compares
@@ -268,9 +266,6 @@ machine. Each rule keeps the characters that pass it:
   characters. His `zbase62` (Python, 2010) and `zbase32` (Python and C)
   libraries implement that agreement as `b2a_l` and `a2b_l`. Sigil uses the
   agreement too: the length sets the layout and makes truncation an error.
-- **Zcash's F4Jumble**, the jumbling of its Unified Addresses, spreads every
-  bit of an address over its whole encoding so that a forger cannot keep the
-  ends; Sigil's jumbling is its four-round Feistel structure, with BLAKE3.
 - **qntm's** base2048, base32768 and base65536 pack binary into Unicode for
   services that count characters, and his definition of "safe" code points
   (https://qntm.org/safe) is where this alphabet's rules begin.
@@ -286,7 +281,8 @@ python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data;
 python3 python/vectors.py --check             # vectors.json and vectors.tsv are the reference's output
 python3 python/test.py [BLAKE3_TEST_VECTORS]  # the reference implementation
 (cd typescript && tsc -p .) && node typescript/dist/test.js
-(cd rust && cargo test)
+(cd rust && cargo test && cargo run --release --example bench)
+(cd lean && lake build && lake exe tests ../vectors.tsv)   # the specification, with Lean 4.31
 ```
 
 ## License

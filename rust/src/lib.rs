@@ -8,10 +8,9 @@
 //! assert_eq!(sigilcode::decode(&sigil, 32).unwrap(), [0xff; 32]);
 //! ```
 //!
-//! The specification is the repository's README.md ("The encoding"): the data
-//! is jumbled (four Feistel rounds of BLAKE3), joined by a check, and written
-//! in base N = 1,353, one character more than the data needs, the check taking
-//! all the room left. Decoding skips white space and default-ignorable
+//! The specification is the repository's README.md ("The encoding"): the data,
+//! joined by a check (BLAKE3 of the data), is written in base N = 1,353, one
+//! character more than the data needs, the check taking all the room left. Decoding skips white space and default-ignorable
 //! characters and reads a letter's uppercase as the letter. python/sigilcode.py
 //! is the reference implementation and vectors.tsv the tests every
 //! implementation passes.
@@ -95,8 +94,8 @@ impl fmt::Display for DecodeError {
 
 impl std::error::Error for DecodeError {}
 
-// BLAKE3 (github.com/BLAKE3-team/BLAKE3-specs): its derive-key mode and its
-// extended output, which the jumbling and the check use.
+// BLAKE3 (github.com/BLAKE3-team/BLAKE3-specs) and its derive-key mode, which
+// the check uses.
 
 const IV: [u32; 8] = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19];
 const PERMUTATION: [usize; 16] = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8];
@@ -228,58 +227,11 @@ pub fn blake3_derive_key(context: &str, material: &[u8], length: usize) -> Vec<u
     blake3(material, &key, DERIVE_KEY_MATERIAL, length)
 }
 
-/// The derive-key context keys of Sigil's five context strings, computed once
-/// (BLAKE3 hashes a derive-key context string into a key before it reads the
-/// key material): `Sigil 2026-10-22 jumble round 0` to `3`, then
-/// `Sigil 2026-10-22 check`. `test_context_keys` derives them again.
-const CONTEXT_KEYS: [[u32; 8]; 5] = [
-    [0xded18ddb, 0x4b14143e, 0xaec8d21e, 0x383adc8f, 0x5b45faaa, 0xd1fed4f0, 0x355d0b68, 0xa0cad7ae],
-    [0xacdb4187, 0xd6563b0f, 0x81707ff6, 0x24bf4234, 0x43957168, 0x28ec0e32, 0x6f480e21, 0xea055de7],
-    [0xcc677dab, 0x28372170, 0x2659d650, 0x3f7c9ee4, 0xb256bfd9, 0xde9b8995, 0x4537b82c, 0x1810d3e6],
-    [0x363673a3, 0xdb84f26a, 0x04bea1cf, 0xb790c26e, 0xc5960a74, 0x25710c4f, 0x471916b7, 0x751477ab],
-    [0x43c3f22e, 0x2294cd61, 0x520f2bcd, 0x2cbb0c2d, 0x9da1f453, 0x82e29243, 0x2d71014a, 0xd27243ae],
-];
-
-// The jumbling: four Feistel rounds over the data's two halves.
-
-/// `target` XORed with BLAKE3's derive-key output under context key `i` for
-/// key material `from`, 64 bytes at a time.
-fn xor_round(target: &mut [u8], i: usize, from: &[u8]) {
-    let mut r = [0u8; 64];
-    if target.len() <= 64 {
-        blake3_into(from, &CONTEXT_KEYS[i], DERIVE_KEY_MATERIAL, &mut r[..target.len()]);
-        for (t, x) in target.iter_mut().zip(r) {
-            *t ^= x;
-        }
-    } else {
-        let r = blake3(from, &CONTEXT_KEYS[i], DERIVE_KEY_MATERIAL, target.len());
-        for (t, x) in target.iter_mut().zip(r) {
-            *t ^= x;
-        }
-    }
-}
-
-/// The jumbled data: every byte depends on every byte of `data`.
-pub fn jumble(data: &[u8]) -> Vec<u8> {
-    let mut out = data.to_vec();
-    let (a, b) = out.split_at_mut(data.len() / 2);
-    xor_round(b, 0, a);
-    xor_round(a, 1, b);
-    xor_round(b, 2, a);
-    xor_round(a, 3, b);
-    out
-}
-
-/// The data that `jumbled` is the jumbling of.
-pub fn unjumble(jumbled: &[u8]) -> Vec<u8> {
-    let mut out = jumbled.to_vec();
-    let (a, b) = out.split_at_mut(jumbled.len() / 2);
-    xor_round(a, 3, b);
-    xor_round(b, 2, a);
-    xor_round(a, 1, b);
-    xor_round(b, 0, a);
-    out
-}
+/// The derive-key context key of the check's context string,
+/// `Sigil 2026-10-22 check` (BLAKE3 hashes a derive-key context string into a
+/// key before it reads the key material), computed once; `test_check_key`
+/// derives it again.
+const CHECK_KEY: [u32; 8] = [0x43c3f22e, 0x2294cd61, 0x520f2bcd, 0x2cbb0c2d, 0x9da1f453, 0x82e29243, 0x2d71014a, 0xd27243ae];
 
 /// A natural number: 32-bit words, least significant first, no high zero word.
 struct Nat(Vec<u32>);
@@ -336,22 +288,21 @@ pub fn layout(length: usize) -> (usize, usize) {
     (m + 1, c)
 }
 
-/// The check: the first c bits of BLAKE3, in derive-key mode, over the jumbled data.
-fn check(jumbled: &[u8], c: usize) -> u32 {
+/// The check: the first c bits of BLAKE3, in derive-key mode, over the data.
+fn check(data: &[u8], c: usize) -> u32 {
     let mut h = [0u8; 8];
-    blake3_into(jumbled, &CONTEXT_KEYS[4], DERIVE_KEY_MATERIAL, &mut h);
+    blake3_into(data, &CHECK_KEY, DERIVE_KEY_MATERIAL, &mut h);
     (u64::from_be_bytes(h) >> (64 - c)) as u32
 }
 
 /// `data`'s sigil: `layout(data.len()).0` characters of the alphabet.
 pub fn encode(data: &[u8]) -> String {
     let (n, c) = layout(data.len());
-    let jumbled = jumble(data);
     let mut w = Nat(Vec::new());
-    for &b in &jumbled {
+    for &b in data {
         w.mul_add(256, b as u32);
     }
-    w.mul_add(1 << c, check(&jumbled, c));
+    w.mul_add(1 << c, check(data, c));
     let a = alphabet();
     let mut digits = vec![0u32; n];
     for d in digits.iter_mut().rev() {
@@ -381,14 +332,14 @@ fn decode_digits(digits: &[u32], length: usize, c: usize) -> Result<Vec<u8>, Dec
         return Err(DecodeError::Range);
     }
     let t = w.div_rem(1 << c);
-    let mut jumbled = vec![0u8; length];
-    for b in jumbled.iter_mut().rev() {
+    let mut data = vec![0u8; length];
+    for b in data.iter_mut().rev() {
         *b = w.div_rem(256) as u8;
     }
-    if t != check(&jumbled, c) {
+    if t != check(&data, c) {
         return Err(DecodeError::Check);
     }
-    Ok(unjumble(&jumbled))
+    Ok(data)
 }
 
 /// The `length` bytes that `sigil` encodes, or why it encodes none. White
@@ -461,16 +412,12 @@ pub fn decode_readings(readings: &[&str], length: usize) -> Vec<Vec<u8>> {
 
 #[cfg(test)]
 mod test {
-    /// `CONTEXT_KEYS` are the context keys of Sigil's five context strings.
+    /// `CHECK_KEY` is the context key of the check's context string.
     #[test]
-    fn test_context_keys() {
-        let contexts = ["Sigil 2026-10-22 jumble round 0", "Sigil 2026-10-22 jumble round 1",
-                        "Sigil 2026-10-22 jumble round 2", "Sigil 2026-10-22 jumble round 3", "Sigil 2026-10-22 check"];
-        for (i, context) in contexts.iter().enumerate() {
-            let k = super::blake3(context.as_bytes(), &super::IV, super::DERIVE_KEY_CONTEXT, 32);
-            let words: Vec<u32> = k.chunks(4).map(|w| u32::from_le_bytes(w.try_into().unwrap())).collect();
-            assert_eq!(words, super::CONTEXT_KEYS[i], "{context}");
-        }
+    fn test_check_key() {
+        let k = super::blake3(b"Sigil 2026-10-22 check", &super::IV, super::DERIVE_KEY_CONTEXT, 32);
+        let words: Vec<u32> = k.chunks(4).map(|w| u32::from_le_bytes(w.try_into().unwrap())).collect();
+        assert_eq!(words, super::CHECK_KEY);
     }
 
     /// BLAKE3 across chunk and tree boundaries: the hash of 0, 1, 1024, 1025,

@@ -26,8 +26,8 @@ export class DecodeError extends Error {
   }
 }
 
-// BLAKE3 (github.com/BLAKE3-team/BLAKE3-specs): its derive-key mode and its
-// extended output, which the jumbling uses.
+// BLAKE3 (github.com/BLAKE3-team/BLAKE3-specs) and its derive-key mode, which
+// the check uses.
 
 const IV = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
 const PERMUTATION = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8];
@@ -116,29 +116,6 @@ export function blake3DeriveKey(context: string, material: Uint8Array, length = 
   return blake3(material, words(ck).slice(0, 8), DERIVE_KEY_MATERIAL, length);
 }
 
-// The jumbling: four Feistel rounds over the data's two halves.
-
-const round = (i: number, x: Uint8Array, length: number) => blake3DeriveKey(`Sigil 2026-10-22 jumble round ${i}`, x, length);
-const xor = (a: Uint8Array, b: Uint8Array) => a.map((x, i) => x ^ b[i]);
-
-export function jumble(data: Uint8Array): Uint8Array {
-  let a = data.slice(0, data.length >> 1), b = data.slice(data.length >> 1);
-  b = xor(b, round(0, a, b.length));
-  a = xor(a, round(1, b, a.length));
-  b = xor(b, round(2, a, b.length));
-  a = xor(a, round(3, b, a.length));
-  return new Uint8Array([...a, ...b]);
-}
-
-export function unjumble(data: Uint8Array): Uint8Array {
-  let a = data.slice(0, data.length >> 1), b = data.slice(data.length >> 1);
-  a = xor(a, round(3, b, a.length));
-  b = xor(b, round(2, a, b.length));
-  a = xor(a, round(1, b, a.length));
-  b = xor(b, round(0, a, b.length));
-  return new Uint8Array([...a, ...b]);
-}
-
 /** [n, c] for data of `length` bytes (at least 1): the sigil's characters,
  * one more than the fewest that hold 8 * length bits, and the check's bits,
  * all the room left. */
@@ -152,10 +129,10 @@ export function layout(length: number): [number, number] {
   return [n, c];
 }
 
-/** The check: the first c bits of BLAKE3, in derive-key mode, over the jumbled data. */
-function check(jumbled: Uint8Array, c: number): bigint {
+/** The check: the first c bits of BLAKE3, in derive-key mode, over the data. */
+function check(data: Uint8Array, c: number): bigint {
   let x = 0n;
-  for (const byte of blake3DeriveKey("Sigil 2026-10-22 check", jumbled, 8)) x = (x << 8n) | BigInt(byte);
+  for (const byte of blake3DeriveKey("Sigil 2026-10-22 check", data, 8)) x = (x << 8n) | BigInt(byte);
   return x >> BigInt(64 - c);
 }
 
@@ -163,8 +140,7 @@ const toBig = (b: Uint8Array) => b.reduce((v, byte) => (v << 8n) | BigInt(byte),
 
 export function encode(data: Uint8Array): string {
   const [n, c] = layout(data.length);
-  const jumbled = jumble(data);
-  let w = (toBig(jumbled) << BigInt(c)) | check(jumbled, c);
+  let w = (toBig(data) << BigInt(c)) | check(data, c);
   const out: string[] = new Array(n);
   for (let i = n - 1; i >= 0; i--) {
     out[i] = CHARS[Number(w % BN)];
@@ -194,13 +170,13 @@ export function decode(sigil: string, length: number): Uint8Array {
   }
   if (w >> BigInt(8 * length + c) !== 0n) throw new DecodeError("range", `its value is too large for ${length} bytes: a character was misread or changed`);
   let v = w >> BigInt(c);
-  const jumbled = new Uint8Array(length);
+  const data = new Uint8Array(length);
   for (let i = length - 1; i >= 0; i--) {
-    jumbled[i] = Number(v & 0xffn);
+    data[i] = Number(v & 0xffn);
     v >>= 8n;
   }
-  if ((w & ((1n << BigInt(c)) - 1n)) !== check(jumbled, c)) throw new DecodeError("check", "the check fails: a character was misread or changed");
-  return unjumble(jumbled);
+  if ((w & ((1n << BigInt(c)) - 1n)) !== check(data, c)) throw new DecodeError("check", "the check fails: a character was misread or changed");
+  return data;
 }
 
 /** Every data of `length` bytes that some reading decodes to, for a reader

@@ -1,0 +1,9 @@
+name = "Sigil"
+defaultTargets = ["Sigil"]
+
+[[lean_lib]]
+name = "Sigil"
+
+[[lean_exe]]
+name = "tests"
+root = "Tests"
