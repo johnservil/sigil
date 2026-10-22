@@ -158,9 +158,18 @@ const LEAST_K: u32 = 1361;
 
 /// (n, K) for data of `length` bytes (at least 1): the sigil's characters,
 /// the fewest whose room R = floor(N^n / 2^(8 * length)) holds a prime larger
-/// than N, and K, the largest prime at most R.
+/// than N, and K, the largest prime at most R. Computed once for each length
+/// up to 64 bytes, and on every call for longer data.
 pub fn layout(length: usize) -> (usize, u32) {
     assert!(length >= 1, "Sigil encodes at least one byte");
+    static LAYOUTS: [OnceLock<(usize, u32)>; 64] = [const { OnceLock::new() }; 64];
+    match LAYOUTS.get(length - 1) {
+        Some(cell) => *cell.get_or_init(|| compute_layout(length)),
+        None => compute_layout(length),
+    }
+}
+
+fn compute_layout(length: usize) -> (usize, u32) {
     let mut power = Nat(vec![1]);
     let mut n = 0;
     while power.shr_saturating(8 * length) < LEAST_K as u64 {
