@@ -102,6 +102,20 @@ impl std::error::Error for DecodeError {}
 struct Nat(Vec<u32>);
 
 impl Nat {
+    /// The number that `bytes` write, the first byte most significant.
+    fn from_be_bytes(bytes: &[u8]) -> Nat {
+        let mut words: Vec<u32> = bytes.rchunks(4).map(|c| c.iter().fold(0, |w, &b| w << 8 | b as u32)).collect();
+        while words.last() == Some(&0) {
+            words.pop();
+        }
+        Nat(words)
+    }
+    /// The number as `length` bytes, the first most significant. Requires
+    /// a number below 2^(8 * length).
+    fn to_be_bytes(&self, length: usize) -> Vec<u8> {
+        debug_assert!(self.bits() <= 8 * length);
+        (0..length).rev().map(|i| self.0.get(i / 4).map_or(0, |w| (w >> (8 * (i % 4))) as u8)).collect()
+    }
     fn mul_add(&mut self, m: u32, a: u32) {
         let mut carry = a as u64;
         for w in self.0.iter_mut() {
@@ -190,10 +204,7 @@ fn compute_layout(length: usize) -> (usize, u32) {
 /// before encoding it (README.md, "Structured data: jumble it first").
 pub fn encode(data: &[u8]) -> String {
     let (n, k) = layout(data.len());
-    let mut w = Nat(Vec::new());
-    for &b in data {
-        w.mul_add(256, b as u32);
-    }
+    let mut w = Nat::from_be_bytes(data);
     w.mul_add(k, 0);
     let a = alphabet();
     let mut digits = vec![0u32; n];
@@ -227,11 +238,7 @@ fn decode_digits(digits: &[u32], length: usize, k: u32) -> Result<Vec<u8>, Decod
     if r != 0 {
         return Err(DecodeError::Check);
     }
-    let mut data = vec![0u8; length];
-    for b in data.iter_mut().rev() {
-        *b = w.div_rem(256) as u8;
-    }
-    Ok(data)
+    Ok(w.to_be_bytes(length))
 }
 
 /// The `length` bytes that `sigil` encodes, or why it encodes none. White
