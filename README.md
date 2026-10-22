@@ -324,7 +324,7 @@ machine. Each rule keeps the characters that pass it:
   definitions, over the alphabet that `alphabet/alphabet.py` writes; it
   passes `vectors.tsv` too.
 - **Speed** (`rust/examples/bench.rs`): the Rust encodes a 256-bit value in
-  0.63 µs and decodes it in 0.75 µs, in a Linux virtual machine on an Apple
+  0.18 µs and decodes it in 0.34 µs, in a Linux virtual machine on an Apple
   M4 Max.
 - **Selection** (`copytest.html`): a double-click selects whole sigils in
   Chromium. Open the page in any browser to see its answer.

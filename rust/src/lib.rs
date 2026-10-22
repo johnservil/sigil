@@ -166,6 +166,10 @@ fn is_prime(k: u32) -> bool {
     k > 1 && (2..).take_while(|p| p * p <= k).all(|p| k % p != 0)
 }
 
+/// N^3, the largest power of N below 2^32: base conversion takes three digits
+/// at a time.
+const N3: u32 = N * N * N;
+
 /// The smallest prime larger than N: K must exceed N (README.md, "Why the
 /// check catches what it does").
 const LEAST_K: u32 = 1361;
@@ -207,11 +211,14 @@ pub fn encode(data: &[u8]) -> String {
     let mut w = Nat::from_be_bytes(data);
     w.mul_add(k, 0);
     let a = alphabet();
-    let mut digits = vec![0u32; n];
-    for d in digits.iter_mut().rev() {
-        *d = w.div_rem(N);
+    let mut digits = vec![0u32; n.next_multiple_of(3)];
+    for group in digits.rchunks_mut(3) {
+        let r = w.div_rem(N3);
+        group.copy_from_slice(&[r / (N * N), r / N % N, r % N]);
     }
-    digits.iter().map(|&d| a.chars[d as usize]).collect()
+    // The value is below N^n, so the digits above the n-th are zeros.
+    digits[..digits.len() - n].iter().for_each(|&d| debug_assert_eq!(d, 0));
+    digits[digits.len() - n..].iter().map(|&d| a.chars[d as usize]).collect()
 }
 
 fn is_ignored(a: &Alphabet, ch: char) -> bool {
@@ -228,8 +235,11 @@ fn digit(a: &Alphabet, ch: char) -> Option<u32> {
 /// The data that `n` digits encode under layout (n, k), or why they encode none.
 fn decode_digits(digits: &[u32], length: usize, k: u32) -> Result<Vec<u8>, DecodeError> {
     let mut w = Nat(Vec::with_capacity(digits.len() / 3 + 2));
-    for &d in digits {
-        w.mul_add(N, d);
+    // The first group takes what is left over after groups of three.
+    let first = (digits.len() - 1) % 3 + 1;
+    for group in std::iter::once(&digits[..first]).chain(digits[first..].chunks(3)) {
+        let (scale, value) = group.iter().fold((1, 0), |(s, v), &d| (s * N, v * N + d));
+        w.mul_add(scale, value);
     }
     let r = w.div_rem(k);
     if w.bits() > 8 * length {
