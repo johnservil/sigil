@@ -322,7 +322,8 @@ machine. Each rule keeps the characters that pass it:
   length to 1,024 bytes, K is a prime above N in the fewest characters.
 - **A specification in Lean** (`lean/`): "The encoding" as Lean
   definitions, over the alphabet that `alphabet/alphabet.py` writes; it
-  passes `vectors.tsv` too.
+  passes `vectors.tsv` too, and Lean proves that decoding any data's sigil
+  gives the data back (`decode_encode`), its kernel checking every step.
 - **Speed** (`rust/examples/bench.rs`): the Rust encodes a 256-bit value in
   0.18 µs and decodes it in 0.34 µs, in a Linux virtual machine on an Apple
   M4 Max.

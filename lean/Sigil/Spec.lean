@@ -5,7 +5,7 @@ import Sigil.Alphabet
 This file is README.md's "The encoding" in Lean, over the alphabet that `alphabet/alphabet.py`
 generates from Unicode's data (`Sigil/Alphabet.lean`). Data is a list of at least one byte; a sigil
 is a list of code points. `Tests.lean` runs it on `vectors.tsv`, the vectors every implementation
-passes. -/
+passes, and `Theorems.lean` proves that decoding inverts encoding. -/
 
 namespace Sigil
 
