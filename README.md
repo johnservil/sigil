@@ -104,8 +104,9 @@ A hash protects any data, even data a forger chooses entirely, and keeps
 the sigil at 26 characters for data of any length; when in doubt, hash.
 Jumbling keeps the data recoverable (anyone can unjumble), and protects data
 only where a forger cannot choose all of it. Jumble with F4Jumble (Zcash's
-ZIP 316, for 38 bytes to 4 MiB) or a few Feistel rounds of a secure hash
-such as BLAKE3: a forger solves a simpler mix (a linear one, say) for the
+ZIP 316, for 38 to 4,194,368 bytes) or another reviewed cryptographic
+jumbling construction suited to the data length. Reversibility and bit
+mixing alone are insufficient: a forger can solve a linear mix for the
 bytes they control. "Telling sigils apart" says why.
 
 A decode error has one of four kinds: `length` (the wrong number of
@@ -121,8 +122,10 @@ data whose sigil looks like it: for a hash, they can only try inputs until
 one hashes to a look-alike, and for a key, generate keys. Each character a
 person compares makes them match that character exactly, since no two
 characters of the alphabet look alike: a chance of 1 in 1,353, or 10.4
-bits, for every compared character. Fewer characters, each carrying more
-information, make every sigil harder to imitate.
+bits, approximately, for every compared character. These are capacity
+estimates: valid sigils have dependent digits and a restricted first digit,
+so the 83-bit estimate for the first and last four is not a proved attack
+cost. Fewer characters carry more information per comparison.
 
 This holds for the output of a secure hash, and for keys and identifiers
 drawn at random: every bit of such data depends on the whole input, so a
@@ -318,12 +321,16 @@ machine. Each rule keeps the characters that pass it:
   each of the kind it must give.
 - **The check** (`python/test.py`): in 20 random 256-bit sigils, each of
   the 703,040 single changed characters and 978 swaps of characters one or
-  two apart fails to decode, and one unread character comes back alone every time; at every
-  length to 1,024 bytes, K is a prime above N in the fewest characters.
+  two apart fails to decode. One unread character comes back alone every
+  time. At every length to 1,024 bytes, K is a prime above N in the fewest
+  characters.
 - **A specification in Lean** (`lean/`): "The encoding" as Lean
-  definitions, over the alphabet that `alphabet/alphabet.py` writes; it
-  passes `vectors.tsv` too, and Lean proves that decoding any data's sigil
+  definitions, over the alphabet that `alphabet/alphabet.py` writes.
+  It passes `vectors.tsv` too. Lean proves that decoding any data's sigil
   gives the data back (`decode_encode`), its kernel checking every step.
+  [Check an answer for yourself](lean/README.md) with explicit byte and
+  code-point literals, or inspect the proof coverage and remaining trust
+  boundaries. The Rust refinement and executable-byte proofs remain open.
 - **Speed** (`rust/examples/bench.rs`): the Rust encodes a 256-bit value in
   0.18 µs and decodes it in 0.34 µs, in a Linux virtual machine on an Apple
   M4 Max.

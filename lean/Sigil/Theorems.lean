@@ -4,7 +4,7 @@ import Sigil.Spec
 
 `decode_encode`: for any data `d`, `decode (encode d) d.length = .ok d`. The
 sections below build it from the specification's parts: the alphabet's characters are distinct
-and never ignored; the layout's `K` is a prime larger than `N` that fits the room; bytes and digits
+and never ignored; the layout's `K` exceeds `N` and fits the room; bytes and digits
 convert back and forth. Every proof is checked by Lean's kernel, with no `native_decide`, and
 `decode_encode` rests on Lean's three standard axioms alone (`propext`, `Classical.choice`,
 `Quot.sound`). -/
