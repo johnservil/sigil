@@ -7,3 +7,7 @@ license = "CC0-1.0 OR Apache-2.0"
 repository = "https://github.com/johnservil/sigil"
 
 [dependencies]
+
+[dev-dependencies]
+# The servil projects' one place for reading clocks (wall time and cycles per core kind), pinned by commit.
+clocks = { git = "https://github.com/johnservil/BLAKE3", rev = "83ab942a9c0bd5bd86a7f44720b7c5de905af59f" }

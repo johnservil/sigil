@@ -158,18 +158,22 @@ fn first8(w: [u32; 16]) -> [u32; 8] {
 /// A node's inputs: chaining value, block, counter, block length, flags.
 type Node = ([u32; 8], [u32; 16], u64, u32, u32);
 
-fn blake3(data: &[u8], key: &[u32; 8], flags: u32, length: usize) -> Vec<u8> {
-    let chunk = |c: &[u8], counter: u64| -> Node {
-        let blocks: Vec<&[u8]> = if c.is_empty() { vec![&[][..]] } else { c.chunks(64).collect() };
+/// BLAKE3's output for `data` under key words `key` and mode `flags`,
+/// written into all of `out`.
+fn blake3_into(data: &[u8], key: &[u32; 8], flags: u32, out: &mut [u8]) {
+    // The last block of chunk `index`, after its earlier blocks are compressed.
+    let chunk = |index: usize| -> Node {
+        let start = 1024 * index;
+        let end = data.len().min(start + 1024);
+        let blocks = ((end - start + 63) / 64).max(1);
         let mut cv = *key;
-        for (i, block) in blocks.iter().enumerate() {
-            let f = flags | if i == 0 { CHUNK_START } else { 0 } | if i == blocks.len() - 1 { CHUNK_END } else { 0 };
-            if i == blocks.len() - 1 {
-                return (cv, words(block), counter, block.len() as u32, f);
-            }
-            cv = first8(compress(&cv, &words(block), counter, 64, f));
+        for b in 0..blocks - 1 {
+            let f = flags | if b == 0 { CHUNK_START } else { 0 };
+            cv = first8(compress(&cv, &words(&data[start + 64 * b..start + 64 * b + 64]), index as u64, 64, f));
         }
-        unreachable!("a chunk has a last block")
+        let last = &data[start + 64 * (blocks - 1)..end];
+        let f = flags | if blocks == 1 { CHUNK_START } else { 0 } | CHUNK_END;
+        (cv, words(last), index as u64, last.len() as u32, f)
     };
     let cv_of = |n: &Node| first8(compress(&n.0, &n.1, n.2, n.3, n.4));
     let parent = |l: [u32; 8], r: [u32; 8]| -> Node {
@@ -178,31 +182,38 @@ fn blake3(data: &[u8], key: &[u32; 8], flags: u32, length: usize) -> Vec<u8> {
         block[8..].copy_from_slice(&r);
         (*key, block, 0, 64, flags | PARENT)
     };
-    let chunks: Vec<&[u8]> = if data.is_empty() { vec![&[][..]] } else { data.chunks(1024).collect() };
-    let mut stack: Vec<[u32; 8]> = Vec::new();
-    for (i, c) in chunks[..chunks.len() - 1].iter().enumerate() {
-        let mut cv = cv_of(&chunk(c, i as u64));
-        let mut total = i + 1;
+    let chunks = data.len().div_ceil(1024).max(1);
+    // Subtrees' chaining values, at most one per bit of the chunk count.
+    let mut stack = [[0u32; 8]; 54];
+    let mut depth = 0;
+    for index in 0..chunks - 1 {
+        let mut cv = cv_of(&chunk(index));
+        let mut total = index + 1;
         while total & 1 == 0 {
-            cv = cv_of(&parent(stack.pop().unwrap(), cv));
+            depth -= 1;
+            cv = cv_of(&parent(stack[depth], cv));
             total >>= 1;
         }
-        stack.push(cv);
+        stack[depth] = cv;
+        depth += 1;
     }
-    let mut out = chunk(chunks[chunks.len() - 1], chunks.len() as u64 - 1);
-    while let Some(l) = stack.pop() {
-        out = parent(l, cv_of(&out));
+    let mut node = chunk(chunks - 1);
+    while depth > 0 {
+        depth -= 1;
+        node = parent(stack[depth], cv_of(&node));
     }
-    let mut result = Vec::with_capacity(length + 64);
-    let mut counter = 0;
-    while result.len() < length {
-        for w in compress(&out.0, &out.1, counter, out.3, out.4 | ROOT) {
-            result.extend_from_slice(&w.to_le_bytes());
+    for (counter, block) in out.chunks_mut(64).enumerate() {
+        let w = compress(&node.0, &node.1, counter as u64, node.3, node.4 | ROOT);
+        for (i, b) in block.iter_mut().enumerate() {
+            *b = (w[i / 4] >> (8 * (i % 4))) as u8;
         }
-        counter += 1;
     }
-    result.truncate(length);
-    result
+}
+
+fn blake3(data: &[u8], key: &[u32; 8], flags: u32, length: usize) -> Vec<u8> {
+    let mut out = vec![0u8; length];
+    blake3_into(data, key, flags, &mut out);
+    out
 }
 
 /// BLAKE3's hash of `data`, `length` bytes of it.
@@ -217,12 +228,34 @@ pub fn blake3_derive_key(context: &str, material: &[u8], length: usize) -> Vec<u
     blake3(material, &key, DERIVE_KEY_MATERIAL, length)
 }
 
+/// The derive-key context keys of Sigil's five context strings, computed once
+/// (BLAKE3 hashes a derive-key context string into a key before it reads the
+/// key material): `Sigil 2026-10-22 jumble round 0` to `3`, then
+/// `Sigil 2026-10-22 check`. `test_context_keys` derives them again.
+const CONTEXT_KEYS: [[u32; 8]; 5] = [
+    [0xded18ddb, 0x4b14143e, 0xaec8d21e, 0x383adc8f, 0x5b45faaa, 0xd1fed4f0, 0x355d0b68, 0xa0cad7ae],
+    [0xacdb4187, 0xd6563b0f, 0x81707ff6, 0x24bf4234, 0x43957168, 0x28ec0e32, 0x6f480e21, 0xea055de7],
+    [0xcc677dab, 0x28372170, 0x2659d650, 0x3f7c9ee4, 0xb256bfd9, 0xde9b8995, 0x4537b82c, 0x1810d3e6],
+    [0x363673a3, 0xdb84f26a, 0x04bea1cf, 0xb790c26e, 0xc5960a74, 0x25710c4f, 0x471916b7, 0x751477ab],
+    [0x43c3f22e, 0x2294cd61, 0x520f2bcd, 0x2cbb0c2d, 0x9da1f453, 0x82e29243, 0x2d71014a, 0xd27243ae],
+];
+
 // The jumbling: four Feistel rounds over the data's two halves.
 
+/// `target` XORed with BLAKE3's derive-key output under context key `i` for
+/// key material `from`, 64 bytes at a time.
 fn xor_round(target: &mut [u8], i: usize, from: &[u8]) {
-    let r = blake3_derive_key(&format!("Sigil 2026-10-22 jumble round {i}"), from, target.len());
-    for (t, x) in target.iter_mut().zip(r) {
-        *t ^= x;
+    let mut r = [0u8; 64];
+    if target.len() <= 64 {
+        blake3_into(from, &CONTEXT_KEYS[i], DERIVE_KEY_MATERIAL, &mut r[..target.len()]);
+        for (t, x) in target.iter_mut().zip(r) {
+            *t ^= x;
+        }
+    } else {
+        let r = blake3(from, &CONTEXT_KEYS[i], DERIVE_KEY_MATERIAL, target.len());
+        for (t, x) in target.iter_mut().zip(r) {
+            *t ^= x;
+        }
     }
 }
 
@@ -305,8 +338,9 @@ pub fn layout(length: usize) -> (usize, usize) {
 
 /// The check: the first c bits of BLAKE3, in derive-key mode, over the jumbled data.
 fn check(jumbled: &[u8], c: usize) -> u32 {
-    let h = blake3_derive_key("Sigil 2026-10-22 check", jumbled, 8);
-    (u64::from_be_bytes(h.try_into().unwrap()) >> (64 - c)) as u32
+    let mut h = [0u8; 8];
+    blake3_into(jumbled, &CONTEXT_KEYS[4], DERIVE_KEY_MATERIAL, &mut h);
+    (u64::from_be_bytes(h) >> (64 - c)) as u32
 }
 
 /// `data`'s sigil: `layout(data.len()).0` characters of the alphabet.
@@ -326,27 +360,21 @@ pub fn encode(data: &[u8]) -> String {
     digits.iter().map(|&d| a.chars[d as usize]).collect()
 }
 
-/// The `length` bytes that `sigil` encodes, or why it encodes none. White
-/// space and default-ignorable characters in it are skipped, and a letter's
-/// uppercase reads as the letter.
-pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
-    let (n, c) = layout(length);
-    let a = alphabet();
-    let chars: Vec<(usize, char)> = sigil
-        .chars()
-        .enumerate()
-        .filter(|&(_, ch)| !a.ignored.iter().any(|&(lo, hi)| lo <= ch as u32 && ch as u32 <= hi))
-        .collect();
-    if chars.len() != n {
-        return Err(DecodeError::Length { found: chars.len(), expected: n });
-    }
-    let mut w = Nat(Vec::new());
-    for &(i, ch) in &chars {
-        let d = a
-            .digits
-            .binary_search_by_key(&ch, |&(x, _)| x)
-            .map(|j| a.digits[j].1)
-            .map_err(|_| DecodeError::Character { position: i + 1, character: ch })?;
+fn is_ignored(a: &Alphabet, ch: char) -> bool {
+    let p = ch as u32;
+    // The last range starting at or below p, if p is in it.
+    let i = a.ignored.partition_point(|&(lo, _)| lo <= p);
+    i > 0 && p <= a.ignored[i - 1].1
+}
+
+fn digit(a: &Alphabet, ch: char) -> Option<u32> {
+    a.digits.binary_search_by_key(&ch, |&(x, _)| x).ok().map(|j| a.digits[j].1)
+}
+
+/// The data that `n` digits encode under layout (n, c), or why they encode none.
+fn decode_digits(digits: &[u32], length: usize, c: usize) -> Result<Vec<u8>, DecodeError> {
+    let mut w = Nat(Vec::with_capacity(digits.len() / 3 + 2));
+    for &d in digits {
         w.mul_add(N, d);
     }
     if w.bits() > 8 * length + c {
@@ -363,23 +391,58 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
     Ok(unjumble(&jumbled))
 }
 
+/// The `length` bytes that `sigil` encodes, or why it encodes none. White
+/// space and default-ignorable characters in it are skipped, and a letter's
+/// uppercase reads as the letter.
+pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
+    let (n, c) = layout(length);
+    let a = alphabet();
+    let mut digits = Vec::with_capacity(n);
+    for (i, ch) in sigil.chars().enumerate() {
+        if is_ignored(a, ch) {
+            continue;
+        }
+        match digit(a, ch) {
+            Some(d) => digits.push(d),
+            // The length error comes first: count the characters to the end.
+            None if digits.len() < n => {
+                let rest = sigil.chars().skip(i).filter(|&x| !is_ignored(a, x)).count();
+                if digits.len() + rest != n {
+                    return Err(DecodeError::Length { found: digits.len() + rest, expected: n });
+                }
+                return Err(DecodeError::Character { position: i + 1, character: ch });
+            }
+            None => digits.push(u32::MAX),
+        }
+    }
+    if digits.len() != n {
+        return Err(DecodeError::Length { found: digits.len(), expected: n });
+    }
+    decode_digits(&digits, length, c)
+}
+
 /// Every data of `length` bytes that some reading decodes to, for a reader
 /// unsure of some characters (an OCR tool, say): `readings` gives each
 /// character's possible readings, the likeliest first. One result is the
 /// answer; more mean the readings leave the sigil ambiguous.
 pub fn decode_readings(readings: &[&str], length: usize) -> Vec<Vec<u8>> {
-    let options: Vec<Vec<char>> = readings.iter().map(|r| r.chars().collect()).collect();
+    let (n, c) = layout(length);
+    let a = alphabet();
+    // Each position's readings as digits, those outside the alphabet dropped.
+    let options: Vec<Vec<u32>> = readings.iter().map(|r| r.chars().filter_map(|ch| digit(a, ch)).collect()).collect();
     let mut found: Vec<Vec<u8>> = Vec::new();
-    let mut choice = vec![0usize; options.len()];
+    if options.len() != n || options.iter().any(|o| o.is_empty()) {
+        return found;
+    }
+    let mut choice = vec![0usize; n];
+    let mut digits: Vec<u32> = options.iter().map(|o| o[0]).collect();
     loop {
-        let sigil: String = options.iter().zip(&choice).map(|(o, &k)| o[k]).collect();
-        if let Ok(data) = decode(&sigil, length) {
+        if let Ok(data) = decode_digits(&digits, length, c) {
             if !found.contains(&data) {
                 found.push(data);
             }
         }
-        // The next choice, as a counter over the positions' options.
-        let mut i = options.len();
+        let mut i = n;
         loop {
             if i == 0 {
                 return found;
@@ -387,9 +450,46 @@ pub fn decode_readings(readings: &[&str], length: usize) -> Vec<Vec<u8>> {
             i -= 1;
             choice[i] += 1;
             if choice[i] < options[i].len() {
+                digits[i] = options[i][choice[i]];
                 break;
             }
             choice[i] = 0;
+            digits[i] = options[i][0];
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    /// `CONTEXT_KEYS` are the context keys of Sigil's five context strings.
+    #[test]
+    fn test_context_keys() {
+        let contexts = ["Sigil 2026-10-22 jumble round 0", "Sigil 2026-10-22 jumble round 1",
+                        "Sigil 2026-10-22 jumble round 2", "Sigil 2026-10-22 jumble round 3", "Sigil 2026-10-22 check"];
+        for (i, context) in contexts.iter().enumerate() {
+            let k = super::blake3(context.as_bytes(), &super::IV, super::DERIVE_KEY_CONTEXT, 32);
+            let words: Vec<u32> = k.chunks(4).map(|w| u32::from_le_bytes(w.try_into().unwrap())).collect();
+            assert_eq!(words, super::CONTEXT_KEYS[i], "{context}");
+        }
+    }
+
+    /// BLAKE3 across chunk and tree boundaries: the hash of 0, 1, 1024, 1025,
+    /// 2048, 3073 and 8193 bytes (i mod 251) against BLAKE3's official vectors.
+    #[test]
+    fn test_blake3_lengths() {
+        let want = [
+            (0, "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"),
+            (1, "2d3adedff11b61f14c886e35afa036736dcd87a74d27b5c1510225d0f592e213"),
+            (1024, "42214739f095a406f3fc83deb889744ac00df831c10daa55189b5d121c855af7"),
+            (1025, "d00278ae47eb27b34faecf67b4fe263f82d5412916c1ffd97c8cb7fb814b8444"),
+            (2048, "e776b6028c7cd22a4d0ba182a8bf62205d2ef576467e838ed6f2529b85fba24a"),
+            (3073, "7124b49501012f81cc7f11ca069ec9226cecb8a2c850cfe644e327d22d3e1cd3"),
+            (8193, "bab6c09cb8ce8cf459261398d2e7aef35700bf488116ceb94a36d0f5f1b7bc3b"),
+        ];
+        for (len, hex) in want {
+            let data: Vec<u8> = (0..len).map(|i| (i % 251) as u8).collect();
+            let got: String = super::blake3_hash(&data, 32).iter().map(|b| format!("{b:02x}")).collect();
+            assert_eq!(got, hex, "{len} bytes");
         }
     }
 }

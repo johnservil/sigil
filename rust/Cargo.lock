@@ -3,5 +3,13 @@
 version = 4
 
 [[package]]
+name = "clocks"
+version = "0.1.0"
+source = "git+https://github.com/johnservil/BLAKE3?rev=83ab942a9c0bd5bd86a7f44720b7c5de905af59f#83ab942a9c0bd5bd86a7f44720b7c5de905af59f"
+
+[[package]]
 name = "sigilcode"
 version = "0.1.0"
+dependencies = [
+ "clocks",
+]
