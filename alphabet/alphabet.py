@@ -1,4 +1,4 @@
-"""The base345 alphabet, computed from Unicode 14.0.0's data files: the whole
+"""The Sigil alphabet, computed from Unicode 14.0.0's data files: the whole
 computation, in one script with no dependencies beyond Python 3.
 
     python3 alphabet/alphabet.py [--data DIR] [--check]
@@ -61,8 +61,6 @@ FILES = {
                         "8ea02bbe19f01d541a6387ab97b5f8ebf265fd794460c658679264ae5e7024ec"),
 }
 
-# The scripts whose fonts every major platform ships.
-SCRIPTS = ("Latin", "Greek", "Cyrillic")
 
 
 # BLAKE3 (unkeyed), from the specification (github.com/BLAKE3-team/BLAKE3-specs),
@@ -221,37 +219,85 @@ def mapping(table, c):
 
 
 def rules(p):
-    """The rules, in order: (what a character must be, the test)."""
+    """The rules on single characters, in order: (what a character must be,
+    the test). Each comment says what the rule protects; README.md says the
+    same for readers."""
     def case_round_trip(c):
         up = mapping(p["upper"], c)
         return (mapping(p["lower"], c) == [c] and len(up) == 1 and mapping(p["lower"], up[0]) == [c]
                 and mapping(p["fold"], up[0]) == mapping(p["fold"], c))
 
+    def latin_greek_cyrillic_digit_ethiopic_canadian(c):
+        return ((p["script"].get(c) in ("Latin", "Greek", "Cyrillic") and c < 0x800)
+                or p["script"].get(c) in ("Ethiopic", "Canadian_Aboriginal") or 0x30 <= c <= 0x39)
+
     return [
-        ("at most 2 bytes in UTF-8 (below U+0800)", lambda c: c < 0x800),
+        # GitHub refuses 4-byte UTF-8 in a status description, and characters
+        # beyond the plane need UTF-16 surrogate pairs, which software splits.
+        ("in the Basic Multilingual Plane", lambda c: c <= 0xFFFF),
         ("assigned (not a surrogate)", lambda c: c in p["category"] and p["category"][c] != "Cs"),
         # Fonts lag new letters: DejaVu, a common Linux default, lacks the
         # Cyrillic letters Unicode 6.0 and 7.0 added.
         ("assigned by Unicode 5.2 (2009) or earlier", lambda c: p["age"][c] <= (5, 2)),
-        ("a lowercase letter (general category Ll), or an ASCII digit",
-         lambda c: p["category"][c] == "Ll" or 0x30 <= c <= 0x39),
+        # Letters and digits survive where symbols and punctuation are
+        # rewritten or dropped.
+        ("a lowercase letter (Ll), a caseless letter (Lo), or an ASCII digit",
+         lambda c: p["category"][c] in ("Ll", "Lo") or 0x30 <= c <= 0x39),
+        # Every character displays in the order it is stored, in any paragraph.
         ("left-to-right: a letter of bidi class L, or a digit of class EN",
          lambda c: p["bidi"][c] == ("EN" if p["category"][c] == "Nd" else "L")),
-        # A code point with no decomposition mapping is unchanged by NFD and
-        # NFKD, and so by NFC and NFKC (Hangul syllables, which decompose
-        # without one, lie above U+0800).
-        ("unchanged by NFC, NFD, NFKC and NFKD (no decomposition mapping)", lambda c: c not in p["decomposition"]),
+        # Software normalizes text (older Mac file systems to NFD, web forms to
+        # NFC). A code point with no decomposition mapping is unchanged by NFD
+        # and NFKD, and so by NFC and NFKC, except the Hangul syllables, which
+        # decompose by rule.
+        ("unchanged by NFC, NFD, NFKC and NFKD",
+         lambda c: c not in p["decomposition"] and not 0xAC00 <= c <= 0xD7A3),
+        # Software that changes case leaves a codeword decodable: decoding
+        # reads each letter's uppercase as the letter.
         ("its uppercase is one character, which lowercases and case-folds back to it", case_round_trip),
+        # The next three exclude every way two characters interact: invisible
+        # characters, two characters normalizing into one, cursive joining.
         ("neither default-ignorable nor white space", lambda c: c not in p["ignorable"] and c not in p["white_space"]),
         ("never the second half of a composition (no NFC or NFKC quick-check Maybe)", lambda c: c not in p["maybe"]),
         ("non-joining (joining type U)", lambda c: p["joining"].get(c, "U") == "U"),
+        # A double-click selects the whole codeword (UAX #29 joins these).
         ("joins its neighbours into one word (word break ALetter, or Numeric for a digit)",
          lambda c: p["word_break"].get(c) in ("ALetter", "Numeric")),
+        # A codeword stays on one line (UAX #14 breaks between none of these).
         ("never a line break beside its neighbours (line break AL, or NU for a digit)",
          lambda c: p["line_break"].get(c) in ("AL", "NU")),
-        ("in a script whose fonts every major platform ships (Latin, Greek, Cyrillic), or an ASCII digit",
-         lambda c: p["script"].get(c) in SCRIPTS or 0x30 <= c <= 0x39),
+        # A missing glyph shows as a box, and boxes hide which character is
+        # which: these scripts' fonts ship on the major platforms (macOS draws
+        # every Ethiopic and Canadian syllabic here; DejaVu lacks parts of the
+        # Latin and Cyrillic extension blocks above U+0800).
+        ("Latin, Greek or Cyrillic below U+0800, Ethiopic or Canadian syllabics, or an ASCII digit",
+         latin_greek_cyrillic_digit_ethiopic_canadian),
     ]
+
+
+def sequence_look_alikes(chars, skeletons):
+    """{character: the characters that spell it} for each of `chars` whose
+    skeleton is the skeletons of others of `chars` in a row (one spelling
+    each, the lowest code points first)."""
+    skeleton = lambda c: skeletons.get(c, (c,))
+    by_skeleton = {}
+    for c in sorted(chars):
+        by_skeleton.setdefault(skeleton(c), c)
+    out = {}
+    for c in chars:
+        t = skeleton(c)
+        if len(t) < 2:
+            continue
+        spelled = [[]] + [None] * len(t)
+        for i in range(1, len(t) + 1):
+            for j in range(i):
+                piece = by_skeleton.get(tuple(t[j:i]))
+                if spelled[j] is not None and piece is not None and piece != c:
+                    spelled[i] = spelled[j] + [piece]
+                    break
+        if spelled[len(t)]:
+            out[c] = spelled[len(t)]
+    return out
 
 
 def ignored_ranges(p):
@@ -280,6 +326,33 @@ def main():
         kept = [c for c in left if test(c)]
         print(f"{len(left) - len(kept):9,} {len(kept):9,}  {name}")
         left = kept
+    # The last two rules read the characters together. First, of each class
+    # of look-alikes (characters with one skeleton in Unicode's confusables
+    # table, UTS #39), only the lowest code point stays: every character a
+    # person, or a machine reading a picture, compares then tells its class
+    # apart from every other, and a forger must match each one exactly.
+    classes = collections.defaultdict(list)
+    for c in left:
+        classes[p["skeleton"].get(c, (c,))].append(c)
+    kept = sorted(min(cs) for cs in classes.values())
+    print(f"{len(left) - len(kept):9,} {len(kept):9,}  the lowest code point of its class of look-alikes (UTS #39)")
+    left = kept
+    # Second, no character may look like a sequence of others: Unicode's table
+    # says m looks like rn, and a syllabic with a dot like the dot final and
+    # the syllabic. While some character's skeleton is the skeletons of other
+    # characters in a row, the one character that ends the most such
+    # spellings goes: the look-alike itself, or a piece of its spelling that
+    # is outside ASCII (ties to the lowest code point).
+    kept = set(left)
+    while True:
+        spellings = sequence_look_alikes(kept, p["skeleton"])
+        if not spellings:
+            break
+        counts = collections.Counter(x for whole, pieces in spellings.items()
+                                     for x in {whole} | {c for c in pieces if c >= 0x80})
+        kept.discard(max(counts, key=lambda c: (counts[c], -c)))
+    print(f"{len(left) - len(kept):9,} {len(kept):9,}  looks like no sequence of the others (UTS #39)")
+    left = sorted(kept)
     letters = "".join(map(chr, left))
     upper = "".join(chr(mapping(p["upper"], c)[0]) for c in left)
     ranges = ignored_ranges(p)
@@ -296,6 +369,7 @@ def main():
         ROOT / "typescript" / "alphabet.ts": (
             "// Generated by alphabet/alphabet.py from Unicode 14.0.0's data; do not edit.\n"
             f"export const ALPHABET: string = \"{letters}\";\n"
+
             "// Each letter's uppercase, in the same order (uppercase.txt).\n"
             f"export const UPPERCASE: string = \"{upper}\";\n"
             "// The code points decoding ignores, as [first, last] ranges (ignored.txt).\n"
@@ -306,11 +380,8 @@ def main():
             assert path.read_text(encoding="utf-8") == content, f"{path.name} is not this script's output"
         else:
             path.write_text(content, encoding="utf-8")
-    # How distinct the letters look: V classes of look-alikes, so log2(V) bits
-    # an adversary must match for each character a person compares.
-    looks = len({p["skeleton"].get(c, (c,)) for c in left})
-    print(f"\n{looks} classes of look-alikes (UTS #39 skeletons): {math.log2(looks):.2f} bits for each "
-          f"character compared, {8 * math.log2(looks):.0f} for the first and last four")
+    print(f"\n{math.log2(len(left)):.2f} bits for each character a person compares, "
+          f"{8 * math.log2(len(left)):.0f} for the first and last four")
     b = letters.encode("utf-8")
     print(f"{len(left):,} characters, U+{left[0]:04X}..U+{left[-1]:04X}; alphabet.txt SHA-256 "
           f"{hashlib.sha256(b).hexdigest()}, BLAKE3 {blake3(b).hex()}" + (" (checked)" if check else ""))

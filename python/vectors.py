@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import base345 as B
+import sigilcode as B
 
 ROOT = Path(__file__).resolve().parent.parent
 LENGTHS = list(range(1, 41)) + [48, 64, 100, 128]
@@ -26,7 +26,7 @@ def value(length, i):
     out = b""
     j = 0
     while len(out) < length:
-        out += hashlib.sha256(f"base345 vector {length} {i} {j}".encode()).digest()
+        out += hashlib.sha256(f"Sigil vector {length} {i} {j}".encode()).digest()
         j += 1
     return out[:length]
 
@@ -44,17 +44,27 @@ def vectors():
         for data in datas:
             text = B.encode(data)
             good.append({"data": data.hex(), "text": text})
-        # The corruptions of one value at this length.
+        # The codewords of no value at this length.
         text = B.encode(datas[2])
-        d = B.DIGIT[text[-1]]
         bad += [
             {"text": text[:-1], "length": length, "error": "length"},
             {"text": text + text[0], "length": length, "error": "length"},
             {"text": "_" + text[1:], "length": length, "error": "character"},
             {"text": "\u4e00" + text[1:], "length": length, "error": "character"},
             {"text": "\u0131" + text[1:], "length": length, "error": "character"},
-            {"text": text[:-1] + B.ALPHABET[(d + 1) % B.N], "length": length, "error": "corrupt"},
+            {"text": text[:-1] + " " + "\u200b", "length": length, "error": "length"},
         ]
+        bad.append({"text": B.ALPHABET[-1] * len(text), "length": length, "error": "range"})
+        # One character changed: the first change of the last character that
+        # the check catches (rather than the range).
+        for d in range(1, B.N):
+            changed = text[:-1] + B.ALPHABET[(B.DIGIT[text[-1]] + d) % B.N]
+            try:
+                B.decode(changed, length)
+            except B.DecodeError as e:
+                if e.kind == "check":
+                    bad.append({"text": changed, "length": length, "error": "check"})
+                    break
         # Copies that differ from the codeword and decode as it does: ignored
         # characters inserted, and the codeword in uppercase, wholly or in part.
         for insert in SPACES:
@@ -63,10 +73,6 @@ def vectors():
         upper = "".join(B.UPPERCASE[B.DIGIT[c]] for c in text)
         variants.append({"data": datas[2].hex(), "text": upper})
         variants.append({"data": datas[2].hex(), "text": "".join(u if i % 2 else c for i, (c, u) in enumerate(zip(text, upper)))})
-        bad.append({"text": text[:-1] + " " + "\u200b", "length": length, "error": "length"})
-        swap = next((i for i in range(len(text) - 1) if text[i] != text[i + 1]), None)
-        if swap is not None:
-            bad.append({"text": text[:swap] + text[swap + 1] + text[swap] + text[swap + 2:], "length": length, "error": "corrupt"})
     return {"good": good, "variants": variants, "bad": bad}
 
 

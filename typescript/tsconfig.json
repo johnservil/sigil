@@ -9,7 +9,7 @@
     "declaration": true
   },
   "files": [
-    "base345.ts",
+    "sigilcode.ts",
     "alphabet.ts",
     "test.ts",
     "node.d.ts"

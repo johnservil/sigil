@@ -1,146 +1,174 @@
-# base345
+# Sigil
 
-base345 writes bytes of a known length as one word of letters and digits. A
-256-bit hash becomes 32 characters, half the length of hex and never more
-bytes, that a double-click selects whole; decoding catches every changed
-character.
+Sigil writes bytes as a sigil: one word of letters and digits that a person
+can copy with a double-click, compare at a glance, and read back from a
+picture. A 256-bit hash becomes 26 characters, no two of which look alike.
 
 ```
-BLAKE3("") in hex      af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
-            in base64   rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            in base345  зӆԏƒρҝƥωɿđҙɓʊȝϡʖɖϝԓȸђɑѥџԣъcʞ4ɂӷʦ
+BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
+            in base64 rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
+            as a sigil ᔓⶲውሖካᗠⶓⷜᓞƈɽᐾʔᗞᖋᒤኜጎᑔሿᑪዤⷎዺፎጺ
 ```
 
-The 345 characters are the ten digits and lowercase letters of the Latin,
-Greek and Cyrillic scripts, whose fonts every major platform ships. Each
-takes one or two bytes in UTF-8. A codeword decodes in either case.
+Its 1,353 characters are digits and letters of five scripts: Latin, Greek,
+Cyrillic, Ethiopic and Canadian syllabics. Every one runs left to right, and
+Unicode treats a run of them as one word that never breaks across lines. A
+sigil looks like nothing else in a text, and it looks wonderful.
 
 ## When to use it
 
-base345 serves values that people copy, paste and compare: hashes, keys and
-identifiers shown in a status line, a chat, an email or a web page.
+Sigil serves values that people copy, compare and photograph: hashes, keys
+and identifiers in a status line, a chat, an email, a web page or a printout.
 
-| a 256-bit value | characters | bytes in UTF-8 | a double-click selects | a changed character |
+| a 256-bit value | characters | bits a forger matches per compared character | a double-click selects | a misread character |
 |---|---|---|---|---|
-| hex | 64 | 64 | the whole value | goes unnoticed |
-| base32 | 52 | 52 | the whole value | goes unnoticed |
-| base64 | 43 | 43 | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
-| **base345** | **32** | **61 (52 to 64)** | **the whole value** | **is caught** |
+| hex | 64 | 4 | the whole value | goes unnoticed |
+| base32 | 52 | 5 | the whole value | goes unnoticed |
+| base64 | 43 | under 6 (`I` `l` `1` and `O` `0` look alike) | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
+| **sigil** | **26** | **10.4** | **the whole value** | **is caught, and repaired from a few readings** |
 
 Its properties work together:
 
-- **Short.** A base345 hash takes half the characters of hex, and at most as
-  many bytes. Two hashes, labelled, fit GitHub's 140-character status
-  description.
-- **Copied with one gesture.** A double-click selects the whole codeword, and
+- **Short.** A sigil takes 26 characters where hex takes 64, so two of
+  them, labelled, fit GitHub's 140-character status description.
+- **Copied with one gesture.** A double-click selects the whole sigil, and
   copying it carries nothing else. Decoding skips any white space or
   invisible characters that a line break or a copy inserts, and reads
   letters in either case.
-- **Checked when decoded.** Every one-character change, every swap of
-  neighbours and every truncation fails to decode; any other corruption
-  passes about once in 14,000 tries. A damaged copy is reported, and never
-  read as a different value.
-- **Hard to imitate.** Each character carries 8 bits that someone forging a
-  look-alike codeword must match ("Telling codewords apart"), twice what a
-  hex character carries.
+- **Hard to imitate.** No two characters look alike, and every character
+  depends on every bit of the data, so each character a person compares
+  costs a forger 10.4 bits ("Telling sigils apart"): 83 bits for the first
+  and last four, where hex's first and last four cost 32.
+- **Read back by machines.** Fonts on the major platforms draw every
+  character, no character or sequence of characters looks like another, and
+  a check confirms a reading or picks the right one of several ("Reading
+  sigils by machine").
+- **Recognized at a glance.** A word of glyphs from five scripts at once is
+  unlike any word of any language, so a reader who meets one knows what it
+  is: a sigil, which Sigil decodes. A string of hex could be a number, a
+  colour or a hash from any of a dozen functions, and base64 could be any
+  token at all.
+- **Beautiful.** A sigil looks like a seal cut in an old alphabet: something
+  worth showing, and worth asking about.
 
 Other encodings serve other channels:
 
 - **Typed by hand or read aloud:** hex, or z-base-32, whose letters are
   chosen for people to type.
-- **Bytes at a premium** (URLs, database columns): base64, at 43 bytes.
+- **Bytes at a premium** (URLs, database columns): base64, at 43 bytes. A
+  sigil's characters take 1 to 3 bytes in UTF-8, about 72 for 256 bits.
 - **ASCII only:** hex or base64.
 
 ## Use it
 
-Decoding takes the length in bytes that the codeword encodes. The encoder
-and decoder agree on it in advance: a 256-bit hash is always 32 bytes.
+Decoding takes the length in bytes that the sigil encodes. The encoder and
+decoder agree on it in advance: a 256-bit hash is always 32 bytes.
 
-Python (`python/base345.py`):
+Python (`python/sigilcode.py`):
 
 ```python
-import base345
-codeword = base345.encode(digest)        # 32 characters for 32 bytes
-digest = base345.decode(codeword, 32)    # raises base345.DecodeError
+import sigilcode
+sigil = sigilcode.encode(digest)            # 26 characters for 32 bytes
+digest = sigilcode.decode(sigil, 32)        # raises sigilcode.DecodeError
+found = sigilcode.decode_readings(readings, 32)   # readings: each character's possible readings
 ```
 
-TypeScript (`typescript/base345.ts`, in browsers and Node):
+TypeScript (`typescript/sigilcode.ts`, in browsers and Node):
 
 ```typescript
-import { encode, decode, DecodeError } from "base345";
-const codeword = encode(digest);          // digest: a Uint8Array
-const back = decode(codeword, 32);        // throws DecodeError
+import { encode, decode, decodeReadings, DecodeError } from "sigilcode";
+const sigil = encode(digest);               // digest: a Uint8Array
+const back = decode(sigil, 32);             // throws DecodeError
 ```
 
-Rust (`rust/`, no dependencies):
+Rust (`rust/`, crate `sigilcode`, no dependencies):
 
 ```rust
-let codeword = base345::encode(&digest);
-let back = base345::decode(&codeword, 32)?;   // Err(DecodeError)
+let sigil = sigilcode::encode(&digest);
+let back = sigilcode::decode(&sigil, 32)?;  // Err(DecodeError)
 ```
 
-A decode error has one of three kinds: `length` (the wrong number of
-characters), `character` (one outside the alphabet), and `corrupt` (the
-check fails).
+A decode error has one of four kinds: `length` (the wrong number of
+characters), `character` (one outside the alphabet), `range` (a value too
+large for the length) and `check` (the check fails). The last two mean a
+character was misread or changed.
 
-## Telling codewords apart
+## Telling sigils apart
 
-People compare codewords by eye, and often only their first and last few
-characters. Someone who wants a codeword that looks like yours cannot choose
-a hash's output; they can only try inputs until one encodes to a look-alike.
-Each character a person compares makes them match one of the alphabet's
-classes of look-alike characters. Unicode's table of look-alikes (UTS #39)
-puts base345's 345 characters in 268 classes, so each compared character
-costs a forger 8.07 bits, and the first and last four together cost 65
-bits. A hex character costs 4 bits, and hex's first and last four cost 32.
+People compare sigils by eye, often only their first and last few
+characters. Someone who wants a sigil that looks like yours must produce
+data whose sigil looks like it: for a hash, they can only try inputs until
+one hashes to a look-alike. Each character a person compares makes them
+match that character exactly, since no two characters of the alphabet look
+alike: a chance of 1 in 1,353, or 10.4 bits, for every compared character.
 
-The alphabet keeps letters that resemble one another, because that makes
-codewords harder to imitate. A look-alike letter enlarges the alphabet, so
-codewords get shorter and the check stronger, and it leaves the number of
-look-alike classes as it was, so a forger's work per compared character
-stays the same. More information in each character, and fewer characters
-to compare, make every codeword harder to imitate.
+Jumbling makes this hold for any data, including data a forger partly
+chooses. A plain positional encoding writes the data's first bytes in the
+first characters and its last bytes in the last ones, so a forger who
+controls the middle of some data can change it freely and keep the ends.
+Sigil jumbles the data first, so every character depends on every bit:
+changing any one bit changes, on average, all 26 characters.
+
+Fewer characters, each carrying more information, make every sigil harder
+to imitate.
+
+## Reading sigils by machine
+
+A sigil photographed or printed can be read back by optical character
+recognition (OCR). Three properties serve it:
+
+- **Every character is drawn.** The alphabet keeps scripts whose fonts the
+  major platforms ship, so a picture of a sigil shows its characters, never
+  boxes.
+- **Nothing looks alike.** No two characters look alike, and no character
+  looks like a sequence of others (as `m` looks like `rn`), by Unicode's
+  table of look-alikes (UTS #39). A reader that recognizes the shapes can
+  tell every character apart.
+- **The check confirms a reading.** A sigil carries a check, 14 bits for a
+  256-bit value, so a wrong reading almost always fails to decode. A reader
+  unsure of a character passes its few likeliest readings to
+  `decode_readings`, which returns the data that the one valid reading
+  encodes. With three readings for one character, the right data comes back
+  alone practically always (200 of 200 in the tests); with one character
+  unread altogether, every character tried in its place, about 92 times in
+  100.
 
 ## The encoding
 
-Data of L bytes is a number v below 2^(8L), most significant byte first. Its
-codeword is v·K written in base N = 345, with exactly n digits, most
-significant first. Digit d is the d-th character of the alphabet
-(`alphabet.txt`, in ascending code point order).
+Sigil encodes data of L bytes, L ≥ 1:
 
-- **n** is the fewest digits that leave room for a prime larger than N:
-  the smallest n with ⌊N^n / 2^(8L)⌋ > N.
-- **K** is the largest prime at most ⌊N^n / 2^(8L)⌋.
-
-Both follow from L alone:
+1. **Layout.** Let m be the fewest characters that hold 8L bits, the
+   smallest m with N^m ≥ 2^(8L), where N = 1,353. The sigil has n = m + 1
+   characters, and its check has c bits, all the room left: the most c with
+   2^(8L + c) ≤ N^n.
+2. **Jumble.** Split the data into a, its first ⌊L/2⌋ bytes, and b, the rest.
+   Then b ⊕= R₀(a), a ⊕= R₁(b), b ⊕= R₂(a), a ⊕= R₃(b), where Rᵢ(x) is BLAKE3
+   in derive-key mode, with context string `Sigil 2026-10-22 jumble round i`
+   and key material x, extended to the length of the half it changes. The
+   jumbled data is a ‖ b.
+3. **Check.** t is the first c bits of BLAKE3 in derive-key mode, with
+   context string `Sigil 2026-10-22 check`, over the jumbled data.
+4. **Write.** The value w = j · 2^c + t, where j is the jumbled data as a
+   number, most significant byte first, written in base N with exactly n
+   digits, most significant first. Digit d is the d-th character of the
+   alphabet (`alphabet.txt`, in ascending code point order).
 
 | L (bytes) | 16 | 20 | 32 | 48 | 64 |
 |---|---|---|---|---|---|
-| n (characters) | 17 | 20 | 32 | 47 | 62 |
-| K | 40,829 | 389 | 14,011 | 4,801 | 1,637 |
+| n (characters) | 14 | 17 | 26 | 38 | 51 |
+| c (check bits) | 17 | 16 | 14 | 11 | 18 |
 
 A decoder told L first drops every character that Unicode 14.0 marks
 White_Space or Default_Ignorable_Code_Point (the ranges in `ignored.txt`).
-It reads each remaining character as its digit, taking a letter's uppercase
+It reads each remaining character as its digit, a letter's uppercase
 (`uppercase.txt`, in the alphabet's order) as the letter. It requires
-exactly n characters, each in the alphabet or its uppercase, whose value w
-is a multiple of K with w/K below 2^(8L), and returns w/K as L bytes.
+exactly n characters, each in the alphabet or its uppercase, and a value w
+below 2^(8L + c) whose low c bits are the check of the rest. It unjumbles
+the rest by the four rounds in reverse order.
 
-<details>
-<summary>Why the check catches what it does</summary>
-
-Multiplying by K makes every codeword's value a multiple of K, and spreads
-that property over every digit. Changing one character adds d·N^i for some
-0 < |d| < N; swapping neighbours a and b adds (a − b)·N^i·(N − 1). K is a
-prime larger than N, so it divides neither, and the result fails the check.
-Any other change leaves a multiple of K about once in K tries. This is the
-classic arithmetic code of coding theory (an "AN code"); the room for K
-costs at most one character.
-
-Knowing the length in advance does two more things. It saves the padding and
-end markers other encodings need. And it turns truncation into an error: a
-codeword missing a character has the wrong length.
-</details>
+The layout gives every length a check of at least one character's worth,
+and the alphabet's size is chosen for 256-bit data: 25 characters hold it,
+and the 26th gives the check its 14 bits.
 
 ## The alphabet
 
@@ -152,61 +180,84 @@ machine. Each rule keeps the characters that pass it:
 
 | rule | removes | left |
 |---|---:|---:|
-| at most 2 bytes in UTF-8 (below U+0800) | 1,112,064 | 2,048 |
-| assigned (not a surrogate) | 57 | 1,991 |
-| assigned by Unicode 5.2 (2009) or earlier | 26 | 1,965 |
-| a lowercase letter (general category Ll), or an ASCII digit | 1,391 | 574 |
-| left-to-right: a letter of bidi class L, or a digit of class EN | 0 | 574 |
-| unchanged by NFC, NFD, NFKC and NFKD | 181 | 393 |
-| its uppercase is one character, which lowercases and case-folds back to it | 3 | 390 |
-| neither default-ignorable nor white space | 0 | 390 |
-| never the second half of a composition | 0 | 390 |
-| non-joining (joining type U) | 0 | 390 |
-| joins its neighbours into one word (word break ALetter, or Numeric for a digit) | 0 | 390 |
-| never a line break beside its neighbours (line break AL, or NU for a digit) | 0 | 390 |
-| in Latin, Greek or Cyrillic, whose fonts every major platform ships, or an ASCII digit | 45 | **345** |
+| in the Basic Multilingual Plane | 1,048,576 | 65,536 |
+| assigned (not a surrogate) | 48,652 | 16,884 |
+| assigned by Unicode 5.2 (2009) or earlier | 1,208 | 15,676 |
+| a lowercase letter (Ll), a caseless letter (Lo), or an ASCII digit | 7,337 | 8,339 |
+| left-to-right: a letter of bidi class L, or a digit of class EN | 1,130 | 7,209 |
+| unchanged by NFC, NFD, NFKC and NFKD | 1,245 | 5,964 |
+| its uppercase is one character, which lowercases and case-folds back to it | 3 | 5,961 |
+| neither default-ignorable nor white space | 2 | 5,959 |
+| never the second half of a composition | 48 | 5,911 |
+| non-joining (joining type U) | 173 | 5,738 |
+| joins its neighbours into one word (word break ALetter, or Numeric for a digit) | 609 | 5,129 |
+| never a line break beside its neighbours (line break AL, or NU for a digit) | 1,537 | 3,592 |
+| Latin, Greek or Cyrillic below U+0800, Ethiopic or Canadian syllabics, or an ASCII digit | 2,113 | 1,479 |
+| the lowest code point of its class of look-alikes (UTS #39) | 104 | 1,375 |
+| looks like no sequence of the others (UTS #39) | 22 | **1,353** |
 
 <details>
-<summary>What each rule protects against</summary>
+<summary>What each rule protects</summary>
 
-- **At most 2 bytes in UTF-8.** Every codeword stays within hex's byte count.
+- **The Basic Multilingual Plane.** GitHub refuses 4-byte UTF-8 in a status
+  description, and characters beyond the plane need UTF-16 surrogate pairs,
+  which software splits.
 - **Unicode 5.2 or earlier.** Fonts lag new letters: DejaVu, a common Linux
   default, lacks the Cyrillic letters that Unicode 6.0 and 7.0 added.
-- **Lowercase letters and digits, with uppercase that maps back.** Software
-  that changes case leaves a codeword decodable: each letter's uppercase is
-  one character that lowercases to it again, and decoding reads either.
-- **Left-to-right.** Every character displays in the order it is stored,
-  in any paragraph.
+- **Letters and digits.** They survive where symbols and punctuation are
+  rewritten or dropped.
+- **Left-to-right.** Every character displays in the order it is stored, in
+  any paragraph.
 - **Unchanged by normalization.** Software normalizes text (older Mac file
-  systems to NFD, many web forms to NFC); every character stays itself.
-- **No interaction between characters.** The next four rules exclude every
-  way two characters can interact: invisible characters, two characters
-  normalizing into one, cursive joining, and reordering. Each excludes both
-  sides of an interaction, so rules on single characters suffice.
-- **One word.** Unicode's word rules (UAX #29) join letters and digits into
-  one word, which a double-click selects whole.
-- **One line.** Unicode's line rules (UAX #14) allow no break between these
-  letters and digits, so a codeword stays on one line.
-- **Fonts on every major platform.** A missing glyph shows as a box, and
-  boxes hide which character is which. Every major platform ships fonts for
-  Latin, Greek and Cyrillic.
+  systems to NFD, web forms to NFC); every character stays itself.
+- **An uppercase that maps back.** Software that changes case leaves a sigil
+  decodable: decoding reads each letter's uppercase as the letter.
+- **No interaction between characters.** The next three rules exclude
+  invisible characters, two characters normalizing into one, and cursive
+  joining. Each excludes both sides of an interaction.
+- **One word.** Unicode's word rules (UAX #29) join these letters and digits
+  into one word, which a double-click selects whole.
+- **One line.** Unicode's line rules (UAX #14) allow no break between them,
+  so a sigil stays on one line.
+- **Scripts with fonts.** A missing glyph shows as a box, and boxes hide
+  which character is which. macOS draws every Ethiopic and Canadian
+  syllabic the alphabet keeps; DejaVu lacks parts of the Latin and Cyrillic
+  extension blocks above U+0800, which the alphabet leaves out.
+- **One character per class of look-alikes.** Of characters that Unicode's
+  table of look-alikes (UTS #39) gives one skeleton, the lowest code point
+  stays. Every compared character then tells its class apart from every
+  other, for a person and for OCR.
+- **No sequence look-alikes.** Unicode's table says `m` looks like `rn`, and
+  a syllabic with a dot like the dot final and the syllabic. While a
+  character's skeleton is the skeletons of others in a row, the character
+  that ends the most such spellings goes: the look-alike itself, or a piece
+  of its spelling outside ASCII (ties to the lowest code point). Every
+  ASCII digit and letter that the earlier rules keep stays but `m`.
 </details>
 
 ## Evidence
 
 - **The encoding:** all three implementations pass `vectors.json` (or its
   twin, `vectors.tsv`): 220 encodings, 528 variants (copies with white space
-  or invisible characters inserted, or letters in uppercase) and 352
-  corruptions, each with the error it must give. The Python tests also check
-  every one-character change of two codewords (22,016), every swap of
-  neighbours in 1,000 codewords (30,912) and every truncation.
-- **Selection** (`copytest.html`): a double-click selects whole codewords in
+  or invisible characters inserted, or letters in uppercase) and 352 errors,
+  each of the kind it must give. Each implementation's BLAKE3 agrees with
+  BLAKE3's official test vectors, hashing and deriving keys (the Python
+  tests check all 35).
+- **Readings:** with three readings for one character of a 256-bit sigil,
+  `decode_readings` returned the right data alone in 200 of 200 tests; with
+  one character unread, in 39 of 40.
+- **Jumbling:** changing one bit in the middle of 256 values changed the
+  first and the last four characters every time, and 26.0 of 26 characters
+  on average.
+- **Selection** (`copytest.html`): a double-click selects whole sigils in
   Chromium. Open the page in any browser to see its answer.
-- **Fonts** (`fonttest.html`): the page draws every character and compares it
-  with a missing glyph's box, so it measures any device it is opened on.
-  Chromium on a Linux system with DejaVu, its default font, draws all 345.
+- **Fonts** (`fonttest.html`): the page draws every character and compares
+  it with a missing glyph's box, so it measures any device it is opened on.
+  macOS draws all of the alphabet's Ethiopic and Canadian syllabics. A Linux
+  system with DejaVu alone draws its Latin, Greek and Cyrillic, and needs a
+  font such as Noto for Ethiopic and Canadian syllabics.
 - **GitHub** counts a status description's 140 characters in code points and
-  stores 2-byte UTF-8 intact.
+  stores 2- and 3-byte UTF-8 intact.
 
 ## Prior work
 
@@ -215,25 +266,30 @@ machine. Each rule keeps the characters that pass it:
   chose an alphabet for people, and argued that an encoder and decoder that
   agree on the data's length in bits should use it to write fewer
   characters. His `zbase62` (Python, 2010) and `zbase32` (Python and C)
-  libraries implement that agreement as `b2a_l` and `a2b_l`. base345 takes
-  the same agreement further: it also catches truncation and corruption.
+  libraries implement that agreement as `b2a_l` and `a2b_l`. Sigil uses the
+  agreement too: the length sets the layout and makes truncation an error.
+- **Zcash's F4Jumble**, the jumbling of its Unified Addresses, spreads every
+  bit of an address over its whole encoding so that a forger cannot keep the
+  ends; Sigil's jumbling is its four-round Feistel structure, with BLAKE3.
 - **qntm's** base2048, base32768 and base65536 pack binary into Unicode for
   services that count characters, and his definition of "safe" code points
   (https://qntm.org/safe) is where this alphabet's rules begin.
 - **Bitcoin's base58** removed punctuation so that a double-click selects a
   whole address.
+- **Unicode's UTS #39** table of look-alikes defines which characters, and
+  which sequences, look alike.
 
 ## Reproduce and test
 
 ```sh
 python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data; alphabet.txt, uppercase.txt and ignored.txt are its output
 python3 python/vectors.py --check             # vectors.json and vectors.tsv are the reference's output
-python3 python/test.py                        # the reference implementation
+python3 python/test.py [BLAKE3_TEST_VECTORS]  # the reference implementation
 (cd typescript && tsc -p .) && node typescript/dist/test.js
 (cd rust && cargo test)
 ```
 
 ## License
 
-base345 is yours under either the CC0 1.0 dedication (`LICENSE_CC0`) or the
+Sigil is yours under either the CC0 1.0 dedication (`LICENSE_CC0`) or the
 Apache License 2.0 (`LICENSE_A2`), at your choice.
