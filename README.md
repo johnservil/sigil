@@ -328,6 +328,11 @@ machine. Each rule keeps the characters that pass it:
   definitions, over the alphabet that `alphabet/alphabet.py` writes.
   It passes `vectors.tsv` too. Lean proves that decoding any data's sigil
   gives the data back (`decode_encode`), its kernel checking every step.
+  It also proves the layout's prime and size choices, single-digit-error
+  detection, neighbour and two-apart swap detection, and uniqueness of an
+  erased digit. The single-digit result covers the Lean decoder on
+  canonical alphabet text; the arithmetic results cover all lengths and
+  positions.
   [Check an answer for yourself](lean/README.md) with explicit byte and
   code-point literals, or inspect the proof coverage and remaining trust
   boundaries. The Rust refinement and executable-byte proofs remain open.

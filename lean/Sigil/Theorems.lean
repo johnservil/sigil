@@ -190,59 +190,62 @@ theorem mapM_ok {α β ε : Type} (F : α → Except ε β) (g : α → β) :
       mapM_ok F g l (fun x hx => h x (List.mem_cons_of_mem _ hx))]
     rfl
 
-/-- Decoding `d`'s sigil, told `d`'s length, gives back `d`. -/
-theorem decode_encode (d : List UInt8) : decode (encode d) d.length = .ok d := by
-  have hK := N_lt_K d.length
-  have hfit := K_fits d.length
-  have hlt := ofBytes_lt d
-  simp only [decode, encode]
-  generalize layout d.length = lk at hK hfit ⊢
-  obtain ⟨n, K⟩ := lk
-  simp only at hK hfit ⊢
-  -- The value fits the sigil's characters.
-  have hw : ofBytes d * K < N ^ n := by
-    have : ofBytes d * K < 2 ^ (8 * d.length) * K :=
-      Nat.mul_lt_mul_of_pos_right hlt (by omega)
-    rw [Nat.mul_comm (2 ^ _)] at this
-    omega
-  generalize hs : (toDigits (ofBytes d * K) n).map (fun x => alphabet[x]!) = s
-  -- Each character of the sigil is the alphabet's character for a digit.
-  have hchar : ∀ a ∈ s.zipIdx 1, ∃ x, x ∈ toDigits (ofBytes d * K) n ∧ a.1 = alphabet[x]! := by
+/-- On alphabet digits of the specified length, decoding is exactly the AN code's range and
+remainder checks, followed by conversion of the quotient to bytes. -/
+theorem decode_alphabet_digits (L : Nat) (ds : List Nat)
+    (hlen : ds.length = (layout L).1) (hdigits : ∀ x ∈ ds, x < N) :
+    decode (ds.map (fun x => alphabet[x]!)) L =
+      if (layout L).2 * 2 ^ (8 * L) ≤ ofDigits ds then .error .range
+      else if ofDigits ds % (layout L).2 ≠ 0 then .error .check
+      else .ok (toBytes (ofDigits ds / (layout L).2) L) := by
+  simp only [decode]
+  generalize hs : ds.map (fun x => alphabet[x]!) = s
+  have hchar : ∀ a ∈ s.zipIdx 1, ∃ x, x ∈ ds ∧ a.1 = alphabet[x]! := by
     intro a ha
     have := List.fst_mem_of_mem_zipIdx ha
     rw [← hs, List.mem_map] at this
     obtain ⟨x, hx, e⟩ := this
     exact ⟨x, hx, e.symm⟩
-  -- No character is ignored.
   have hfilter : (s.zipIdx 1).filter (fun x => !ignored x.fst) = s.zipIdx 1 := by
     rw [List.filter_eq_self]
     intro a ha
     obtain ⟨x, hx, e⟩ := hchar a ha
-    rw [e, ignored_alphabet x (toDigits_lt _ _ x hx)]
+    rw [e, ignored_alphabet x (hdigits x hx)]
     rfl
-  have hlen : (s.zipIdx 1).length = n := by
-    rw [List.length_zipIdx, ← hs, List.length_map, toDigits_length]
-  have hds : (s.zipIdx 1).map (fun a => (digit? a.1).getD 0) = toDigits (ofBytes d * K) n := by
+  have hslen : (s.zipIdx 1).length = (layout L).1 := by
+    rw [List.length_zipIdx, ← hs, List.length_map, hlen]
+  have hds : (s.zipIdx 1).map (fun a => (digit? a.1).getD 0) = ds := by
     rw [show (fun a : Nat × Nat => (digit? a.1).getD 0) = (fun p => (digit? p).getD 0) ∘ Prod.fst
       from rfl, ← List.map_map, List.zipIdx_map_fst, ← hs, List.map_map]
-    conv => rhs; rw [← List.map_id (toDigits _ _)]
+    conv => rhs; rw [← List.map_id ds]
     apply List.map_congr_left
     intro x hx
-    simp [digit?_alphabet x (toDigits_lt _ _ x hx)]
-  simp only [hfilter, hlen, ne_eq, not_true_eq_false, if_false]
-  -- Each character reads as its digit.
+    simp [digit?_alphabet x (hdigits x hx)]
+  simp only [hfilter, hslen, ne_eq, not_true_eq_false, if_false]
   rw [mapM_ok _ (fun a => (digit? a.1).getD 0) _ ?chars]
   case chars =>
     intro a ha
     obtain ⟨x, hx, e⟩ := hchar a ha
-    simp only [e, digit?_alphabet x (toDigits_lt _ _ x hx)]
+    simp only [e, digit?_alphabet x (hdigits x hx)]
     rfl
   simp only [bind, Except.bind, pure, Except.pure]
-  rw [hds, ofDigits_toDigits, Nat.mod_eq_of_lt hw]
-  have hrange : ¬ K * 2 ^ (8 * d.length) ≤ ofBytes d * K := by
-    have : ofBytes d * K < 2 ^ (8 * d.length) * K := Nat.mul_lt_mul_of_pos_right hlt (by omega)
-    rw [Nat.mul_comm (2 ^ _)] at this
-    omega
-  simp [hrange, Nat.mul_mod_left, Nat.mul_div_cancel _ (show 0 < K by omega), toBytes_ofBytes]
+  rw [hds]
+  simp only [throw, throwThe]
+  split <;> simp_all <;> rfl
+
+/-- Decoding `d`'s sigil, told `d`'s length, gives back `d`. -/
+theorem decode_encode (d : List UInt8) : decode (encode d) d.length = .ok d := by
+  have hK := N_lt_K d.length
+  have hfit := K_fits d.length
+  have hlt := ofBytes_lt d
+  have hprod : ofBytes d * (layout d.length).2 < (layout d.length).2 * 2 ^ (8 * d.length) := by
+    rw [Nat.mul_comm (layout d.length).2]
+    exact Nat.mul_lt_mul_of_pos_right hlt (by omega)
+  have hw : ofBytes d * (layout d.length).2 < N ^ (layout d.length).1 := by omega
+  unfold encode
+  rw [decode_alphabet_digits _ _ (toDigits_length _ _) (toDigits_lt _ _),
+    ofDigits_toDigits, Nat.mod_eq_of_lt hw]
+  simp [Nat.not_le_of_lt hprod, Nat.mul_mod_left,
+    Nat.mul_div_cancel _ (show 0 < (layout d.length).2 by omega), toBytes_ofBytes]
 
 end Sigil

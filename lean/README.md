@@ -1,8 +1,10 @@
 # Checking Sigil for yourself
 
 This directory contains the mathematical format (`Sigil/Spec.lean`), a proof
-that its decoder inverts its encoder (`Sigil/Theorems.lean`), and fixed
-known answers checked by Lean's kernel (`Sigil/KnownAnswers.lean`). They use
+that its decoder inverts its encoder (`Sigil/Theorems.lean`), the layout's
+prime/maximality/minimality proofs (`Sigil/Layout.lean`), error-control
+proofs (`Sigil/Errors.lean`), and fixed known answers checked by Lean's kernel
+(`Sigil/KnownAnswers.lean`). They use
 Lean 4.31.0 and its core library, with no Mathlib or external solver.
 
 The optimized Rust implementation has tests, **but its correctness and its
@@ -100,16 +102,28 @@ alone can miss. A finite test corpus cannot exclude a malicious rare case.
 | The layout's K exceeds N and K·2^(8L) fits in N^n | Proved (`N_lt_K`, `K_fits`) |
 | Bytes and base-N digits round-trip | Proved |
 | Decoding an encoding returns the original data, for every byte list | Proved (`decode_encode`) |
-| K is mathematically prime, maximal, and the character count minimal | Computed and tested; proofs connecting the search to these mathematical properties remain |
-| All accepted representations and exact failures match an independent format characterization | Definition and examples; universal characterization remains |
-| Single-error detection, swaps and erasure recovery | Arithmetic argument in the main README and tests; formal proofs remain |
+| K is mathematically prime, maximal, and the character count minimal | Proved for every byte length (`isPrime_iff`, `layout_contract`) |
+| Canonical alphabet digits decode by exactly the range/remainder checks | Proved (`decode_alphabet_digits`) |
+| All accepted representations and exact failures match an independent format characterization | Full characterization including case variants and ignored characters remains |
+| Single-digit-error detection | Proved arithmetically and for the Lean decoder on canonical alphabet text (`single_change_decode_rejected`) |
+| Adjacent and two-apart swaps; uniqueness of one erased digit | Proved for the AN code (`adjacent_swap_detected`, `two_apart_swap_detected`, `erased_digit_unique`); `decode_nonmultiple` connects failed divisibility to decoder rejection |
 | `decode_readings` enumerates all and only valid readings | Tests; specification and proof remain |
 | Optimized Rust matches the specification, including failures and termination | Tests; refinement proof remains |
 | The executable Bob runs matches the specification | Open |
 | Work, allocation and platform bounds | Full contracts and proofs remain |
 
-The round-trip proof uses only Lean's standard axioms (`propext`,
-`Classical.choice`, `Quot.sound`), with no `sorry` or `native_decide`.
+After `lake build`, run `lake env lean --trust=0 Audit.lean` from this
+directory to recheck imported proofs and inspect the main theorem statements
+and axiom lists.
+
+The proofs use only Lean's standard axioms (`propext`, `Classical.choice`,
+`Quot.sound`), with no `sorry` or `native_decide`. `Sigil.Prime` states
+mathematical primality explicitly: at least two, with only one and itself
+as natural-number divisors. `isPrime_iff` connects that definition to the
+trial-division program; `layout_contract` states all the layout guarantees
+together. The error-control theorems quantify over every position and digit
+value. Erasure uniqueness is a property of digits; uppercase spellings of
+the same digit are aliases, not different recovered data.
 The Lean definitions also have a value for an empty byte list; the public
 implementations require at least one byte.
 
