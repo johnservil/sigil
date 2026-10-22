@@ -102,7 +102,8 @@ The current `tools/certificate.py` proposes answers using the Python
 reference and emits statements for kernel checking. Bob can also write a
 literal statement for another producer's candidate answer himself. A tool
 that directly accepts that producer's claimed answer, checks it with bounded
-resources and enforces checked use remains a near-term goal. Kernel
+resources and enforces checked use is deferred until it demonstrates a
+materially smaller reliance set and a practical integration path. Kernel
 recomputation can be expensive; an efficient proof-producing implementation
 could reduce the checking work while preserving the same assurance boundary.
 
@@ -200,11 +201,12 @@ A program can return every correct answer while leaking its input.
 
 ## Our destination and present foothold
 
-Two complementary goals serve Bob: **dynamic checking of each answer
-before use**, and a universal certificate about **his own build's executable
-bytes**. The latter is checked against a short specification and statement
-he inspects, through a checker he chooses. That executable connection is
-still open; dynamic answer checking can give him useful assurance first.
+The priority is a universal certificate about **Bob's own build's executable
+bytes**, checked against a short specification and statement he inspects,
+through a checker he chooses. That connection is still open. Dynamic
+per-answer checking is an alternative path; a complete static proof would
+make it redundant for the same functional claims. Further dynamic-tool
+integration is deferred until its reliance set and workflow earn their cost.
 
 Today Bob can kernel-check particular encoding and decoding answers and
 the specification's universal mathematical guarantees. The Lean definitions
@@ -217,3 +219,12 @@ establishes feasibility for a small example. Sigil's Rust refinement proof
 remains open. Source-level proofs can help develop the arithmetic invariants
 while an executable-level proof or independently checked translation closes
 the remaining compilation boundary.
+
+A [static AArch64 probe](experiments/static-arm64/README.md) now proves a
+multiply-add primitive's exact modeled state change, including return and
+preservation of all state except X0 and PC. It binds the final linked
+library's instruction bytes to the proof and calls the routine through a
+C ABI. Sigil's complete encoding/decoding proof remains open. The historical
+model toolchain, missing division instructions and loader/caller boundaries
+remain explicit adoption gates. The experiment motivates investigating a
+small assembly core while keeping the current implementations as oracles.
