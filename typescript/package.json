@@ -1,8 +1,8 @@
 {
-  "name": "base1160",
+  "name": "base345",
   "version": "0.1.0",
   "type": "module",
-  "main": "dist/base1160.js",
-  "types": "dist/base1160.d.ts",
+  "main": "dist/base345.js",
+  "types": "dist/base345.d.ts",
   "license": "CC0-1.0 OR Apache-2.0"
 }

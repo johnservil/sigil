@@ -1,40 +1,42 @@
-//! base1160: bytes of a known length as a codeword, one word of letters from
-//! Ethiopic and Canadian syllabics, which a double-click selects whole; every
-//! one-character error and every swap of neighbours is caught.
+//! base345: bytes of a known length as a codeword: one word of digits and
+//! lowercase Latin, Greek and Cyrillic letters, which a double-click selects
+//! whole and either case decodes; every one-character error and every swap of
+//! neighbours is caught.
 //!
 //! ```
-//! let codeword = base1160::encode(&[0xff; 32]);
-//! assert_eq!(codeword.chars().count(), 27);
-//! assert_eq!(base1160::decode(&codeword, 32).unwrap(), [0xff; 32]);
+//! let codeword = base345::encode(&[0xff; 32]);
+//! assert_eq!(codeword.chars().count(), 32);
+//! assert_eq!(base345::decode(&codeword, 32).unwrap(), [0xff; 32]);
 //! ```
 //!
 //! Decoding skips white space and default-ignorable characters, which copying
 //! and line breaking insert. The specification is the repository's README.md
-//! ("The encoding"): L bytes are a number v below 2^(8L); the codeword is v * K in base N = 1,160,
+//! ("The encoding"): L bytes are a number v below 2^(8L); the codeword is v * K in base N = 345,
 //! exactly n digits, most significant first, digit d the alphabet's d-th
 //! character (alphabet.txt, ascending), where n is the fewest digits that leave
 //! room for a prime K larger than N and K is the largest prime at most
 //! N^n / 2^(8L).
-//! python/base1160.py is the reference implementation and vectors.tsv the
+//! python/base345.py is the reference implementation and vectors.tsv the
 //! tests every implementation passes.
 
 use std::fmt;
 use std::sync::OnceLock;
 
 const ALPHABET_TEXT: &str = include_str!("../alphabet.txt");
+/// Each letter's uppercase, in the same order; decoding reads either.
+const UPPERCASE_TEXT: &str = include_str!("../uppercase.txt");
 /// The code points decoding ignores, as `first..last` hex ranges: white
 /// space and the default-ignorable characters, which copying and line
 /// breaking insert.
 const IGNORED_TEXT: &str = include_str!("../ignored.txt");
 /// The alphabet's size.
-pub const N: u32 = 1160;
+pub const N: u32 = 345;
 
-/// The alphabet's characters, and each code point's digit (by its offset
-/// from the first character), built once.
+/// The alphabet's characters, the digit of each letter and of its
+/// uppercase (sorted by code point), and the ignored ranges, built once.
 struct Alphabet {
     chars: Vec<char>,
-    first: u32,
-    digits: Vec<u32>,
+    digits: Vec<(char, u32)>,
     ignored: Vec<(u32, u32)>,
 }
 
@@ -42,12 +44,12 @@ fn alphabet() -> &'static Alphabet {
     static ALPHABET: OnceLock<Alphabet> = OnceLock::new();
     ALPHABET.get_or_init(|| {
         let chars: Vec<char> = ALPHABET_TEXT.chars().collect();
-        assert_eq!(chars.len(), N as usize, "the alphabet has 1,160 characters");
-        let first = chars[0] as u32;
-        let mut digits = vec![u32::MAX; (chars[chars.len() - 1] as u32 - first + 1) as usize];
-        for (d, &c) in chars.iter().enumerate() {
-            digits[(c as u32 - first) as usize] = d as u32;
-        }
+        let upper: Vec<char> = UPPERCASE_TEXT.chars().collect();
+        assert_eq!((chars.len(), upper.len()), (N as usize, N as usize), "the alphabet has 345 characters");
+        let mut digits: Vec<(char, u32)> =
+            chars.iter().chain(&upper).enumerate().map(|(i, &c)| (c, i as u32 % N)).collect();
+        digits.sort();
+        digits.dedup();
         let ignored = IGNORED_TEXT
             .lines()
             .map(|l| {
@@ -55,7 +57,7 @@ fn alphabet() -> &'static Alphabet {
                 (u32::from_str_radix(a, 16).unwrap(), u32::from_str_radix(b, 16).unwrap())
             })
             .collect();
-        Alphabet { chars, first, digits, ignored }
+        Alphabet { chars, digits, ignored }
     })
 }
 
@@ -174,7 +176,7 @@ fn is_prime(k: u64) -> bool {
 /// (n, K) for data of `length` bytes (at least 1): the text's length, and
 /// the prime the value is multiplied by.
 pub fn layout(length: usize) -> (usize, u32) {
-    assert!(length >= 1, "base1160 encodes at least one byte");
+    assert!(length >= 1, "base345 encodes at least one byte");
     let bits = 8 * length as u64;
     let mut power = Nat::small(1);
     let mut n = 0;
@@ -227,11 +229,11 @@ pub fn decode(codeword: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
     }
     let mut w = Nat(Vec::new());
     for &(i, c) in &chars {
-        let d = (c as u32)
-            .checked_sub(a.first)
-            .and_then(|o| a.digits.get(o as usize).copied())
-            .filter(|&d| d != u32::MAX)
-            .ok_or(DecodeError::Character { position: i + 1, character: c })?;
+        let d = a
+            .digits
+            .binary_search_by_key(&c, |&(x, _)| x)
+            .map(|j| a.digits[j].1)
+            .map_err(|_| DecodeError::Character { position: i + 1, character: c })?;
         w.mul_add(N, d);
     }
     if w.div_rem(k) != 0 || w.bits() > 8 * length as u64 {

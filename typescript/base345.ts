@@ -1,17 +1,19 @@
-// base1160: bytes of a known length as a codeword, one word of letters from
-// Ethiopic and Canadian syllabics, which a double-click selects whole; every
-// one-character error and every swap of neighbours is caught.
+// base345: bytes of a known length as a codeword: one word of digits and
+// lowercase Latin, Greek and Cyrillic letters, which a double-click selects
+// whole and either case decodes; every one-character error and every swap of
+// neighbours is caught.
 // Decoding skips white space and default-ignorable characters, which copying
 // and line breaking insert. The specification is README.md ("The encoding");
-// python/base1160.py is the reference implementation, and vectors.json the
+// python/base345.py is the reference implementation, and vectors.json the
 // tests every implementation passes.
 
-import { ALPHABET, IGNORED } from "./alphabet.js";
+import { ALPHABET, IGNORED, UPPERCASE } from "./alphabet.js";
 
 const CHARS: string[] = Array.from(ALPHABET);
 export const N = CHARS.length;
-if (N !== 1160) throw new Error("the alphabet must have 1,160 characters");
-const DIGIT = new Map<string, number>(CHARS.map((c, d) => [c, d]));
+if (N !== 345) throw new Error("the alphabet must have 345 characters");
+// Decoding reads each letter, or its uppercase.
+const DIGIT = new Map<string, number>([...Array.from(UPPERCASE).map((c, d): [string, number] => [c, d]), ...CHARS.map((c, d): [string, number] => [c, d])]);
 const BN = BigInt(N);
 
 /** A codeword that encodes no data of the length asked for: `kind` is "length"
@@ -31,7 +33,7 @@ function isPrime(k: bigint): boolean {
 
 /** [n, K] for data of `length` bytes (at least 1). */
 export function layout(length: number): [number, bigint] {
-  if (!(Number.isInteger(length) && length >= 1)) throw new RangeError("base1160 encodes at least one byte");
+  if (!(Number.isInteger(length) && length >= 1)) throw new RangeError("base345 encodes at least one byte");
   const bits = BigInt(8 * length);
   let n = 1;
   while (BN ** BigInt(n) >> bits <= BN) n++;

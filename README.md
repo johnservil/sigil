@@ -1,53 +1,54 @@
-# base1160
+# base345
 
-base1160 writes bytes of a known length as one word of letters. A 256-bit
-hash becomes 27 characters that a double-click selects whole, and decoding
-catches every one-letter change.
+base345 writes bytes of a known length as one word of letters and digits. A
+256-bit hash becomes 32 characters, half the length of hex and never more
+bytes, that a double-click selects whole; decoding catches every changed
+character.
 
 ```
-BLAKE3("") in hex       af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
-            in base64    rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            in base1160  ᗄᎏጞᐇᔄᘜኗᗯቇቓᢵᎃᐇጤᔉᖅᕕᕘᓜᘌⷔᗵⶖᐗᣕቐነ
+BLAKE3("") in hex      af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
+            in base64   rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
+            in base345  зӆԏƒρҝƥωɿđҙɓʊȝϡʖɖϝԓȸђɑѥџԣъcʞ4ɂӷʦ
 ```
 
-The letters come from two scripts, Ethiopic and Canadian syllabics, 1,160 in
-all. Both run left to right, and Unicode treats a run of them as one word
-that never breaks across lines. macOS draws all 1,160; the other platforms
-are being measured ("Evidence").
+The 345 characters are the ten digits and lowercase letters of the Latin,
+Greek and Cyrillic scripts, whose fonts every major platform ships. Each
+takes one or two bytes in UTF-8. A codeword decodes in either case.
 
 ## When to use it
 
-base1160 serves values that people copy and paste: hashes, keys, and
-identifiers shown in a status line, a chat, an email, or a web page.
+base345 serves values that people copy, paste and compare: hashes, keys and
+identifiers shown in a status line, a chat, an email or a web page.
 
-| a 256-bit value | characters | a double-click selects | a changed character |
-|---|---|---|---|
-| hex | 64 | the whole value | goes unnoticed |
-| base32 | 52 | the whole value | goes unnoticed |
-| base64 | 43 | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
-| base58 (without Bitcoin's checksum) | 44 | the whole value | goes unnoticed |
-| **base1160** | **27** | **the whole value** | **is caught** |
+| a 256-bit value | characters | bytes in UTF-8 | a double-click selects | a changed character |
+|---|---|---|---|---|
+| hex | 64 | 64 | the whole value | goes unnoticed |
+| base32 | 52 | 52 | the whole value | goes unnoticed |
+| base64 | 43 | 43 | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
+| **base345** | **32** | **61 (52 to 64)** | **the whole value** | **is caught** |
 
-Three of its properties work together:
+Its properties work together:
 
-- **Short where characters are counted.** A commit status, a tweet, or a
-  terminal line holds a base1160 hash in under half the room of hex. Two
-  hashes, labelled, fit GitHub's 140-character status description.
-- **Copied with one gesture.** A double-click selects the whole codeword,
-  and copying it carries nothing else. Decoding skips any white space or invisible characters that a line
-  break or a copy inserts.
+- **Short.** A base345 hash takes half the characters of hex, and at most as
+  many bytes. Two hashes, labelled, fit GitHub's 140-character status
+  description.
+- **Copied with one gesture.** A double-click selects the whole codeword, and
+  copying it carries nothing else. Decoding skips any white space or
+  invisible characters that a line break or a copy inserts, and reads
+  letters in either case.
 - **Checked when decoded.** Every one-character change, every swap of
-  neighbours, and every truncation fails to decode; any other corruption
-  passes about once in 475,000 tries. A damaged copy is reported, and never
+  neighbours and every truncation fails to decode; any other corruption
+  passes about once in 14,000 tries. A damaged copy is reported, and never
   read as a different value.
+- **Hard to imitate.** Each character carries 8 bits that someone forging a
+  look-alike codeword must match ("Telling codewords apart"), twice what a
+  hex character carries.
 
-Other encodings serve other channels better:
+Other encodings serve other channels:
 
 - **Typed by hand or read aloud:** hex, or z-base-32, whose letters are
   chosen for people to type.
-- **Counted in bytes** (file names, URLs, database columns): hex or base64.
-  Each base1160 letter is 3 bytes in UTF-8, so a 256-bit codeword is 81
-  bytes, beside hex's 64.
+- **Bytes at a premium** (URLs, database columns): base64, at 43 bytes.
 - **ASCII only:** hex or base64.
 
 ## Use it
@@ -55,18 +56,18 @@ Other encodings serve other channels better:
 Decoding takes the length in bytes that the codeword encodes. The encoder
 and decoder agree on it in advance: a 256-bit hash is always 32 bytes.
 
-Python (`python/base1160.py`):
+Python (`python/base345.py`):
 
 ```python
-import base1160
-codeword = base1160.encode(digest)        # 27 letters for 32 bytes
-digest = base1160.decode(codeword, 32)    # raises base1160.DecodeError
+import base345
+codeword = base345.encode(digest)        # 32 characters for 32 bytes
+digest = base345.decode(codeword, 32)    # raises base345.DecodeError
 ```
 
-TypeScript (`typescript/base1160.ts`, in browsers and Node):
+TypeScript (`typescript/base345.ts`, in browsers and Node):
 
 ```typescript
-import { encode, decode, DecodeError } from "base1160";
+import { encode, decode, DecodeError } from "base345";
 const codeword = encode(digest);          // digest: a Uint8Array
 const back = decode(codeword, 32);        // throws DecodeError
 ```
@@ -74,18 +75,36 @@ const back = decode(codeword, 32);        // throws DecodeError
 Rust (`rust/`, no dependencies):
 
 ```rust
-let codeword = base1160::encode(&digest);
-let back = base1160::decode(&codeword, 32)?;   // Err(DecodeError)
+let codeword = base345::encode(&digest);
+let back = base345::decode(&codeword, 32)?;   // Err(DecodeError)
 ```
 
 A decode error has one of three kinds: `length` (the wrong number of
-letters), `character` (one outside the alphabet), and `corrupt` (the check
-fails).
+characters), `character` (one outside the alphabet), and `corrupt` (the
+check fails).
+
+## Telling codewords apart
+
+People compare codewords by eye, and often only their first and last few
+characters. Someone who wants a codeword that looks like yours cannot choose
+a hash's output; they can only try inputs until one encodes to a look-alike.
+Each character a person compares makes them match one of the alphabet's
+classes of look-alike characters. Unicode's table of look-alikes (UTS #39)
+puts base345's 345 characters in 268 classes, so each compared character
+costs a forger 8.07 bits, and the first and last four together cost 65
+bits. A hex character costs 4 bits, and hex's first and last four cost 32.
+
+The alphabet keeps letters that resemble one another, because that makes
+codewords harder to imitate. A look-alike letter enlarges the alphabet, so
+codewords get shorter and the check stronger, and it leaves the number of
+look-alike classes as it was, so a forger's work per compared character
+stays the same. More information in each character, and fewer characters
+to compare, make every codeword harder to imitate.
 
 ## The encoding
 
 Data of L bytes is a number v below 2^(8L), most significant byte first. Its
-codeword is v·K written in base N = 1,160, with exactly n digits, most
+codeword is v·K written in base N = 345, with exactly n digits, most
 significant first. Digit d is the d-th character of the alphabet
 (`alphabet.txt`, in ascending code point order).
 
@@ -97,12 +116,14 @@ Both follow from L alone:
 
 | L (bytes) | 16 | 20 | 32 | 48 | 64 |
 |---|---|---|---|---|---|
-| n (letters) | 14 | 17 | 27 | 39 | 52 |
-| K | 23,473 | 8,527 | 474,983 | 8,273 | 167,663 |
+| n (characters) | 17 | 20 | 32 | 47 | 62 |
+| K | 40,829 | 389 | 14,011 | 4,801 | 1,637 |
 
 A decoder told L first drops every character that Unicode 14.0 marks
 White_Space or Default_Ignorable_Code_Point (the ranges in `ignored.txt`).
-It then requires exactly n characters, each in the alphabet, whose value w
+It reads each remaining character as its digit, taking a letter's uppercase
+(`uppercase.txt`, in the alphabet's order) as the letter. It requires
+exactly n characters, each in the alphabet or its uppercase, whose value w
 is a multiple of K with w/K below 2^(8L), and returns w/K as L bytes.
 
 <details>
@@ -113,94 +134,79 @@ that property over every digit. Changing one character adds d·N^i for some
 0 < |d| < N; swapping neighbours a and b adds (a − b)·N^i·(N − 1). K is a
 prime larger than N, so it divides neither, and the result fails the check.
 Any other change leaves a multiple of K about once in K tries. This is the
-classic arithmetic code of coding theory (an "AN code"); the room for K costs
-one letter, since 26 letters would hold 256 bits with no check.
+classic arithmetic code of coding theory (an "AN code"); the room for K
+costs at most one character.
 
 Knowing the length in advance does two more things. It saves the padding and
-end markers other encodings need. And it turns truncation into an error:
-a codeword missing a letter has the wrong length.
+end markers other encodings need. And it turns truncation into an error: a
+codeword missing a character has the wrong length.
 </details>
 
 ## The alphabet
 
 `alphabet/alphabet.py` computes the alphabet from Unicode 14.0.0's data
-files. It checks each file's SHA-256 and BLAKE3 before reading it, so the
-same inputs give the same alphabet on any machine. Each rule keeps the
-characters that pass it:
+files, by itself: it downloads each file (or reads a saved copy), checks its
+SHA-256 and its BLAKE3 before using it, and reads every property from the
+files. So the same files give the same alphabet with any Python 3 on any
+machine. Each rule keeps the characters that pass it:
 
 | rule | removes | left |
 |---|---:|---:|
-| in the Basic Multilingual Plane | 1,048,576 | 65,536 |
-| assigned (not a surrogate) | 3,470 | 62,066 |
-| a caseless letter (general category Lo) | 15,940 | 46,126 |
-| strongly left-to-right (bidi class L) | 1,239 | 44,887 |
-| unchanged by NFC, NFD, NFKC and NFKD | 11,937 | 32,950 |
-| unchanged by lower-casing, upper-casing and case folding | 0 | 32,950 |
-| neither default-ignorable nor white space | 2 | 32,948 |
-| never the second half of a composition | 48 | 32,900 |
-| outside the Hangul jamo | 307 | 32,593 |
-| non-joining (joining type U) | 174 | 32,419 |
-| outside the logical-order exceptions | 19 | 32,400 |
-| a letter that joins its neighbours into one word (word break ALetter) | 28,209 | 4,191 |
-| never a line break beside a neighbour of its kind (line break AL) | 1,240 | 2,951 |
-| in a script whose fonts every major platform ships | 1,791 | **1,160** |
+| at most 2 bytes in UTF-8 (below U+0800) | 1,112,064 | 2,048 |
+| assigned (not a surrogate) | 57 | 1,991 |
+| assigned by Unicode 5.2 (2009) or earlier | 26 | 1,965 |
+| a lowercase letter (general category Ll), or an ASCII digit | 1,391 | 574 |
+| left-to-right: a letter of bidi class L, or a digit of class EN | 0 | 574 |
+| unchanged by NFC, NFD, NFKC and NFKD | 181 | 393 |
+| its uppercase is one character, which lowercases and case-folds back to it | 3 | 390 |
+| neither default-ignorable nor white space | 0 | 390 |
+| never the second half of a composition | 0 | 390 |
+| non-joining (joining type U) | 0 | 390 |
+| joins its neighbours into one word (word break ALetter, or Numeric for a digit) | 0 | 390 |
+| never a line break beside its neighbours (line break AL, or NU for a digit) | 0 | 390 |
+| in Latin, Greek or Cyrillic, whose fonts every major platform ships, or an ASCII digit | 45 | **345** |
 
 <details>
 <summary>What each rule protects against</summary>
 
-- **The Basic Multilingual Plane.** GitHub refuses 4-byte UTF-8 in status
-  descriptions (measured), and characters beyond the plane need surrogate
-  pairs in UTF-16, which some software splits.
-- **Caseless letters.** Letters survive where symbols and punctuation are
-  rewritten or dropped; caseless ones survive software that changes case.
-- **Strongly left-to-right.** A right-to-left letter, or a neutral one that
-  takes its direction from its neighbours, would make a codeword show in a
-  different order from the one it is stored in.
-- **Unchanged by normalization and case mapping.** Software normalizes text
-  (older Mac file systems to NFD, many web forms to NFC); every alphabet
-  letter stays itself under all four forms.
-- **The next five rules** exclude every way two characters can interact:
-  invisible characters, two characters normalizing into one, syllable
-  blocks, cursive joining, and reordering. Each excludes both sides of an
-  interaction. So rules on single characters suffice, and no sequence of
-  alphabet letters interacts.
-- **A letter that joins into one word.** Unicode's word rules (UAX #29) join
-  ALetter characters into one word, which a double-click selects whole.
-  Browsers split CJK text by dictionary, so a double-click on a codeword of
-  ideographs selects one to four of them (measured in Chromium: 1 of 20).
-- **Never a line break.** Unicode's line rules (UAX #14) allow no break
-  between two AL characters, so a codeword stays on one line.
+- **At most 2 bytes in UTF-8.** Every codeword stays within hex's byte count.
+- **Unicode 5.2 or earlier.** Fonts lag new letters: DejaVu, a common Linux
+  default, lacks the Cyrillic letters that Unicode 6.0 and 7.0 added.
+- **Lowercase letters and digits, with uppercase that maps back.** Software
+  that changes case leaves a codeword decodable: each letter's uppercase is
+  one character that lowercases to it again, and decoding reads either.
+- **Left-to-right.** Every character displays in the order it is stored,
+  in any paragraph.
+- **Unchanged by normalization.** Software normalizes text (older Mac file
+  systems to NFD, many web forms to NFC); every character stays itself.
+- **No interaction between characters.** The next four rules exclude every
+  way two characters can interact: invisible characters, two characters
+  normalizing into one, cursive joining, and reordering. Each excludes both
+  sides of an interaction, so rules on single characters suffice.
+- **One word.** Unicode's word rules (UAX #29) join letters and digits into
+  one word, which a double-click selects whole.
+- **One line.** Unicode's line rules (UAX #14) allow no break between these
+  letters and digits, so a codeword stays on one line.
 - **Fonts on every major platform.** A missing glyph shows as a box, and
-  boxes make distinct letters look alike. Most scripts that pass the rules
-  above lack a font on some platform. Ethiopic and Canadian syllabics have
-  them: macOS draws all 1,160 letters (measured), Windows ships Ebrima, Nyala
-  and Euphemia, and Android ships Noto fonts for both. `fonttest.html`
-  measures any other device.
-- **Yi** has fonts on these platforms too, and its letters join into one
-  word, but a line may break between two of them (line-break class ID), so
-  the line-break rule leaves them out. A word joiner between each pair would
-  keep a Yi codeword on one line, at the cost of a second written form for
-  every codeword.
+  boxes hide which character is which. Every major platform ships fonts for
+  Latin, Greek and Cyrillic.
 </details>
 
 ## Evidence
 
 - **The encoding:** all three implementations pass `vectors.json` (or its
-  twin, `vectors.tsv`): 220 encodings, 440 codewords with white space or
-  invisible characters inserted, and 308 corruptions, each with the error it
-  must give. The Python tests also check every one-letter change of two
-  codewords (62,586), every swap of neighbours in 1,000 codewords (25,978),
-  and every truncation.
-- **Selection** (`copytest.html`): a double-click selects the whole codeword
-  in Chromium and in Chrome on macOS. Open the page in any browser to see
-  its answer; a long-press on a phone is next.
-- **Fonts** (`fonttest.html`): Chrome on macOS draws all 1,160 letters. The
-  page draws every letter and compares it with a missing glyph's box, so it
-  measures any device it is opened on; iOS, Windows and Android are next.
-  Fonts can cover a script in part: a Linux VM with few fonts drew 403 of
-  the 707 Canadian syllabics, and none of the Ethiopic.
-- **GitHub** counts a status description's 140 characters in code points,
-  stores 2- and 3-byte UTF-8 intact, and refuses 4-byte UTF-8.
+  twin, `vectors.tsv`): 220 encodings, 528 variants (copies with white space
+  or invisible characters inserted, or letters in uppercase) and 352
+  corruptions, each with the error it must give. The Python tests also check
+  every one-character change of two codewords (22,016), every swap of
+  neighbours in 1,000 codewords (30,912) and every truncation.
+- **Selection** (`copytest.html`): a double-click selects whole codewords in
+  Chromium. Open the page in any browser to see its answer.
+- **Fonts** (`fonttest.html`): the page draws every character and compares it
+  with a missing glyph's box, so it measures any device it is opened on.
+  Chromium on a Linux system with DejaVu, its default font, draws all 345.
+- **GitHub** counts a status description's 140 characters in code points and
+  stores 2-byte UTF-8 intact.
 
 ## Prior work
 
@@ -209,19 +215,18 @@ characters that pass it:
   chose an alphabet for people, and argued that an encoder and decoder that
   agree on the data's length in bits should use it to write fewer
   characters. His `zbase62` (Python, 2010) and `zbase32` (Python and C)
-  libraries implement that agreement as `b2a_l` and `a2b_l`. base1160 takes
+  libraries implement that agreement as `b2a_l` and `a2b_l`. base345 takes
   the same agreement further: it also catches truncation and corruption.
 - **qntm's** base2048, base32768 and base65536 pack binary into Unicode for
   services that count characters, and his definition of "safe" code points
-  (https://qntm.org/safe) is where this alphabet's first rules begin.
+  (https://qntm.org/safe) is where this alphabet's rules begin.
 - **Bitcoin's base58** removed punctuation so that a double-click selects a
   whole address.
 
 ## Reproduce and test
 
 ```sh
-sh alphabet/fetch.sh DATA                     # Unicode 14.0.0's data files
-python3 alphabet/alphabet.py DATA --check     # alphabet.txt and ignored.txt are the rules' output
+python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data; alphabet.txt, uppercase.txt and ignored.txt are its output
 python3 python/vectors.py --check             # vectors.json and vectors.tsv are the reference's output
 python3 python/test.py                        # the reference implementation
 (cd typescript && tsc -p .) && node typescript/dist/test.js
@@ -230,5 +235,5 @@ python3 python/test.py                        # the reference implementation
 
 ## License
 
-base1160 is yours under either the CC0 1.0 dedication (`LICENSE_CC0`) or the
+base345 is yours under either the CC0 1.0 dedication (`LICENSE_CC0`) or the
 Apache License 2.0 (`LICENSE_A2`), at your choice.

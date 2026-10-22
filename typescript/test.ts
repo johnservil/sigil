@@ -1,6 +1,6 @@
 // The TypeScript implementation against vectors.json (run from the repository's root).
 import { readFileSync } from "node:fs";
-import { decode, DecodeError, encode, layout } from "./base1160.js";
+import { decode, DecodeError, encode, layout } from "./base345.js";
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 const bytes = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
@@ -10,9 +10,9 @@ for (const g of v.good) {
   if (encode(data) !== g.text) throw new Error(`encode ${g.data}`);
   if (hex(decode(g.text, data.length)) !== g.data) throw new Error(`decode ${g.text}`);
 }
-for (const g of v.spaced) {
+for (const g of v.variants) {
   const data = bytes(g.data);
-  if (hex(decode(g.text, data.length)) !== g.data) throw new Error(`decode spaced ${JSON.stringify(g.text)}`);
+  if (hex(decode(g.text, data.length)) !== g.data) throw new Error(`decode variant ${JSON.stringify(g.text)}`);
 }
 for (const b of v.bad) {
   let kind: string | null = null;
@@ -25,5 +25,5 @@ for (const b of v.bad) {
   if (kind !== b.error) throw new Error(`${b.text}: ${kind}, not ${b.error}`);
 }
 const [n, k] = layout(32);
-if (n !== 27 || k !== 474983n) throw new Error("layout(32)");
-console.log(`vectors: ${v.good.length} good, ${v.spaced.length} spaced and ${v.bad.length} bad agree`);
+if (n !== 32 || k !== 14011n) throw new Error("layout(32)");
+console.log(`vectors: ${v.good.length} good, ${v.variants.length} variants and ${v.bad.length} bad agree`);
