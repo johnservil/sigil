@@ -1,0 +1,7 @@
+{
+  "name": "base11585",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/base11585.js",
+  "types": "dist/base11585.d.ts"
+}
