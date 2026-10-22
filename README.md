@@ -104,14 +104,46 @@ characters of the alphabet look alike: a chance of 1 in 1,353, or 10.4
 bits, for every compared character. Fewer characters, each carrying more
 information, make every sigil harder to imitate.
 
-This holds for data that looks random: hashes, keys, and identifiers drawn
-at random. Sigil writes the data's first bytes in the first characters and
-its last bytes in the last ones, so data with structure shows it. Counters
-and timestamps give sigils that share their first characters. A forger who
-controls the middle of some data can change it and keep the ends. A caller
-with such data encodes its hash, or jumbles it first, as Zcash's F4Jumble
-does for its unified addresses, so that every character depends on every
-bit.
+This holds for the output of a secure hash, and for keys and identifiers
+drawn at random: every bit of such data depends on the whole input, so a
+forger who changes anything changes every character. Sigil writes the data's
+bytes in order, the first bytes in the first characters, and mixes nothing
+of its own into them, since mixing would give such data nothing more.
+
+Data with structure shows it. Counters and timestamps give sigils that share
+their first characters. A forger who can copy parts of some data (one of the
+keys in an address, one of a pair of hashes) can keep its ends and change
+its middle. Encode such data's hash instead; or, where the data itself must
+come back, jumble it first, as Zcash's F4Jumble does for its unified
+addresses.
+
+<details>
+<summary>Why Sigil writes the data in order</summary>
+
+An encoding can jumble the data before writing it: a few rounds of a hash
+over its two halves, as F4Jumble does, so that every character depends on
+every bit. What jumbling would do depends on what a forger controls:
+
+- **A secure hash's output, a key, a random identifier: nothing.** The
+  forger can only try inputs, or generate keys, and every result is random
+  in every position, jumbled or not. Matching the first and last four
+  characters costs 83 bits either way.
+- **Data the forger chooses entirely: nothing.** Jumbling is public and
+  invertible: the forger writes a jumbled value with the victim's ends and
+  runs the rounds backwards.
+- **Data built of parts a forger can copy: protection.** Without jumbling,
+  the forger keeps the victim's parts at the ends and puts their own in the
+  middle, and the ends match for free. With it, any change changes every
+  character, and since the data must still hold the copied parts, the forger
+  must try their own part until the ends match: 10.4 bits for each compared
+  character.
+
+Sigil's data is the first kind, and the third is protected as well by
+encoding its hash. Jumbling would cost every call five BLAKE3 compressions
+where one serves (38% of encoding's time in the Rust), and every
+implementation its rounds, their inverse and their tests, for data that
+gains nothing. So Sigil leaves jumbling to the callers whose data needs it.
+</details>
 
 ## Reading sigils by machine
 

@@ -10,7 +10,9 @@
 //!
 //! The specification is the repository's README.md ("The encoding"): the data,
 //! joined by a check (BLAKE3 of the data), is written in base N = 1,353, one
-//! character more than the data needs, the check taking all the room left. Decoding skips white space and default-ignorable
+//! character more than the data needs, the check taking all the room left.
+//! The data is written in order, unjumbled; README.md's "Why Sigil writes the
+//! data in order" says why. Decoding skips white space and default-ignorable
 //! characters and reads a letter's uppercase as the letter. python/sigilcode.py
 //! is the reference implementation and vectors.tsv the tests every
 //! implementation passes.

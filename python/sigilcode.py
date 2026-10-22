@@ -12,6 +12,12 @@ more than the data needs, the check taking all the room left (for 32 bytes,
 26 characters and a 14-bit check). Decoding skips white space
 and default-ignorable characters (ignored.txt) and reads a letter's
 uppercase as the letter.
+
+For maintainers: Sigil writes the data in order, without jumbling it.
+README.md ("Telling sigils apart", "Why Sigil writes the data in order")
+says what jumbling would and would not accomplish, case by case, and why
+Sigil leaves it to the callers whose data needs it; read it before adding
+any mixing of the data to the encoding.
 """
 from pathlib import Path
 

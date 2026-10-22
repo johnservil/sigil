@@ -3,7 +3,8 @@
 // a check that confirms a reading or picks the right one of several.
 // The specification is README.md ("The encoding"); python/sigilcode.py is the
 // reference implementation, and vectors.json the tests every implementation
-// passes.
+// passes. The data is written in order, unjumbled; README.md's "Why Sigil
+// writes the data in order" says why.
 
 import { ALPHABET, IGNORED, UPPERCASE } from "./alphabet.js";
 
