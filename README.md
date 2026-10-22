@@ -334,8 +334,9 @@ machine. Each rule keeps the characters that pass it:
   canonical alphabet text; the arithmetic results cover all lengths and
   positions.
   [Check an answer for yourself](lean/README.md) with explicit byte and
-  code-point literals, or inspect the proof coverage and remaining trust
-  boundaries. The Rust refinement and executable-byte proofs remain open.
+  code-point literals. [Bob's verification checklist](VERIFICATION.md)
+  records the properties, proof coverage and reliances he can reduce.
+  The Rust refinement and executable-byte proofs remain open.
 - **Speed** (`rust/examples/bench.rs`): the Rust encodes a 256-bit value in
   0.18 µs and decodes it in 0.34 µs, in a Linux virtual machine on an Apple
   M4 Max.
