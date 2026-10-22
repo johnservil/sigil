@@ -139,6 +139,10 @@ function check(data: Uint8Array, c: number): bigint {
 
 const toBig = (b: Uint8Array) => b.reduce((v, byte) => (v << 8n) | BigInt(byte), 0n);
 
+/** `data`'s sigil, layout(data.length)[0] characters of the alphabet.
+ * Its protection against look-alikes holds for data that looks random (a
+ * secure hash's output, a key, a random identifier): jumble structured data
+ * before encoding it (README.md, "Structured data: jumble it first"). */
 export function encode(data: Uint8Array): string {
   const [n, c] = layout(data.length);
   let w = (toBig(data) << BigInt(c)) | check(data, c);

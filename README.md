@@ -88,6 +88,16 @@ let sigil = sigilcode::encode(&digest);
 let back = sigilcode::decode(&sigil, 32)?;  // Err(DecodeError)
 ```
 
+**Structured data: jumble it first.** Sigil writes the data in order, and
+its protection against look-alikes holds for data that looks random: a
+secure hash's output, a key, a random identifier. If your data has
+structure (fields, several keys or hashes together, a counter or a
+timestamp), jumble it before you encode it and unjumble it after you decode
+it, with F4Jumble (Zcash's ZIP 316) or a few Feistel rounds of a secure
+hash such as BLAKE3. The jumble must be built from a secure hash: a forger
+solves a simpler mix (a linear one, say) for the bytes they control.
+"Telling sigils apart" says why.
+
 A decode error has one of four kinds: `length` (the wrong number of
 characters), `character` (one outside the alphabet), `range` (a value too
 large for the length) and `check` (the check fails). The last two mean a
@@ -113,9 +123,10 @@ of its own into them, since mixing would give such data nothing more.
 Data with structure shows it. Counters and timestamps give sigils that share
 their first characters. A forger who can copy parts of some data (one of the
 keys in an address, one of a pair of hashes) can keep its ends and change
-its middle. Encode such data's hash instead; or, where the data itself must
-come back, jumble it first, as Zcash's F4Jumble does for its unified
-addresses.
+its middle. So if your data has structure, you must jumble it before
+encoding it, as Zcash's F4Jumble does for its unified addresses: then every
+character depends on every bit, and a forger who keeps your parts must try
+their own until the ends match, at 10.4 bits for each compared character.
 
 <details>
 <summary>Why Sigil writes the data in order</summary>
@@ -138,11 +149,11 @@ every bit. What jumbling would do depends on what a forger controls:
   must try their own part until the ends match: 10.4 bits for each compared
   character.
 
-Sigil's data is the first kind, and the third is protected as well by
-encoding its hash. Jumbling would cost every call five BLAKE3 compressions
-where one serves (38% of encoding's time in the Rust), and every
-implementation its rounds, their inverse and their tests, for data that
-gains nothing. So Sigil leaves jumbling to the callers whose data needs it.
+Most of Sigil's data is the first kind. Jumbling inside Sigil would cost
+every call five BLAKE3 compressions where one serves (38% of encoding's
+time in the Rust), and every implementation its rounds, their inverse and
+their tests, for data that gains nothing. So Sigil leaves jumbling to the
+callers whose data is the third kind: they jumble it before encoding.
 </details>
 
 ## Reading sigils by machine

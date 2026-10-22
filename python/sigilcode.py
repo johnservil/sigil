@@ -149,6 +149,10 @@ def check(data, c):
 
 
 def encode(data: bytes) -> str:
+    """`data`'s sigil, layout(len(data))[0] characters of the alphabet.
+    Its protection against look-alikes holds for data that looks random (a
+    secure hash's output, a key, a random identifier): jumble structured data
+    before encoding it (README.md, "Structured data: jumble it first")."""
     n, c = layout(len(data))
     w = int.from_bytes(data, "big") << c | check(data, c)
     out = []

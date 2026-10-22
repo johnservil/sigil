@@ -298,6 +298,9 @@ fn check(data: &[u8], c: usize) -> u32 {
 }
 
 /// `data`'s sigil: `layout(data.len()).0` characters of the alphabet.
+/// Its protection against look-alikes holds for data that looks random (a
+/// secure hash's output, a key, a random identifier): jumble structured data
+/// before encoding it (README.md, "Structured data: jumble it first").
 pub fn encode(data: &[u8]) -> String {
     let (n, c) = layout(data.len());
     let mut w = Nat(Vec::new());
