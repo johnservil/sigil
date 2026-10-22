@@ -34,6 +34,7 @@ correctness proofs remain open.
 | Known answers match the specification | Ten kernel-checked cases; another 1,100 shared vectors run through compiled Lean |
 | Optimized Rust implements the specification, including failures | Tests; refinement proof remains |
 | Bob's actual executable implements the specification | Executable-byte proof remains |
+| Every result Bob uses is checked for its specific input before use | Kernel-checking machinery exists for reference-proposed answers; accepting arbitrary executable results and the checked-use workflow remain to implement |
 | Execution has no memory errors, invalid shifts or unintended overflow | Safe Rust provides substantial protection; comprehensive implementation proof remains |
 | Operations terminate within affordable work and allocation bounds | Lean definitions terminate; finite-machine resource contracts and proofs remain |
 | Concurrent calls behave correctly | Shared initialization and memoization need coverage in the implementation proof |
@@ -61,19 +62,64 @@ work factor. Valid sigils have dependent digits and a restricted first
 digit. Jumbling structured input also needs a security argument for that
 input's validity constraints.
 
+## Dynamic assurance: check each result before using it
+
+Bob can check each encoding or decoding operation at the time he needs it,
+using his specific input and the specific result he is about to use. He
+repeats the check for every operation whose answer he wants certified.
+
+The proposed workflow is:
+
+1. Bob records the exact input and, for decoding, its expected byte length.
+2. Any implementation produces a candidate answer, including a claimed
+   decoding error where appropriate.
+3. A local tool places that input and candidate answer in a fixed-form
+   theorem with explicit byte/code-point literals.
+4. Lean's kernel checks that the specification gives that exact answer.
+5. Bob uses the certified answer only after the check succeeds. A failed,
+   interrupted or resource-exhausted check leaves the answer unverified.
+
+This is **dynamic, per-operation assurance**. The theorem establishes
+`encode(this input) = this answer`, or the corresponding decoding result
+or exact error. An entirely new input receives the same check; past success
+on a finite test corpus is separate evidence. If a planted rare trigger
+produces a wrong answer, its theorem fails on that triggering input too.
+
+For the correctness of that accepted answer, Bob can remove reliance on
+the producer and its compiler. He retains reliance on the reviewed
+specification, proof checker and its foundations, input/output
+correspondence, and the environment running the check. The checker itself
+has a compiler/build chain that also deserves scrutiny.
+
+This assurance covers a result. A universal executable proof instead covers
+all permitted executions of particular bytes. Side effects, leakage and a
+producer that hangs need separate protection; a producer running with
+access to the checker could also interfere with the check. Isolation can
+separate those responsibilities. Bob also needs the answer he uses to be
+the one whose literals the theorem certified.
+
+The current `tools/certificate.py` proposes answers using the Python
+reference and emits statements for kernel checking. Bob can also write a
+literal statement for another producer's candidate answer himself. A tool
+that directly accepts that producer's claimed answer, checks it with bounded
+resources and enforces checked use remains a near-term goal. Kernel
+recomputation can be expensive; an efficient proof-producing implementation
+could reduce the checking work while preserving the same assurance boundary.
+
 ## Verification paths and their reliances
 
 **●** means relied upon. **—** means that path can avoid relying on the
 component's correctness, under the qualifications below. These are possible
-paths; Sigil currently provides the kernel-checked-answer path and the
-specification proofs, with Rust and executable proofs still open.
+paths; Sigil currently provides reference-proposed kernel-checked answers
+and the specification proofs. The arbitrary-candidate workflow above and
+Rust/executable proofs remain open.
 
 | Verification path | Answer-producing implementation | Rust compiler/linker | Source-to-proof extractor | Lean native compiler/runtime | Proof checker | Machine-code semantics |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | Run Rust and compare test vectors | ● | ● | — | — | — | — |
 | Prove extracted Rust, then compile normally | —¹ | ● | ● | — | ● | — |
 | Prove a Lean implementation, then compile normally | —¹ | —² | — | ● | ● | — |
-| Kernel-check an answer for Bob's particular input | — | — | — | —³ | ● | — |
+| Dynamically kernel-check each specific input/result before use | — | — | — | —³ | ● | — |
 | Check a correctness certificate for Bob's executable bytes | — | — | —⁴ | —⁴ | ● | ● |
 
 1. The implementation can be adversarial: a sound proof covering its full
@@ -104,7 +150,7 @@ runtime produce and execute the native code.
 | Our test-vector or answer generator | Use independently calculated examples and kernel-check proposed answers |
 | Our prover or solver | Accept independently checkable proof certificates |
 | A source-to-Lean translator | Validate the translation independently, or verify the resulting machine code directly |
-| Rust, LLVM and linker correctness | Check the executable bytes they produced |
+| Rust, LLVM and linker correctness | Dynamically check each answer before use, or check a universal correctness certificate for the executable bytes they produced |
 | Lean's native compiler | Use kernel-checked answers for particular inputs |
 | A particular proof-checker implementation | Check through independent kernels |
 | The compiler that built the proof checker | Investigate with diverse double compilation and independent implementations |
@@ -154,9 +200,11 @@ A program can return every correct answer while leaking its input.
 
 ## Our destination and present foothold
 
-The destination is a certificate about **Bob's own build's executable
-bytes**, checked against a short specification and statement he inspects,
-through a checker he chooses. That connection is still open.
+Two complementary goals serve Bob: **dynamic checking of each answer
+before use**, and a universal certificate about **his own build's executable
+bytes**. The latter is checked against a short specification and statement
+he inspects, through a checker he chooses. That executable connection is
+still open; dynamic answer checking can give him useful assurance first.
 
 Today Bob can kernel-check particular encoding and decoding answers and
 the specification's universal mathematical guarantees. The Lean definitions
