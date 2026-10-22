@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Sigil \u2014 hashes as glyphs",
+  "version": "0.1.0",
+  "description": "Click to show hashes and abbreviated commit links as sigils. Click again to restore hex. Local, display-only experiment.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_title": "Show hashes as sigils / restore hex"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "fonts/*.ttf"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

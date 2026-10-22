@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "file": "canadian.ttf",
+      "url": "https://fonts.gstatic.com/s/notosanscanadianaboriginal/v28/4C_TLjTuEqPj-8J01CwaGkiZ9os0iGVkezM1mUT-j_Lmlzda6uH_nnX1bzigWLn_yA.ttf",
+      "sha256": "301b084f1418da1f187564db2b44595eeffbb6291f077ef10d81f3e703aedf78",
+      "blake3": "0f27406391e00f2dc980f3d8cd1a480fe1f56d91c93fb008c20978c446716bff"
+    },
+    {
+      "file": "ethiopic.ttf",
+      "url": "https://fonts.gstatic.com/s/notosansethiopic/v50/7cHPv50vjIepfJVOZZgcpQ5B9FBTH9KGNfhSTgtoow1KVnIvyBoMSzUMacb-T35OK6Dj.ttf",
+      "sha256": "6d66ffc7a4a33f95d56df3c02417083d14f2bfd1f7b4c50ebcdcda3d3f89ea9c",
+      "blake3": "04d439f1a977ce3224e5b0b36af2e44ac812a027d666eb203d662c924b47b438"
+    },
+    {
+      "file": "canadian-OFL.txt",
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanscanadianaboriginal/OFL.txt",
+      "sha256": "507cc466e43d021662b9e9320a55a81798d293ed6a4a80c8d519f917bd90fdeb",
+      "blake3": "0b3573c2314bb3672a1adf17146412262b9846cd339d6da6c41ca000f87e6880"
+    },
+    {
+      "file": "ethiopic-OFL.txt",
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansethiopic/OFL.txt",
+      "sha256": "72606b23f312cb25973958f2892d4d2c2012deabadbf0f763232624a9649fc69",
+      "blake3": "a65d750791c207dfe2a313fe7ee6479cd197dc8b0a3677986d8cf1da673aa532"
+    }
+  ]
+}

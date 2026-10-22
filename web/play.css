@@ -1,0 +1,30 @@
+:root { color-scheme: light dark; --paper: #faf7f1; --ink: #25231f; --accent: #6542a3; --card: #fff; --line: #ded7cb; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 system-ui, sans-serif; }
+main { max-width: 850px; margin: auto; padding: 28px 24px 48px; }
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; font-size: .85em; }
+header a { font-size: 1.45em; font-weight: 750; text-decoration: none; }
+h1 { margin: 54px 0 8px; line-height: 1.1; font-size: clamp(2.3em, 7vw, 3.5em); letter-spacing: -.045em; }
+h2 { margin-top: 0; line-height: 1.3; font-size: 1.25em; }
+.intro { margin-bottom: 30px; }
+a { color: var(--accent); text-underline-offset: .2em; }
+.card { padding: 24px; margin: 22px 0; background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+label { display: block; margin: 14px 0 6px; font-size: .85em; font-weight: 650; }
+textarea, input { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; color: inherit; background: var(--paper); font: inherit; }
+#hex { font: 15px/1.6 ui-monospace, monospace; overflow-wrap: anywhere; }
+input { width: 7em; }
+.result { overflow-x: auto; padding: 12px 0; }
+#sigil { white-space: nowrap; font: 36px/1.8 "Noto Sans Ethiopic", "Noto Sans Canadian Aboriginal", "Segoe UI", sans-serif; color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; font-size: .85em; }
+button { padding: 8px 14px; border: 1px solid var(--accent); border-radius: 999px; background: transparent; color: var(--accent); font: inherit; cursor: pointer; }
+button:hover { background: var(--accent); color: var(--card); }
+button:disabled { opacity: .45; cursor: default; }
+button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+summary { cursor: pointer; font-weight: 600; }
+#decoded, #hashes code, #hashes a { overflow-wrap: anywhere; }
+#decoded { display: block; font-family: ui-monospace, monospace; }
+#hashes { margin-top: 20px; overflow-x: auto; }
+footer { font-size: .8em; opacity: .8; }
+.error { color: #b43131; }
+@media (prefers-color-scheme: dark) { :root { --paper: #191720; --ink: #eee9e1; --accent: #c1a4f5; --card: #24212d; --line: #46404f; } }
+@media (max-width: 500px) { main { padding: 20px 14px; } .card { padding: 18px; } header span { max-width: 10em; text-align: right; } #sigil { font-size: 29px; } #hex { min-height: 7em; } }

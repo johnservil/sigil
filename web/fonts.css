@@ -1,0 +1,3 @@
+/* Locally bundled Noto script fonts; SIL OFL 1.1 notices in fonts/. */
+@font-face { font-family: "Noto Sans Ethiopic"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/ethiopic.ttf") format("truetype"); }
+@font-face { font-family: "Noto Sans Canadian Aboriginal"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/canadian.ttf") format("truetype"); }

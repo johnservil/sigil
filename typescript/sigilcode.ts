@@ -55,8 +55,8 @@ const toBig = (b: Uint8Array) => b.reduce((v, byte) => (v << 8n) | BigInt(byte),
 
 /** `data`'s sigil, layout(data.length)[0] characters of the alphabet.
  * Its protection against look-alikes holds for data that looks random (a
- * secure hash's output, a key, a random identifier): jumble structured data
- * before encoding it (README.md, "Structured data: jumble it first"). */
+ * secure hash's output, a key, a random identifier): hash or jumble structured data
+ * before encoding it (README.md, "Data with structure: hash it, or jumble it"). */
 export function encode(data: Uint8Array): string {
   const [n, k] = layout(data.length);
   let w = toBig(data) * BigInt(k);

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Play with Sigil</title>
+<link rel="stylesheet" href="web/fonts.css">
+<link rel="stylesheet" href="web/play.css">
+<main>
+  <header><a href="https://github.com/johnservil/sigil">Sigil</a><span>bytes, dressed for humans</span></header>
+  <h1>A hash can look like this.</h1>
+  <p class="intro">One word. A double-click. Twenty-six characters for a 256-bit hash.</p>
+  <section class="card">
+    <label for="hex">Your bytes, in hex</label>
+    <textarea id="hex" rows="2" spellcheck="false" autocapitalize="off" autocomplete="off">af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</textarea>
+    <div class="actions"><button id="random" type="button">Try random bytes</button><span id="size"></span></div>
+    <label>Your sigil</label>
+    <div class="result"><output id="sigil" aria-live="polite"></output></div>
+    <div class="actions"><button id="copy" type="button">Copy sigil</button><span id="encode-status" role="status"></span></div>
+  </section>
+  <details class="card">
+    <summary>Read a sigil back — or change a character and try the check</summary>
+    <label for="reading">Sigil to decode</label>
+    <textarea id="reading" rows="2" spellcheck="false" autocapitalize="off"></textarea>
+    <label for="length">Original length in bytes</label>
+    <input id="length" type="number" min="1" max="256" value="32">
+    <p id="decode-status" role="status"></p><output id="decoded"></output>
+  </details>
+  <section class="card">
+    <h2>What if hashes looked like sigils everywhere?</h2>
+    <p>Try the same display switch used by the browser extension. Hover a sigil to see its hex; toggle again to restore it.</p>
+    <button id="toggle" type="button">Show sigils</button>
+    <div id="hashes">
+      <p><strong>256-bit hash</strong><br><code>af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</code></p>
+      <p><strong>Full Git commit</strong><br><a href="https://github.com/johnservil/sigil/commit/716c98ca9f4336a45f51c15eeff0c9608c1002ae" id="commit">716c98ca9f4336a45f51c15eeff0c9608c1002ae</a></p>
+      <p><strong>Abbreviated Git commit</strong><br><a href="https://github.com/johnservil/sigil/commit/716c98ca9f4336a45f51c15eeff0c9608c1002ae">716c98c</a> — a short sigil for a short ID.</p>
+    </div>
+    <p><a href="https://github.com/johnservil/sigil/tree/main/web">Try the browser extension on GitHub →</a></p>
+  </section>
+  <footer>
+    <p>Conversion happens in your browser. Use public data here. This is an experimental display and encoding tool, with tested JavaScript and <a href="https://github.com/johnservil/sigil/blob/main/VERIFICATION.md">a separate Lean specification and proofs</a>.</p>
+    <p>This page bundles Ethiopic and Canadian syllabics fonts. <a href="fonttest.html">Check your fonts</a> · <a href="copytest.html">Try double-click selection</a></p>
+  </footer>
+</main>
+<script src="web/sigilcode.js"></script>
+<script src="web/page.js"></script>
+<script src="web/play.js"></script>
+</html>

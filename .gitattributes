@@ -1,0 +1,3 @@
+# Preserve the hashed upstream font-license texts byte for byte.
+web/fonts/*-OFL.txt -whitespace
+web/extension/fonts/*-OFL.txt -whitespace

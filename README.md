@@ -15,6 +15,17 @@ Cyrillic, Ethiopic and Canadian syllabics. Every one runs left to right, and
 Unicode treats a run of them as one word that never breaks across lines. A
 sigil looks like nothing else in a text, and it looks wonderful.
 
+## Try it
+
+[**Play with Sigil →**](https://johnservil.github.io/sigil/play.html)
+Paste hex, try random bytes, copy a sigil, or change a character and see the
+check catch it. Everything runs in your browser, with locally bundled fonts.
+
+[**Show GitHub hashes as sigils →**](web/README.md)
+Load the experimental browser extension, then click to switch hashes to
+sigils and back. Short commit IDs become short sigils too; hover to see the
+original hex. Links keep their original destinations.
+
 ## When to use it
 
 Sigil serves values that people copy, compare and photograph: hashes, keys
@@ -59,10 +70,33 @@ Other encodings serve other channels:
   sigil's characters take 1 to 3 bytes in UTF-8, about 72 for 256 bits.
 - **ASCII only:** hex or base64.
 
+## Ways to use it
+
+| You want to… | Start here |
+|---|---|
+| See how sigils look and whether they copy cleanly | [Playground](https://johnservil.github.io/sigil/play.html), [selection test](copytest.html), [font test](fonttest.html) |
+| Read hashes and abbreviated commit IDs as sigils on a website | [Click-to-toggle browser extension](web/README.md) |
+| Put fingerprints in logs, CI status lines, chats, labels or reports | Encode the digest bytes with Python, TypeScript or Rust below; keep the hash algorithm and byte length in the surrounding format |
+| Convert values in a shell pipeline or a small script | [Python source](python/sigilcode.py), with the pipeline example below |
+| Integrate encoding and decoding into an application | [TypeScript](typescript/sigilcode.ts) for browsers/Node, [Rust](rust/) for native applications, or [Python](python/sigilcode.py) |
+| Read a photographed or uncertain value | Supply possible character readings to `decode_readings`; multiple results mean ambiguity |
+| Carry structured data, or identify a file or document | Choose hashing or reversible jumbling as described below |
+| Independently check a critical answer or inspect the proofs | [Lean checking guide](lean/README.md) and [Bob's properties/reliances checklist](VERIFICATION.md) |
+
+A statically verified native library is the goal of the
+[assembly/C-ABI experiment](experiments/static-arm64/README.md). That
+experiment currently proves one arithmetic primitive. Complete C encoding
+and decoding APIs and an executable-level Sigil proof remain open.
+
 ## Use it
+
+The implementations are in this repository; package releases are still to
+come. The browser playground and extension are ready to try from the checked-in
+files.
 
 Decoding takes the length in bytes that the sigil encodes. The encoder and
 decoder agree on it in advance: a 256-bit hash is always 32 bytes.
+Anyone can decode a sigil; keep secret data secret after encoding it.
 
 Python (`python/sigilcode.py`):
 
@@ -73,6 +107,13 @@ digest = sigilcode.decode(sigil, 32)        # raises sigilcode.DecodeError
 found = sigilcode.decode_readings(readings, 32)   # readings: each character's possible readings
 ```
 
+From the repository root, a shell pipeline can encode hex read on stdin:
+
+```sh
+printf '%s' af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262 |
+  PYTHONPATH=python python3 -c 'import sys, sigilcode; print(sigilcode.encode(bytes.fromhex(sys.stdin.read())))'
+```
+
 TypeScript (`typescript/sigilcode.ts`, in browsers and Node):
 
 ```typescript
@@ -81,7 +122,7 @@ const sigil = encode(digest);               // digest: a Uint8Array
 const back = decode(sigil, 32);             // throws DecodeError
 ```
 
-Rust (`rust/`, crate `sigilcode`, no dependencies):
+Rust (`rust/`, crate `sigilcode`, no runtime dependencies):
 
 ```rust
 let sigil = sigilcode::encode(&digest);
@@ -100,8 +141,9 @@ carry the data or only identify it:
 | anything the reader has or can fetch (a file, a document, a public key) | **encode its hash** |
 | structured data that decoding must give back (an address made of several keys, a payment request) | **jumble it, then encode** |
 
-A hash protects any data, even data a forger chooses entirely, and keeps
-the sigil at 26 characters for data of any length; when in doubt, hash.
+A secure 256-bit hash protects the fingerprint of data a forger chooses
+entirely and keeps its sigil at 26 characters for input of any length; when
+in doubt, hash.
 Jumbling keeps the data recoverable (anyone can unjumble), and protects data
 only where a forger cannot choose all of it. Jumble with F4Jumble (Zcash's
 ZIP 316, for 38 to 4,194,368 bytes) or another reviewed cryptographic
@@ -374,6 +416,8 @@ python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data;
 python3 python/vectors.py --check             # vectors.json and vectors.tsv are the reference's output
 python3 python/test.py                        # the reference implementation
 (cd typescript && tsc -p .) && node typescript/dist/test.js
+python3 tools/build-web.py --check           # compiled TypeScript matches the checked-in browser bundles
+python3 tools/test-web.py                     # Chromium required
 (cd rust && cargo test && cargo run --release --example bench)
 (cd lean && lake build && lake exe tests ../vectors.tsv)   # the specification, with Lean 4.31
 ```
@@ -386,3 +430,6 @@ You may use Sigil under the terms of any of these four Free and Open Source Soft
 * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
 * Transitive Grace Period Public License 1.0 ([LICENSE-TGPPL](LICENSE-TGPPL) or https://spdx.org/licenses/TGPPL-1.0.html)
 * Bootstrap Open Source License v1.0 ([LICENSE-BOSL.txt](LICENSE-BOSL.txt))
+
+The Noto fonts bundled in `web/fonts/` and `web/extension/fonts/` are under
+SIL Open Font License 1.1; their copyright and license notices accompany them.

@@ -69,8 +69,8 @@ def layout(length):
 def encode(data: bytes) -> str:
     """`data`'s sigil, layout(len(data))[0] characters of the alphabet.
     Its protection against look-alikes holds for data that looks random (a
-    secure hash's output, a key, a random identifier): jumble structured data
-    before encoding it (README.md, "Structured data: jumble it first")."""
+    secure hash's output, a key, a random identifier): hash or jumble structured data
+    before encoding it (README.md, "Data with structure: hash it, or jumble it")."""
     n, k = layout(len(data))
     w = int.from_bytes(data, "big") * k
     out = []
