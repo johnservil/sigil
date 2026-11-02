@@ -50,7 +50,7 @@ def decoding(text, length):
     assert length >= 1, "Sigil encodes at least one byte"
     points = list(map(ord, text))
     n, _ = S.layout(length)
-    kept = [(i, ch) for i, ch in enumerate(text, 1) if not S.ignored(ch)]
+    kept = [(i, ch) for i, ch in enumerate(text, 1) if not S.skipped(ch)]
     try:
         data = S.decode(text, length)
         expected = f".ok {nats(data)}"
@@ -61,7 +61,7 @@ def decoding(text, length):
             position, ch = next((i, ch) for i, ch in kept if ch not in S.DIGIT)
             error = f".character {position} {ord(ch)}"
         else:
-            assert e.kind in ("range", "check"), "unknown decoding error"
+            assert e.kind in ("check", "range", "marker"), "unknown decoding error"
             error = f".{e.kind}"
         expected = f".error ({error})"
     return (HEADER +

@@ -41,23 +41,29 @@ class Certificates(unittest.TestCase):
     def test_decode(self):
         text = C.S.encode(bytes(range(32)))
         self.check(C.decoding(text, 32))
-        self.check(C.decoding("\u200b " + text.upper() + "\n", 32))
+        self.check(C.decoding("\u200b " + text[:5] + "\u2060" + text[5:] + "\n", 32))
 
     def test_exact_errors(self):
+        zero = C.S.encode(b"\0")
         self.check(C.decoding("", 1))
-        self.check(C.decoding("\u200b_0", 1))
+        self.check(C.decoding("\u200b_" + zero[1], 1))
         self.check(C.decoding(C.S.ALPHABET[-1] * 2, 1))
-        self.check(C.decoding("01", 1))
+        self.check(C.decoding(zero[0] + "\u202e", 1))
 
     def test_wrong_answers_rejected(self):
-        # Hand-calculable: 0 * 7129 = 0, represented by the two zero digits.
+        # The zero byte's sigil, with its last letter changed: Lean refuses it.
+        zero = C.S.encode(b"\0")
+        right = f"({C.nats(map(ord, zero))} : List Nat)"
+        wrong = f"({C.nats([ord(zero[0]), ord(zero[1]) + 1])} : List Nat)"
         source = C.encoding(b"\0")
-        self.assertIn("([48, 48] : List Nat)", source)
-        self.check(source.replace("([48, 48] : List Nat)", "([48, 49] : List Nat)"), False)
+        self.assertIn(right, source)
+        self.check(source.replace(right, wrong), False)
         # Change the accepted data and the exact error, independently.
-        source = C.decoding("00", 1)
+        source = C.decoding(zero, 1)
         self.check(source.replace(".ok [0]", ".ok [1]"), False)
-        source = C.decoding("01", 1)
+        changed = zero[0] + C.S.ALPHABET[(C.S.DIGIT[zero[1]] + 1) % C.S.N]
+        source = C.decoding(changed, 1)
+        self.assertIn(".error (.check)", source)
         self.check(source.replace(".error (.check)", ".error (.range)"), False)
 
     def test_untrusted_text_is_only_numerals(self):
