@@ -5,8 +5,11 @@ hex bytes, copy their sigil, and decode it back. Try changing one character
 in the decoding panel. The sample page also has a reversible hash-display
 switch, using the same code as the extension below.
 
-Conversion runs locally in the browser. The page and extension bundle their
-Ethiopic and Canadian syllabics fonts, so they need no font-server requests.
+Conversion runs locally in the browser. The page and extension bundle fonts
+for Ethiopic and Canadian syllabics, the alphabet's two largest scripts, and
+draw the others with the system's own fonts, which every tested system has;
+they need no font-server requests. Every sigil they show is marked
+`translate="no"`, so a browser's translation leaves it as it is.
 Use public data for these experiments; a browser page and other extensions
 are outside the Lean proofs' assurance boundary.
 

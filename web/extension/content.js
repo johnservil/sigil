@@ -199,6 +199,7 @@ globalThis.SigilCode = Object.freeze({encode, decode, decodeReadings, layout, De
       const bytes = Uint8Array.from(padded.match(/../g), (b) => parseInt(b, 16));
       const span = document.createElement('span');
       span.dataset.sigilHex = hex;
+      span.translate = false;  // a browser's translation would replace the sigil with question marks
       span.textContent = globalThis.SigilCode.encode(bytes);
       const kind = match.short ? `Abbreviated commit (${hex.length} hex digits${hex.length % 2 ? '; one leading zero nibble padded' : ''})` : `Hex (${bytes.length} bytes)`;
       span.title = `${hex}\n${kind}, displayed as a sigil. Toggle to restore hex.`;

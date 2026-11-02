@@ -7,7 +7,7 @@
 //!     cargo run --release --example bench
 
 fn main() {
-    let alphabet: Vec<char> = include_str!("../../alphabet.txt").chars().collect();
+    let alphabet: Vec<char> = include_str!("../alphabet.txt").chars().collect();
     for length in [16usize, 32, 64] {
         let values: [(&str, Vec<u8>); 3] = [
             ("zeros", vec![0; length]),

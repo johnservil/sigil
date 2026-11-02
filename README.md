@@ -1,26 +1,28 @@
 # Sigil
 
-Sigil writes bytes as a sigil: one word of letters that a person
-can copy with a double-click, compare at a glance, and read back from a
-picture. A 256-bit hash becomes 26 characters, no two of which look alike.
+Sigil writes bytes as a sigil: one word of letters that a person can copy
+with a double-click, recognize at a glance, and read back from a picture. A
+256-bit hash becomes 25 letters, no two of which look alike.
 
 ```
 BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64 rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            as a sigil ᕜዀᎃᔨsᓙᖒᐑᑉᙫᕄǥᣗዄᒤᣞыᣧⷋⶍⶩᓖᕅᖇዥⶑ
+            as a sigil ᢳᕌᔃጾዿᑂഔጕꔍⶰᣟꕄꕛቴⴲజᐽᙿᕯⶂጁᑃሃᛜጩ
 ```
 
-Its 1,337 characters are letters of five scripts: Latin, Greek, Cyrillic,
-Ethiopic and Canadian syllabics. Every one runs left to right, and Unicode
-treats a run of them as one word that never breaks across lines. None is a
-hex digit, so a sigil and hex are told apart at a glance. A sigil looks like
+Its 2,048 letters come from fifteen scripts: Canadian syllabics, Ethiopic,
+Vai, Runic, Bamum, Devanagari, Sinhala, Telugu, Cham, Gujarati, Oriya,
+Malayalam, Saurashtra, Bengali and Tifinagh. Every one runs left to right,
+has no case, and takes one terminal cell, and Unicode treats a run of them
+as one word that never breaks across lines. None is a hex digit or looks like
+one, so a sigil and hex are told apart at a glance. A sigil looks like
 nothing else in a text, and it looks wonderful.
 
 ## Try it
 
 [**Play with Sigil →**](https://johnservil.github.io/sigil/play.html)
-Paste hex, try random bytes, copy a sigil, or change a character and see the
-check catch it. Everything runs in your browser, with locally bundled fonts.
+Paste hex, try random bytes, copy a sigil, or change a letter and see the
+check catch it. Everything runs in your browser.
 
 [**Show GitHub hashes as sigils →**](web/README.md)
 Load the experimental browser extension, then click to switch hashes to
@@ -29,33 +31,35 @@ original hex. Links keep their original destinations.
 
 ## When to use it
 
-Sigil serves values that people copy, compare and photograph: hashes, keys
+Sigil serves values that people copy, recognize and photograph: hashes, keys
 and identifiers in a status line, a chat, an email, a web page or a printout.
 
-| a 256-bit value | characters | bits a forger matches per compared character | a double-click selects | a misread character |
+| a 256-bit value | characters | bits per character | a double-click selects | a misread character |
 |---|---|---|---|---|
 | hex | 64 | 4 | the whole value | goes unnoticed |
 | base32 | 52 | 5 | the whole value | goes unnoticed |
-| base64 | 43 | under 6 (`I` `l` `1` and `O` `0` look alike) | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
-| **sigil** | **26** | **10.4** | **the whole value** | **is caught, and repaired from a few readings** |
+| base64 | 43 | 6 (`I` `l` `1` and `O` `0` look alike) | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
+| **sigil** | **25** | **11** | **the whole value** | **is caught, and repaired from a few readings** |
 
 Its properties work together:
 
-- **Short.** A sigil takes 26 characters where hex takes 64, so two of
-  them, labelled, fit GitHub's 140-character status description.
+- **Short.** A sigil takes 25 letters where hex takes 64, so two of them,
+  labelled, fit GitHub's 140-character status description.
+- **The same size, however you count.** A sigil of a given number of bytes
+  always has the same number of letters, code points, UTF-16 units,
+  user-perceived characters and terminal cells, and three times as many
+  bytes of UTF-8: no count reveals anything about the data.
 - **Copied with one gesture.** A double-click selects the whole sigil, and
-  copying it carries nothing else. Decoding skips any white space or
-  invisible characters that a line break or a copy inserts, and reads
-  letters in either case.
-- **Hard to imitate.** No two characters look alike, so for a hash or a key
-  each character a person compares costs a forger 10.4 bits ("Telling
-  sigils apart"): 83 bits for the first and last four, where hex's first
-  and last four cost 32.
-- **Read back by machines.** Fonts on the major platforms draw every
-  character, no character or sequence of characters looks like another, and
-  a check confirms a reading or picks the right one of several ("Reading
-  sigils by machine").
-- **Recognized at a glance.** A word of glyphs from five scripts at once is
+  copying it carries nothing else. Decoding skips the white space and
+  invisible characters that a line break or a copy inserts, and refuses
+  every other character, so what you see is what decodes.
+- **Hard to misread.** No two letters look alike, and no letter looks like
+  several others in a row, by Unicode's table of look-alikes (UTS #39). Every
+  misread letter fails the check.
+- **Read back by machines.** Fonts on the major systems draw every letter,
+  and a check confirms a reading or picks the right one of several
+  ("Reading sigils by machine").
+- **Recognized at a glance.** A word of glyphs from many scripts at once is
   unlike any word of any language, so a reader who meets one knows what it
   is: a sigil, which Sigil decodes. A string of hex could be a number, a
   colour or a hash from any of a dozen functions, and base64 could be any
@@ -68,7 +72,7 @@ Other encodings serve other channels:
 - **Typed by hand or read aloud:** hex, or z-base-32, whose letters are
   chosen for people to type.
 - **Bytes at a premium** (URLs, database columns): base64, at 43 bytes. A
-  sigil's characters take 1 to 3 bytes in UTF-8, about 72 for 256 bits.
+  sigil's letters take 3 bytes each in UTF-8: 75 for 256 bits.
 - **ASCII only:** hex or base64.
 
 ## Ways to use it
@@ -77,11 +81,10 @@ Other encodings serve other channels:
 |---|---|
 | See how sigils look and whether they copy cleanly | [Playground](https://johnservil.github.io/sigil/play.html), [selection test](copytest.html), [font test](fonttest.html) |
 | Read hashes and abbreviated commit IDs as sigils on a website | [Click-to-toggle browser extension](web/README.md) |
-| Put fingerprints in logs, CI status lines, chats, labels or reports | Encode the digest bytes with Python, TypeScript or Rust below; keep the hash algorithm and byte length in the surrounding format |
+| Put fingerprints in logs, CI status lines, chats, labels or reports | Encode the digest bytes with Rust, Python or TypeScript below; keep the hash algorithm and byte length in the surrounding format |
 | Convert values in a shell pipeline or a small script | [Python source](python/sigilcode.py), with the pipeline example below |
-| Integrate encoding and decoding into an application | [TypeScript](typescript/sigilcode.ts) for browsers/Node, [Rust](rust/) for native applications, or [Python](python/sigilcode.py) |
-| Read a photographed or uncertain value | Supply possible character readings to `decode_readings`; multiple results mean ambiguity |
-| Carry structured data, or identify a file or document | Choose hashing or reversible jumbling as described below |
+| Integrate encoding and decoding into an application | [Rust](rust/) for native applications, [TypeScript](typescript/sigilcode.ts) for browsers and Node, or [Python](python/sigilcode.py) |
+| Read a photographed or uncertain value | Pass each letter's possible readings to `decode_readings` |
 | Independently check a critical answer or inspect the proofs | [Lean checking guide](lean/README.md) and [Bob's properties/reliances checklist](VERIFICATION.md) |
 
 A statically verified native library is the goal of the
@@ -98,15 +101,22 @@ playground and extension are ready to try from the checked-in files.
 
 Decoding takes the length in bytes that the sigil encodes. The encoder and
 decoder agree on it in advance: a 256-bit hash is always 32 bytes.
-Anyone can decode a sigil; keep secret data secret after encoding it.
 
-Python (`python/sigilcode.py`):
+Rust (`rust/`, crate `sigilcode`, no runtime dependencies), in time linear
+in the data's length and constant whatever its value:
+
+```rust
+let sigil = sigilcode::encode(&digest);
+let back = sigilcode::decode(&sigil, 32)?;  // Err(DecodeError)
+```
+
+Python (`python/sigilcode.py`, the reference implementation):
 
 ```python
 import sigilcode
-sigil = sigilcode.encode(digest)            # 26 characters for 32 bytes
+sigil = sigilcode.encode(digest)            # 25 letters for 32 bytes
 digest = sigilcode.decode(sigil, 32)        # raises sigilcode.DecodeError
-found = sigilcode.decode_readings(readings, 32)   # readings: each character's possible readings
+digest = sigilcode.decode_readings(readings, 32)   # readings: each letter's possible readings
 ```
 
 From the repository root, a shell pipeline can encode hex read on stdin:
@@ -124,93 +134,84 @@ const sigil = encode(digest);               // digest: a Uint8Array
 const back = decode(sigil, 32);             // throws DecodeError
 ```
 
-Rust (`rust/`, crate `sigilcode`, no runtime dependencies):
+Python's and JavaScript's big integers take time that depends on their
+values; for data whose timing must reveal nothing, use the Rust crate.
 
-```rust
-let sigil = sigilcode::encode(&digest);
-let back = sigilcode::decode(&sigil, 32)?;  // Err(DecodeError)
-```
+**What to encode.** Encode a secure hash's output, a key or a random
+identifier as it is. For anything else (a file, a document, a message,
+structured data), encode its hash: a secure 256-bit hash keeps the sigil at
+25 letters for input of any length.
 
-**Data with structure: hash it, or jumble it.** Sigil writes the data in
-order, and its protection against look-alikes holds for data that looks
-random. Data with structure (fields, several keys or hashes together, a
-counter, a timestamp) needs one step first, chosen by whether the sigil must
-carry the data or only identify it:
+<details>
+<summary>For experts: structured data that decoding must give back</summary>
 
-| your data | do this |
-|---|---|
-| a secure hash's output, a key, a random identifier | encode it as it is |
-| anything the reader has or can fetch (a file, a document, a public key) | **encode its hash** |
-| structured data that decoding must give back (an address made of several keys, a payment request) | **jumble it, then encode** |
+Sigil writes the data in order, and its protection against look-alikes holds
+for data that looks random. Data built of parts (an address made of several
+keys, a payment request) that decoding must give back, and so cannot be
+hashed, needs jumbling first: F4Jumble (Zcash's ZIP 316, for 38 to 4,194,368
+bytes) or another reviewed cryptographic jumbling construction suited to the
+length. Reversibility and bit mixing alone are insufficient: a forger can
+solve a linear mix for the bytes they control. "Telling sigils apart" says
+why.
+</details>
 
-A secure 256-bit hash protects the fingerprint of data a forger chooses
-entirely and keeps its sigil at 26 characters for input of any length; when
-in doubt, hash.
-Jumbling keeps the data recoverable (anyone can unjumble), and protects data
-only where a forger cannot choose all of it. Jumble with F4Jumble (Zcash's
-ZIP 316, for 38 to 4,194,368 bytes) or another reviewed cryptographic
-jumbling construction suited to the data length. Reversibility and bit
-mixing alone are insufficient: a forger can solve a linear mix for the
-bytes they control. "Telling sigils apart" says why.
+A decode error has one of five kinds: `length` (the wrong number of
+letters), `character` (one that is not a letter of the alphabet), `check`
+(the value fails the check), `range` (a value too large for the length) and
+`marker` (a string of another format). The last three mean a letter was
+misread or changed, or the string is not Sigil's. `decode_readings` adds
+`ambiguous`, when the readings leave several data.
 
-A decode error has one of four kinds: `length` (the wrong number of
-characters), `character` (one outside the alphabet), `range` (a value too
-large for the length) and `check` (the value fails the check). The last two mean a
-character was misread or changed.
+**Showing sigils.** Mark sigils with `translate="no"` on any web page that
+shows them: browsers may guess that a page of sigils is in another language
+and offer to translate it, which replaces every sigil with question marks.
+Fonts give letters different widths, so a page that wants every sigil of a
+size equally wide draws each letter in a box of fixed width.
 
 ## Telling sigils apart
 
-People compare sigils by eye, often only their first and last few
-characters. Someone who wants a sigil that looks like yours must produce
-data whose sigil looks like it: for a hash, they can only try inputs until
-one hashes to a look-alike, and for a key, generate keys. Each character a
-person compares makes them match that character exactly, since no two
-characters of the alphabet look alike: a chance of 1 in 1,337, or 10.4
-bits, approximately, for every compared character. These are capacity
-estimates: valid sigils have dependent digits and a restricted first digit,
-so the 83-bit estimate for the first and last four is not a proved attack
-cost. Fewer characters carry more information per comparison.
+To check that two sigils match, let a program compare them: decode both, or
+check a file with `b3sum --sigilcode --check`. Comparing by eye catches
+accidents, and Sigil is built to make it as safe as it can.
 
-This holds for the output of a secure hash, and for keys and identifiers
-drawn at random: every bit of such data depends on the whole input, so a
-forger who changes anything changes every character. Sigil writes the data's
-bytes in order, the first bytes in the first characters, and mixes nothing
-of its own into them, since mixing would give such data nothing more.
+- **Every letter counts.** Each is one of 2,048, none of which looks like
+  another by Unicode's table, and the first and last letters carry 11 bits of
+  the data each, like every other.
+- **Hashes and keys look random in every letter.** Someone who wants a sigil
+  that looks like yours must produce data whose sigil looks like it: for a
+  hash they can only try inputs until one hashes to a look-alike, and for a
+  key, generate keys.
 
-Data with structure shows it. Counters and timestamps give sigils that share
-their first characters. A forger who can copy parts of some data (one of the
-keys in an address, one of a pair of hashes) can keep its ends and change
-its middle. So if your data has structure, you must jumble it before
-encoding it, as Zcash's F4Jumble does for its unified addresses: then every
-character depends on every bit, and a forger who keeps your parts must try
-their own until the ends match, at 10.4 bits for each compared character.
+How many letters a person can reliably tell apart at a glance has not been
+measured, so Sigil makes no claim about what a partial comparison by eye
+costs a forger.
 
 <details>
 <summary>Why Sigil writes the data in order</summary>
 
-An encoding can jumble the data before writing it: a few rounds of a hash
-over its two halves, as F4Jumble does, so that every character depends on
-every bit. What jumbling would do depends on what a forger controls:
+Sigil writes the data's bytes in order, the first bytes in the first
+letters, and mixes nothing of its own into them. An encoding could jumble the
+data first: a few rounds of a hash over its two halves, as F4Jumble does, so
+that every letter depends on every bit. What jumbling would do depends on
+what a forger controls:
 
 - **A secure hash's output, a key, a random identifier: nothing.** The
   forger can only try inputs, or generate keys, and every result is random
-  in every position, jumbled or not. Matching the first and last four
-  characters costs 83 bits either way.
+  in every position, jumbled or not.
 - **Data the forger chooses entirely: nothing.** Jumbling is public and
   invertible: the forger writes a jumbled value with the victim's ends and
   runs the rounds backwards.
 - **Data built of parts a forger can copy: protection.** Without jumbling,
   the forger keeps the victim's parts at the ends and puts their own in the
   middle, and the ends match for free. With it, any change changes every
-  character, and since the data must still hold the copied parts, the forger
-  must try their own part until the ends match: 10.4 bits for each compared
-  character.
+  letter, and since the data must still hold the copied parts, the forger
+  must try their own part until the ends match.
 
 Most of Sigil's data is the first kind. Jumbling inside Sigil would give
-every implementation a BLAKE3, its rounds, their inverse and their tests,
-and cost every call four BLAKE3 compressions (0.36 µs of a 0.94 µs encoding
-in the Rust, when Sigil had it), for data that gains nothing. So Sigil leaves jumbling to the
-callers whose data is the third kind: they jumble it before encoding.
+every implementation a hash function, its rounds, their inverse and their
+tests, and cost every call several compressions, for data that gains
+nothing. So Sigil leaves jumbling to the callers whose data is the third
+kind.
 </details>
 
 ## Reading sigils by machine
@@ -218,20 +219,18 @@ callers whose data is the third kind: they jumble it before encoding.
 A sigil photographed or printed can be read back by optical character
 recognition (OCR). Three properties serve it:
 
-- **Every character is drawn.** The alphabet keeps scripts whose fonts the
-  major platforms ship, so a picture of a sigil shows its characters, never
-  boxes.
-- **Nothing looks alike.** No two characters look alike, and no character
-  looks like a sequence of others (as `m` looks like `rn`), by Unicode's
-  table of look-alikes (UTS #39). A reader that recognizes the shapes can
-  tell every character apart.
-- **The check confirms a reading.** Every misread character, and every
-  swap of neighbours, fails to decode; other errors fail all but once in
-  16,433 times for a 256-bit value. A reader unsure of a character passes
-  its possible readings to `decode_readings`, which returns the data that
-  the one valid reading encodes. Exactly one reading of a character decodes,
-  so `decode_readings` recovers any one character, even one unread
-  altogether, with every character of the alphabet tried in its place.
+- **Every letter is drawn.** The alphabet keeps the letters that every tested
+  device drew, so a picture of a sigil shows its letters, never boxes.
+- **Nothing looks alike.** No two letters look alike, and no letter looks
+  like a sequence of others (as `m` looks like `rn`), by Unicode's table of
+  look-alikes (UTS #39).
+- **The check confirms a reading.** Every misread letter, and every swap of
+  neighbours or of letters two apart, fails the check; a random string of
+  letters decodes once in 2^19 tries for a 256-bit value. A reader unsure of
+  a letter passes its possible readings to `decode_readings`, which returns
+  the data the one valid reading encodes. Exactly one reading of a letter
+  decodes, so `decode_readings` recovers any one letter, even one unread
+  altogether, with every letter of the alphabet tried in its place.
 
 ## The encoding
 
@@ -307,111 +306,54 @@ a sigil missing a letter has the wrong length.
 
 ## The alphabet
 
-`alphabet/alphabet.py` computes the alphabet from Unicode 14.0.0's data
-files, by itself: it downloads each file (or reads a saved copy), checks its
-SHA-256 and its BLAKE3 before using it, and reads every property from the
-files. So the same files give the same alphabet with any Python 3 on any
-machine. Each rule keeps the characters that pass it:
+[alphabet/RULES.md](alphabet/RULES.md) gives every rule that chooses the
+2,048 letters and the reason for each, so you can check whether you agree.
+`alphabet/alphabet.py` applies them to Unicode 14.0.0's data files and the
+font tests in `alphabet/fonts.txt`: it downloads each file (or reads a saved
+copy), checks its SHA-256 and its BLAKE3 before using it, and reads every
+property from the files. So the same inputs give the same alphabet with any
+Python 3 on any machine.
 
-| rule | removes | left |
-|---|---:|---:|
-| in the Basic Multilingual Plane | 1,048,576 | 65,536 |
-| assigned (not a surrogate) | 48,652 | 16,884 |
-| assigned by Unicode 5.2 (2009) or earlier | 1,208 | 15,676 |
-| a lowercase letter (Ll), a caseless letter (Lo), or an ASCII digit | 7,337 | 8,339 |
-| left-to-right: a letter of bidi class L, or a digit of class EN | 1,130 | 7,209 |
-| unchanged by NFC, NFD, NFKC and NFKD | 1,245 | 5,964 |
-| its uppercase is one character, which lowercases and case-folds back to it | 3 | 5,961 |
-| neither default-ignorable nor white space | 2 | 5,959 |
-| never the second half of a composition | 48 | 5,911 |
-| non-joining (joining type U) | 173 | 5,738 |
-| joins its neighbours into one word (word break ALetter, or Numeric for a digit) | 609 | 5,129 |
-| never a line break beside its neighbours (line break AL, or NU for a digit) | 1,537 | 3,592 |
-| Latin, Greek or Cyrillic below U+0800, Ethiopic or Canadian syllabics, or an ASCII digit | 2,113 | 1,479 |
-| the lowest code point of its class of look-alikes (UTS #39) | 104 | 1,375 |
-| looks like no sequence of the others (UTS #39) | 22 | 1,353 |
-| no hex digit (0-9, a-f) or a look-alike of one | 16 | **1,337** |
-
-<details>
-<summary>What each rule protects</summary>
-
-- **The Basic Multilingual Plane.** GitHub refuses 4-byte UTF-8 in a status
-  description, and characters beyond the plane need UTF-16 surrogate pairs,
-  which software splits.
-- **Unicode 5.2 or earlier.** Fonts lag new letters: DejaVu, a common Linux
-  default, lacks the Cyrillic letters that Unicode 6.0 and 7.0 added.
-- **Letters and digits.** They survive where symbols and punctuation are
-  rewritten or dropped.
-- **Left-to-right.** Every character displays in the order it is stored, in
-  any paragraph.
-- **Unchanged by normalization.** Software normalizes text (older Mac file
-  systems to NFD, web forms to NFC); every character stays itself.
-- **An uppercase that maps back.** Software that changes case leaves a sigil
-  decodable: decoding reads each letter's uppercase as the letter.
-- **No interaction between characters.** The next three rules exclude
-  invisible characters, two characters normalizing into one, and cursive
-  joining. Each excludes both sides of an interaction.
-- **One word.** Unicode's word rules (UAX #29) join these letters and digits
-  into one word, which a double-click selects whole.
-- **One line.** Unicode's line rules (UAX #14) allow no break between them,
-  so a sigil stays on one line.
-- **Scripts with fonts.** A missing glyph shows as a box, and boxes hide
-  which character is which. macOS draws every Ethiopic and Canadian
-  syllabic the alphabet keeps; DejaVu lacks parts of the Latin and Cyrillic
-  extension blocks above U+0800, which the alphabet leaves out.
-- **One character per class of look-alikes.** Of characters that Unicode's
-  table of look-alikes (UTS #39) gives one skeleton, the lowest code point
-  stays. Every compared character then tells its class apart from every
-  other, for a person and for OCR.
-- **No sequence look-alikes.** Unicode's table says `m` looks like `rn`, and
-  a syllabic with a dot like the dot final and the syllabic. While a
-  character's skeleton is the skeletons of others in a row, the character
-  that ends the most such spellings goes: the look-alike itself, or a piece
-  of its spelling outside ASCII (ties to the lowest code point). Every
-  ASCII digit and letter that the earlier rules keep stays but `m`.
-- **No hex digits.** The last rule drops `0`–`9` and `a`–`f`, whose
-  look-alikes the earlier rules already removed, so a sigil and hex never
-  share a character: a person or a program tells them apart at a glance,
-  at any length. Coming last, it leaves the look-alike rules' work as it
-  was.
-</details>
+**For a format of your own.** A format whose strings might be mistaken for
+Sigil's, or a successor to it, puts another value in the marker (`10` or
+`11`) and uses another check prime; then neither format's strings decode as
+the other's.
 
 ## Evidence
 
-- **The encoding:** all three implementations pass `vectors.json` (or its
-  twin, `vectors.tsv`): 220 encodings, 528 variants (copies with white space
-  or invisible characters inserted, or letters in uppercase) and 352 errors,
-  each of the kind it must give.
+- **The encoding:** all four implementations (Python, Rust, TypeScript and
+  the Lean specification) pass `vectors.json` (or its twin, `vectors.tsv`):
+  220 encodings, 484 variants (copies with skipped characters inserted) and
+  748 errors, each of the kind it must give.
 - **The check** (`python/test.py`): in 20 random 256-bit sigils, each of
-  the 694,720 single changed characters and 979 swaps of characters one or
-  two apart fails to decode. One unread character comes back alone every
-  time. At every length to 1,024 bytes, K is a prime above N in the fewest
-  characters.
+  the 1,023,500 single changed letters and 939 swaps of letters one or two
+  apart fails the check. One unread letter comes back alone every time.
+  Over 20,000 random 256-bit sigils, the first and last letters each take all
+  2,048 values.
 - **A specification in Lean** (`lean/`): "The encoding" as Lean
   definitions, over the alphabet that `alphabet/alphabet.py` writes.
-  It passes `vectors.tsv` too. Lean proves that decoding any data's sigil
-  gives the data back (`decode_encode`), its kernel checking every step.
-  It also proves the layout's prime and size choices, single-digit-error
-  detection, neighbour and two-apart swap detection, and uniqueness of an
-  erased digit. The single-digit result covers the Lean decoder on
-  canonical alphabet text; the arithmetic results cover all lengths and
-  positions.
+  Lean proves that decoding any data's sigil gives the data back
+  (`decode_encode`), its kernel checking every step, and the layout's
+  contract: K is a prime above N that fits beside the marked data, in the
+  fewest letters. It also proves single-letter-error detection, neighbour and
+  two-apart swap detection, and uniqueness of an erased letter, for all
+  lengths and positions. Every proof rests on Lean's three standard axioms.
   [Check an answer for yourself](lean/README.md) with explicit byte and
   code-point literals. [Bob's verification checklist](VERIFICATION.md)
   records the properties, proof coverage and reliances he can reduce.
   The Rust refinement and executable-byte proofs remain open.
 - **Speed** (`rust/examples/bench.rs`): the Rust encodes a 256-bit value in
-  0.18 µs and decodes it in 0.34 µs, in a Linux virtual machine on an Apple
-  M4 Max.
+  1.3 µs and decodes it in 1.4 µs, in a Linux virtual machine on an Apple
+  M4 Max, and takes the same time for all zeros, all ones and random data,
+  within 2%.
 - **Selection** (`copytest.html`): a double-click selects whole sigils in
   Chromium. Open the page in any browser to see its answer.
-- **Fonts** (`fonttest.html`): the page draws every character and compares
-  it with a missing glyph's box, so it measures any device it is opened on.
-  macOS draws all of the alphabet's Ethiopic and Canadian syllabics. A Linux
-  system with DejaVu alone draws its Latin, Greek and Cyrillic, and needs a
-  font such as Noto for Ethiopic and Canadian syllabics.
+- **Fonts** (`alphabet/fonts.txt`): twelve tests, on macOS, iOS, Windows,
+  Android and Linux, in Safari, Chrome, Brave and Firefox, drew every letter.
+  [The font test](https://johnservil.github.io/sigil-candidates/check.html)
+  measures any device it is opened on.
 - **GitHub** counts a status description's 140 characters in code points and
-  stores 2- and 3-byte UTF-8 intact.
+  stores 3-byte UTF-8 intact.
 
 ## Prior work
 
@@ -433,14 +375,15 @@ machine. Each rule keeps the characters that pass it:
 ## Reproduce and test
 
 ```sh
-python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data; alphabet.txt, uppercase.txt and ignored.txt are its output
+python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data; alphabet.txt, skipped.txt and the generated Lean and TypeScript are its output
 python3 python/vectors.py --check             # vectors.json and vectors.tsv are the reference's output
 python3 python/test.py                        # the reference implementation
 (cd typescript && tsc -p .) && node typescript/dist/test.js
 python3 tools/build-web.py --check           # compiled TypeScript matches the checked-in browser bundles
 python3 tools/test-web.py                     # Chromium required
 (cd rust && cargo test && cargo run --release --example bench)
-(cd lean && lake build && lake exe tests ../vectors.tsv)   # the specification, with Lean 4.31
+(cd lean && lake build && lake exe tests ../vectors.tsv)   # the specification and its proofs, with Lean 4.31
+python3 tools/test_certificate.py            # answers checked by Lean's kernel, wrong ones refused
 ```
 
 ## License

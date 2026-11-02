@@ -28,21 +28,23 @@ The generated statement is:
 ```lean
 theorem answer :
     Sigil.encode ([0] : List UInt8) =
-    ([48, 48] : List Nat) := by decide +kernel
+    ([2339, 43524] : List Nat) := by decide +kernel
 ```
 
-The input is one zero byte. The output is two U+0030 characters, `00`:
-0 multiplied by K is still 0, written as two zero digits. Both input and
-output are explicit numerals, in stored order. A 32-byte input is supplied
+The input is one zero byte. The output is two letters, `णꨄ`, which you can
+calculate by hand: the zero byte with the marker bits `01` between its two
+halves is 16; times K = 4,093 that is 65,488 = 31 · 2,048 + 2,000, written as
+letters 31 and 2,000 of the alphabet, code points 2,339 and 43,524. Both input
+and output are explicit numerals, in stored order. A 32-byte input is supplied
 as 64 hex digits to the same command.
 
 To check a decoding, including its exact error:
 
 ```sh
-python3 tools/certificate.py decode 1 '00' > /tmp/Answer.lean
-# Statement: Sigil.decode [48, 48] 1 = .ok [0]
-python3 tools/certificate.py decode 1 '01' > /tmp/Error.lean
-# Statement: Sigil.decode [48, 49] 1 = .error (.check)
+python3 tools/certificate.py decode 1 'णꨄ' > /tmp/Answer.lean
+# Statement: Sigil.decode [2339, 43524] 1 = .ok [0]
+python3 tools/certificate.py decode 1 'णꨅ' > /tmp/Error.lean
+# Statement: Sigil.decode [2339, 43525] 1 = .error (.check)
 (cd lean && lake env lean --trust=0 /tmp/Answer.lean)
 (cd lean && lake env lean --trust=0 /tmp/Error.lean)
 ```
@@ -78,13 +80,13 @@ python3 tools/test_certificate.py
 These are three distinct checks:
 
 - `KnownAnswers.lean` fixes literal encodings (zero, maximum byte, leading
-  zero and a 32-byte sequence), a successful decoding, uppercase and ignored
-  characters, and all four exact error kinds. The kernel checks each one.
+  zero and a 32-byte sequence), a successful decoding, skipped characters,
+  and all five exact error kinds. The kernel checks each one.
   The Python reference proposed the nontrivial answers; these are format
   fixtures, not an independently designed specification.
-- `Tests.lean` runs all 1,100 shared vectors through **compiled** Lean.
+- `Tests.lean` runs all 1,452 shared vectors through **compiled** Lean.
   This is integration evidence, alongside the Python, TypeScript and Rust
-  tests. It is not 1,100 kernel proofs.
+  tests. It is not 1,452 kernel proofs.
 - `test_certificate.py` checks generated certificates through Lean with
   `--trust=0`, then deliberately changes an output code point, a decoded
   byte and an error kind. Every corrupted statement must be rejected. It

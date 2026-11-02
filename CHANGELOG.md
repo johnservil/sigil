@@ -1,18 +1,26 @@
 # Changes
 
-## November 2, 2026: sigils no longer use hex digits
+## Sigil 0.1, November 2026: the first release
 
-Sigil's alphabet dropped the 16 characters that hex uses, `0`–`9` and
-`a`–`f`. A sigil and a hex string now never share a character, so you, or
-a program, can tell which is which at a glance, at any length.
+Sigil's first release changes how sigils look, so a sigil made before it
+won't decode now. The earlier format was never released as a package; the
+first release on crates.io, `sigilcode` 0.1, has the new one.
 
-Every sigil changed with it. The hash of nothing, `BLAKE3("")`, was
-`ᕖᣇጎʗƾኖᣊⷈeᑭɨᣫѯᖣቀⷃᣡᗯᕜᑡᔮᣥዲᑮᘜᒬ` and is now
-`ᕜዀᎃᔨsᓙᖒᐑᑉᙫᕄǥᣗዄᒤᣞыᣧⷋⶍⶩᓖᕅᖇዥⶑ`. A sigil made before this change won't
-decode now.
+What changed:
 
-A 256-bit hash still takes 26 characters, and a mistyped character or two
-swapped neighbours are still always caught.
+- **A new alphabet of 2,048 letters** from fifteen scripts, chosen by
+  rules anyone can check ([alphabet/RULES.md](alphabet/RULES.md)) and drawn
+  by every device tested on macOS, iOS, Windows, Android and Linux.
+- **Shorter sigils:** a 256-bit hash takes 25 letters, where it took 26.
+- **No hex digits,** and no letters that look like them, so a sigil and hex
+  are told apart at a glance.
+- **No upper and lower case,** so software that changes case leaves a sigil
+  as it was.
+- **Every letter is three bytes of UTF-8,** so every sigil of a size has the
+  same length however you count, and encoding in Rust takes the same time
+  whatever the data.
+- **Stricter reading:** decoding skips spaces, line breaks and the invisible
+  characters copying inserts, and refuses everything else, so what you see
+  is what decodes.
 
-The old alphabet was never released as a package. The first release on
-crates.io, `sigilcode` 0.1.0, uses the new one.
+The hash of nothing, `BLAKE3("")`, is now `ᢳᕌᔃጾዿᑂഔጕꔍⶰᣟꕄꕛቴⴲజᐽᙿᕯⶂጁᑃሃᛜጩ`.

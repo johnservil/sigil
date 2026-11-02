@@ -14,13 +14,13 @@
     <textarea id="hex" rows="2" spellcheck="false" autocapitalize="off" autocomplete="off">af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</textarea>
     <div class="actions"><button id="random" type="button">Try random bytes</button><span id="size"></span></div>
     <label>Your sigil</label>
-    <div class="result"><output id="sigil" aria-live="polite"></output></div>
+    <div class="result"><output id="sigil" translate="no" aria-live="polite"></output></div>
     <div class="actions"><button id="copy" type="button">Copy sigil</button><span id="encode-status" role="status"></span></div>
   </section>
   <details class="card">
     <summary>Read a sigil back — or change a character and try the check</summary>
     <label for="reading">Sigil to decode</label>
-    <textarea id="reading" rows="2" spellcheck="false" autocapitalize="off"></textarea>
+    <textarea id="reading" translate="no" rows="2" spellcheck="false" autocapitalize="off"></textarea>
     <label for="length">Original length in bytes</label>
     <input id="length" type="number" min="1" max="256" value="32">
     <p id="decode-status" role="status"></p><output id="decoded"></output>
@@ -38,7 +38,7 @@
   </section>
   <footer>
     <p>Conversion happens in your browser. Use public data here. This is an experimental display and encoding tool, with tested JavaScript and <a href="https://github.com/johnservil/sigil/blob/main/VERIFICATION.md">a separate Lean specification and proofs</a>.</p>
-    <p>This page bundles Ethiopic and Canadian syllabics fonts. <a href="fonttest.html">Check your fonts</a> · <a href="copytest.html">Try double-click selection</a></p>
+    <p>This page bundles fonts for Ethiopic and Canadian syllabics, the alphabet's two largest scripts; the others come from your system's fonts. <a href="fonttest.html">Check your fonts</a> · <a href="copytest.html">Try double-click selection</a></p>
   </footer>
 </main>
 <script src="web/sigilcode.js"></script>

@@ -18,20 +18,20 @@ correctness proofs remain open.
 | Property | Current evidence and scope |
 |---|---|
 | The specification describes Bob's intended format | Readable definitions and known answers; Bob's review remains essential |
-| The alphabet follows the documented Unicode rules | Deterministic generator and checks; the rules-to-alphabet connection has no formal proof |
-| Alphabet entries are distinct and never ignored | Kernel-checked facts: strict ascending order and absence from the ignored ranges |
+| The alphabet follows the documented rules (`alphabet/RULES.md`) | Deterministic generator and checks, from Unicode 14.0.0 and the recorded font tests; the rules-to-alphabet connection has no formal proof |
+| Alphabet entries are distinct and never skipped | Kernel-checked facts: strict ascending order and absence from the skipped ranges |
 | Every alphabet entry reads as its prescribed digit | Proved for canonical alphabet entries |
 | Layout chooses a prime K above N, with sufficient capacity | Proved for every byte length (`layout_contract`) |
-| K is the largest prime that fits, and the character count is minimal | Proved for every byte length (`isPrime_iff`, `layout_contract`) |
+| The letter count is minimal, and K is the documented check prime | Minimality proved for every byte length (`layout_contract`); each K is its table entry, whose choice by the two-letter rule is checked by the Python reference and the Rust test `ks`, without a Lean proof |
 | Bytes and base-N digits convert back and forth | Proved |
 | Encoding preserves all input bytes | Lean's decoder inverts its encoder (`decode_encode`) |
-| Every permitted spelling is accepted | Canonical digits proved; uppercase and ignored-character variants tested |
-| Every forbidden spelling receives the prescribed error | Canonical range/remainder checks proved (`decode_alphabet_digits`); full parsing and error characterization remains |
+| Every permitted spelling is accepted | Canonical letters proved; skipped-character variants tested |
+| Every forbidden spelling receives the prescribed error | Canonical check, range and marker proved (`decode_alphabet_digits`); full parsing and error characterization remains |
 | Every single-digit substitution is detected | Proved for the AN code and for the Lean decoder on canonical alphabet text (`single_change_decode_rejected`) |
 | Every swap of unequal neighbours or digits two apart is detected | Proved for the AN code (`adjacent_swap_detected`, `two_apart_swap_detected`); `decode_nonmultiple` connects failed divisibility to decoder rejection |
-| One erased digit has a unique valid replacement, given a valid original | Proved (`erased_digit_unique`); uppercase spellings of one digit are aliases |
-| `decode_readings` returns all and only the distinct valid data | Tests; enumeration specification and proof remain |
-| Known answers match the specification | Ten kernel-checked cases; another 1,100 shared vectors run through compiled Lean |
+| One erased letter has a unique valid replacement, given a valid original | Proved (`erased_digit_unique`) |
+| `decode_readings` returns the one valid data, or reports ambiguity | Tests; enumeration specification and proof remain |
+| Known answers match the specification | Eleven kernel-checked cases; another 1,452 shared vectors run through compiled Lean |
 | Optimized Rust implements the specification, including failures | Tests; refinement proof remains |
 | Bob's actual executable implements the specification | Executable-byte proof remains |
 | Every result Bob uses is checked for its specific input before use | Kernel-checking machinery exists for reference-proposed answers; accepting arbitrary executable results and the checked-use workflow remain to implement |
@@ -39,11 +39,11 @@ correctness proofs remain open.
 | Operations terminate within affordable work and allocation bounds | Lean definitions terminate; finite-machine resource contracts and proofs remain |
 | Concurrent calls behave correctly | Shared initialization and memoization need coverage in the implementation proof |
 | Output and exit status faithfully report the result | Requires coverage of the surrounding application |
-| Execution reveals no secrets through timing or other unintended channels | Requires an explicit leakage model, including allocation and surrounding code |
-| Advertised look-alike attack costs hold | Precise adversary and digit-distribution analysis remains |
+| Execution reveals no secrets through timing or other unintended channels | The Rust is written to run in constant time (no branch, table index or division on the data) and measured within 2% across values; a proof needs an explicit leakage model, including allocation and surrounding code |
+| Comparing by eye is as safe as claimed | No attack cost is claimed: how reliably people tell the letters apart is unmeasured |
 
-The format uses N = 1,353 alphabet digits and encodes the input's numeric
-value multiplied by K. `Sigil.Prime` states mathematical primality explicitly:
+The format uses N = 2,048 letters and encodes the input's numeric value,
+with the marker bits between its halves, multiplied by K. `Sigil.Prime` states mathematical primality explicitly:
 at least two, with only one and itself as natural-number divisors.
 `isPrime_iff` connects this to trial division; `layout_contract` states the
 layout guarantees together.
@@ -56,11 +56,9 @@ Round-trip correctness also leaves a separate obligation: the encoder and
 decoder must agree with Bob's intended format. Two implementations of the
 same mistaken format can round-trip perfectly.
 
-The look-alike figures of 10.4 bits per compared character and 83 bits for
-eight characters are approximate capacity estimates, with no proved attack
-work factor. Valid sigils have dependent digits and a restricted first
-digit. Jumbling structured input also needs a security argument for that
-input's validity constraints.
+Sigil claims no attack cost for comparing sigils by eye, and recommends that
+a program compare them. Jumbling structured input also needs a security
+argument for that input's validity constraints.
 
 ## Dynamic assurance: check each result before using it
 
