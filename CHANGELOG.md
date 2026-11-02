@@ -1,6 +1,6 @@
 # Changes
 
-## Sigil 0.1.1, November 2026: a README on crates.io
+## Sigil 0.1.1+a04b2b9b525bd58126b62bb66938f58b2adeb53f, November 2026: a README on crates.io
 
 The crate's page on crates.io shows a README. The code is 0.1's.
 
