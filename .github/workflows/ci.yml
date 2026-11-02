@@ -1,0 +1,41 @@
+# Every check QUALITY.md lists as run on each push, except the slow
+# certificate tests (tools/test_certificate.py), which run by hand.
+name: CI
+on: [push, pull_request]
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: python3 alphabet/alphabet.py --check   # downloads Unicode 14.0.0's data, checked by SHA-256 and BLAKE3
+    - run: python3 python/vectors.py --check
+    - run: python3 python/test.py
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo test --release
+      working-directory: rust
+  typescript-and-browser:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    # The TypeScript that reproduces the checked-in bundles exactly.
+    - run: npx -y -p typescript@5.9.3 tsc -p typescript
+    - run: node typescript/dist/test.js
+    - run: python3 tools/build-web.py --check
+    # tools/test-web.py runs `chromium`; the runner ships Chrome.
+    - run: sudo ln -sf "$(command -v google-chrome)" /usr/local/bin/chromium && python3 tools/test-web.py
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: |
+        curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+    - run: lake build && lake exe tests ../vectors.tsv
+      working-directory: lean

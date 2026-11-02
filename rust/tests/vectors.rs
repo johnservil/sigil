@@ -79,3 +79,53 @@ fn readings() {
     let two: Vec<&str> = two.iter().map(String::as_str).collect();
     assert_eq!(sigilcode::decode_readings(&two, 32).unwrap_err().kind(), "ambiguous");
 }
+
+/// A deterministic generator (xorshift64*), for repeatable random cases.
+struct Rng(u64);
+impl Rng {
+    fn next(&mut self) -> u64 {
+        self.0 ^= self.0 >> 12;
+        self.0 ^= self.0 << 25;
+        self.0 ^= self.0 >> 27;
+        self.0.wrapping_mul(0x2545F4914F6CDD1D)
+    }
+    fn below(&mut self, n: u64) -> u64 {
+        self.next() % n
+    }
+}
+
+/// Random data round-trips at random lengths; random texts (letters, skipped
+/// characters, refused characters, corrupted sigils) never panic, and any
+/// text `decode` accepts re-encodes to exactly its letters.
+#[test]
+fn random_inputs() {
+    let alphabet: Vec<char> = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../alphabet.txt")).unwrap().chars().collect();
+    let skipped = [' ', '\n', '\t', '\u{a0}', '\u{ad}', '\u{200b}', '\u{2060}', '\u{feff}', '\u{3000}'];
+    let refused = ['a', '0', 'Z', '\u{202e}', '\u{200d}', '\u{fe0f}', '\u{4e00}', '\u{1f600}', 'ß'];
+    let mut rng = Rng(0x5167_696c_2031);
+    for _ in 0..20_000 {
+        let length = 1 + rng.below(80) as usize;
+        let data: Vec<u8> = (0..length).map(|_| rng.next() as u8).collect();
+        let sigil = sigilcode::encode(&data);
+        assert_eq!(sigilcode::decode(&sigil, length).unwrap(), data);
+        // Corrupt the sigil: change, insert, delete or swap a few characters.
+        let mut text: Vec<char> = sigil.chars().collect();
+        for _ in 0..rng.below(4) {
+            let i = rng.below(text.len() as u64 + 1) as usize;
+            match rng.below(5) {
+                0 if i < text.len() => text[i] = alphabet[rng.below(2048) as usize],
+                1 => text.insert(i, skipped[rng.below(skipped.len() as u64) as usize]),
+                2 => text.insert(i, refused[rng.below(refused.len() as u64) as usize]),
+                3 if i < text.len() => drop(text.remove(i)),
+                _ if i + 1 < text.len() => text.swap(i, i + 1),
+                _ => {}
+            }
+        }
+        let text: String = text.into_iter().collect();
+        let asked = if rng.below(8) == 0 { 1 + rng.below(80) as usize } else { length };
+        if let Ok(decoded) = sigilcode::decode(&text, asked) {
+            let letters: String = text.chars().filter(|c| !skipped.contains(c)).collect();
+            assert_eq!(sigilcode::encode(&decoded), letters, "{text:?} decoded at {asked} bytes");
+        }
+    }
+}
