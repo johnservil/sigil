@@ -5,6 +5,13 @@ edition = "2021"
 description = "Bytes of a known length as a sigil: one word of letters, 25 for a 256-bit hash, selected whole by a double-click, no two letters alike, in linear and constant time, with a check that picks the right one of several readings"
 license = "MIT OR Apache-2.0 OR TGPPL-1.0" # OR BOSL-1.0, see LICENSE-BOSL.txt
 repository = "https://github.com/johnservil/sigil"
+homepage = "https://github.com/johnservil/sigil"
+documentation = "https://docs.rs/sigilcode"
+keywords = ["encoding", "hash", "fingerprint", "unicode", "checksum"]
+categories = ["encoding"]
+# The library and the data it reads; the tests and the bench read the
+# repository's vectors and depend on its tools.
+include = ["src/**", "alphabet.txt", "skipped.txt", "LICENSE-MIT", "LICENSE-APACHE", "LICENSE-TGPPL", "LICENSE-BOSL.txt"]
 
 [dependencies]
 
