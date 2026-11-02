@@ -35,14 +35,14 @@ def main():
         assert error(b["text"], b["length"]) == b["error"], b
     print(f"vectors: {len(v['good'])} good, {len(v['variants'])} variants and {len(v['bad'])} bad agree")
 
-    assert B.layout(32) == (25, 131071) and B.layout(16) == (13, 8191)
+    assert B.layout(32) == (25, 131063) and B.layout(16) == (13, 8179) and B.layout(8) == (8, 4193633)
+    assert [B.check_prime(1 << e) for e in range(12, 23)] == [4093, 8179, 16381, 32749, 65519, 131063, 262133, 524269, 1048433, 2096881, 4193633]
     for length in range(1, 1025):
         n, k = B.layout(length)
         room = 1 << (11 * n - 8 * length - 2)
         assert B.N < k <= room and B.is_prime(k) and (room >> 11) < 2053, length
-        assert all(not B.is_prime(c) for c in range(k + 1, room + 1)), length
     print("layouts (letters, K):", {length: B.layout(length) for length in (1, 8, 10, 16, 20, 24, 32, 64)},
-          "; at every length to 1024 bytes K is the largest prime in the room and n the fewest letters that hold one above N")
+          "; at every length to 1024 bytes n is the fewest letters whose room holds a prime above N")
     # Every letter is three bytes of UTF-8, and none is a hex digit.
     assert all(len(c.encode()) == 3 for c in B.ALPHABET) and not set(B.ALPHABET) & set("0123456789abcdefABCDEF")
 

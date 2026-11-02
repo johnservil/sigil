@@ -245,14 +245,18 @@ letter carries 11 bits.
    bits and d_low its low 4L bits. d′ has 8L + 2 bits and is never zero.
 2. **Layout.** The sigil has n = ⌈(8L + 14) / 11⌉ letters, the fewest whose
    room 2^(11n − 8L − 2) holds a prime larger than N (2,053 or more). K is
-   the largest prime at most that room.
+   the largest prime at most that room that lets few two-letter errors
+   through: at its worst letter distance, from 1 to 63 letters apart, it
+   misses at most twice the changes to two letters that a random prime would
+   (`check_prime` in `python/sigilcode.py`; "Why the check catches what it
+   does" says why the largest prime alone is not enough).
 3. **Write.** w = d′ · K, written in base 2,048 with exactly n digits, most
    significant first: each letter is the next 11 bits of w.
 
 | data | 64-bit | 80-bit | 128-bit | 160-bit | 192-bit | 256-bit | 512-bit |
 |---|---|---|---|---|---|---|---|
 | n (letters) | 8 | 9 | 13 | 16 | 19 | 25 | 48 |
-| K | 4,194,301 | 131,071 | 8,191 | 16,381 | 32,749 | 131,071 | 16,381 |
+| K | 4,193,633 | 131,063 | 8,179 | 16,381 | 32,749 | 131,063 | 16,381 |
 | a random string decodes once in | 2^24 | 2^19 | 2^15 | 2^16 | 2^17 | 2^19 | 2^16 |
 
 A decoder told L first drops every character in `skipped.txt`: white space
@@ -283,6 +287,14 @@ some 0 < |δ| < 2,048; swapping neighbours a and b adds (a − b) · 2^(11i) ·
 2^22 − 1 = 3 · 23 · 89 · 683, so K divides none of these and the value fails
 the check. Any other change leaves a multiple of K about once in K tries,
 and then keeps the marker about once in four.
+
+Two changed letters i places apart escape the check when δ1 · 2^(11i) + δ2
+is a multiple of K. The largest prime at most a room 2^e is 2^e − c for a
+small c, so 2^e ≡ c and, at some distance, the multiplier 2^(11i) modulo K is
+c times a small power of two: then many pairs (δ1, δ2) escape, 4,094 of
+16.8 million at the worst distance for 256-bit data under K = 2^17 − 1. The
+rule for K skips such primes; the K it gives for 256-bit data lets 150
+through at its worst distance, near the 128 of a random prime.
 
 Since one letter's possible values differ by less than N, at most one of
 them gives a multiple of K: that is why `decode_readings` recovers any one

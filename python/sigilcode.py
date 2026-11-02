@@ -49,16 +49,44 @@ def is_prime(k):
     return k > 1 and all(k % p for p in range(2, int(k ** 0.5) + 1))
 
 
+def escapes(k, m):
+    """The changes (d1, d2) to two letters, each by less than N, that a check
+    by k misses when the first letter's place is m times the second's
+    (modulo k): d1 * m + d2 = 0 (mod k)."""
+    hits = 0
+    for d1 in range(1, N):
+        r = -d1 * m % k
+        hits += 0 < r < N or k - N < r
+    return 2 * hits
+
+
+def check_prime(room):
+    """K for a room: the largest prime at most it, larger than N, whose worst
+    letter distance, 1 to 63 letters apart, lets through at most twice the
+    two-letter changes a random multiplier would, about (2N - 2)^2 / K. (The
+    largest prime alone sits just below a power of two, where some distance's
+    multiplier is a small number and many two-letter changes escape.)"""
+    k = room
+    while True:
+        if k > N and is_prime(k):
+            if max(escapes(k, pow(2, 11 * dist, k)) for dist in range(1, 64)) * k <= 2 * (2 * N - 2) ** 2:
+                return k
+        k -= 1
+
+
+CHECK_PRIMES = {}
+
+
 def layout(length):
     """(n, K) for data of `length` bytes (at least 1): the sigil's letters,
     the fewest whose room 2^(11n - 8 * length - 2) holds a prime larger than
-    N (2,053 or more), and K, the largest prime at most that room."""
+    N (2,053 or more), and K, check_prime(room)."""
     assert length >= 1, "Sigil encodes at least one byte"
     n = -(-(8 * length + 14) // 11)
-    k = 1 << (11 * n - 8 * length - 2)
-    while not is_prime(k):
-        k -= 1
-    return n, k
+    room = 1 << (11 * n - 8 * length - 2)
+    if room not in CHECK_PRIMES:
+        CHECK_PRIMES[room] = check_prime(room)
+    return n, CHECK_PRIMES[room]
 
 
 def encode(data: bytes) -> str:
@@ -108,6 +136,8 @@ def decode_readings(readings, length):
     and the first reading's error when none decodes. The work is the
     product of the readings' counts."""
     import itertools
+    if any(not r for r in readings):  # a letter with no reading: the text is a letter short
+        return decode("".join(r[0] for r in readings if r), length)
     found, first_error = [], None
     for choice in itertools.product(*readings):
         try:

@@ -1,27 +1,36 @@
 //! Sigil's speed: each operation's run mean (wall time per call, from
 //! `clocks::summary::mean` over batches of about 0.1 s) and the clock its
-//! thread ran at, at three lengths.
+//! thread ran at. Encoding and decoding take the same time for every value of
+//! the data, so each length is timed on three: all zeros, all ones, and
+//! bytes that look random.
 //!
 //!     cargo run --release --example bench
 
 fn main() {
-    let lengths = [16usize, 32, 64];
-    for &length in &lengths {
-        let data: Vec<u8> = (0..length as u8).map(|i| i.wrapping_mul(97).wrapping_add(13)).collect();
-        let sigil = sigilcode::encode(&data);
-        // Three readings for one character, the right one among them.
-        let chars: Vec<String> = sigil.chars().map(String::from).collect();
-        let mut readings = chars.clone();
-        readings[3] = format!("0{}ab", chars[3]);
+    let alphabet: Vec<char> = include_str!("../../alphabet.txt").chars().collect();
+    for length in [16usize, 32, 64] {
+        let values: [(&str, Vec<u8>); 3] = [
+            ("zeros", vec![0; length]),
+            ("ones", vec![0xff; length]),
+            ("random", (0..length as u32).map(|i| (i.wrapping_mul(2654435761) >> 13) as u8).collect()),
+        ];
+        for (name, data) in &values {
+            let sigil = sigilcode::encode(data);
+            report(&format!("encode {length} bytes, {name}"), &mut || {
+                std::hint::black_box(sigilcode::encode(std::hint::black_box(data)));
+            });
+            report(&format!("decode {length} bytes, {name}"), &mut || {
+                std::hint::black_box(sigilcode::decode(std::hint::black_box(&sigil), length).unwrap());
+            });
+        }
+        // Three readings for one letter, the right one among them.
+        let sigil = sigilcode::encode(&values[2].1);
+        let letters: Vec<char> = sigil.chars().collect();
+        let mut readings: Vec<String> = letters.iter().map(char::to_string).collect();
+        readings[3] = format!("{}{}{}", alphabet[7], letters[3], alphabet[1500]);
         let readings: Vec<&str> = readings.iter().map(String::as_str).collect();
-        report(&format!("encode {length} bytes"), &mut || {
-            std::hint::black_box(sigilcode::encode(std::hint::black_box(&data)));
-        });
-        report(&format!("decode {length} bytes"), &mut || {
-            std::hint::black_box(sigilcode::decode(std::hint::black_box(&sigil), length).unwrap());
-        });
-        report(&format!("decode_readings {length} bytes, 3 readings of one character"), &mut || {
-            std::hint::black_box(sigilcode::decode_readings(std::hint::black_box(&readings), length));
+        report(&format!("decode_readings {length} bytes, 3 readings of one letter"), &mut || {
+            std::hint::black_box(sigilcode::decode_readings(std::hint::black_box(&readings), length).unwrap());
         });
     }
 }

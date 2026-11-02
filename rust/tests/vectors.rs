@@ -52,8 +52,7 @@ fn vectors() {
             _ => panic!("a line of vectors.tsv: {line}"),
         }
     }
-    assert_eq!((good, variants, bad), (220, 528, 352));
-    assert_eq!(sigilcode::layout(32), (26, 22381));
+    assert_eq!((good, variants, bad), (220, 484, 748));
 }
 
 #[test]
@@ -63,7 +62,20 @@ fn readings() {
     let f: Vec<&str> = line.split('\t').collect();
     let chars: Vec<String> = f[2].chars().map(String::from).collect();
     let mut readings: Vec<String> = chars.clone();
-    readings[5] = format!("0{}ab", chars[5]);
+    // Letter 5 read three ways (two of them wrong letters), letter 9 unread altogether.
+    let other = |c: &str, d: u32| char::from_u32(c.chars().next().unwrap() as u32 + d).unwrap().to_string();
+    readings[5] = format!("{}{}{}", other(&chars[5], 1), chars[5], other(&chars[5], 2));
+    let alphabet = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../alphabet.txt")).unwrap();
+    readings[9] = alphabet.clone();
     let readings: Vec<&str> = readings.iter().map(String::as_str).collect();
-    assert_eq!(sigilcode::decode_readings(&readings, 32), vec![bytes(f[1])]);
+    assert_eq!(sigilcode::decode_readings(&readings, 32).unwrap(), bytes(f[1]));
+    // Two letters each read two ways, where the other two readings also decode
+    // (letters 0 and 1 as digits 63 and 2,039, found by the reference): the
+    // readings leave two data, and decode_readings says so.
+    let letter = |d: usize| alphabet.chars().nth(d).unwrap();
+    let mut two: Vec<String> = chars.clone();
+    two[0] = format!("{}{}", chars[0], letter(63));
+    two[1] = format!("{}{}", chars[1], letter(2039));
+    let two: Vec<&str> = two.iter().map(String::as_str).collect();
+    assert_eq!(sigilcode::decode_readings(&two, 32).unwrap_err().kind(), "ambiguous");
 }
