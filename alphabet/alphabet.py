@@ -1,16 +1,16 @@
-"""The Sigil alphabet, computed from Unicode 14.0.0's data files: the whole
-computation, in one script with no dependencies beyond Python 3.
+"""The Sigil alphabet, computed from Unicode 14.0.0's data files and the font
+tests in fonts.txt by the rules of RULES.md: the whole computation, in one
+script with no dependencies beyond Python 3.
 
     python3 alphabet/alphabet.py [--data DIR] [--check]
 
 It downloads the data files from unicode.org (or reads them from DIR, and
 saves there what it downloads), checks each by SHA-256 and by BLAKE3 (below,
 in plain Python) before reading it, applies the rules, and writes
-alphabet.txt, uppercase.txt, ignored.txt, typescript/alphabet.ts and
-lean/Sigil/Alphabet.lean; with
---check it confirms that those files are its output. Every property comes
-from the data files, none from Python's own tables, so the same files give
-the same alphabet with any Python on any machine.
+alphabet.txt, skipped.txt, typescript/alphabet.ts and lean/Sigil/Alphabet.lean;
+with --check it confirms that those files are its output. Every property
+comes from the data files, none from Python's own tables, so the same files
+give the same alphabet with any Python on any machine.
 """
 import collections
 import hashlib
@@ -27,12 +27,6 @@ FILES = {
     "UnicodeData.txt": ("14.0.0/ucd/UnicodeData.txt",
                         "36018e68657fdcb3485f636630ffe8c8532e01c977703d2803f5b89d6c5feafb",
                         "769f79943efcbeeb922a0ea4b6e1e1240ef3815ed5b8e7b736008528ca12bbf3"),
-    "SpecialCasing.txt": ("14.0.0/ucd/SpecialCasing.txt",
-                          "c667b45908fd269af25fd55d2fc5bbc157fb1b77675936e25c513ce32e080334",
-                          "cec757e4847ed93cee4fbcc74f2d36b18476a2a328547a55d05b9f79abd3796d"),
-    "CaseFolding.txt": ("14.0.0/ucd/CaseFolding.txt",
-                        "a566cd48687b2cd897e02501118b2413c14ae86d318f9abbbba97feb84189f0f",
-                        "a4d5c17de4f41245645f3a507c84c3c98a6b296304cf0598e41aa687ce2ab01c"),
     "DerivedAge.txt": ("14.0.0/ucd/DerivedAge.txt",
                        "7e058dec02147098bc9c28d86209f0f251bba0538f3b5a705ad02ea3bb709fe0",
                        "f022a5b165f8a8a798847636987d34e9c9349a1453ea5cfc1e53699534cd8d51"),
@@ -57,6 +51,9 @@ FILES = {
     "WordBreakProperty.txt": ("14.0.0/ucd/auxiliary/WordBreakProperty.txt",
                               "7716752aad296d4ab23ff4ed0a2746fc5328750ff84e9e7d6f3828ee9eaef742",
                               "54ad33216c49a8d47c4b323c546143d91810ff4cee04da7b8c0d97e882d0a1ae"),
+    "EastAsianWidth.txt": ("14.0.0/ucd/EastAsianWidth.txt",
+                           "f901ac011aa32a09224d6555da71e2532c59c1d3381322829de0e3b880507250",
+                           "d4244c1205359fee66cf578d2cd03b0364a6ea5602e9f6b670d6b06631b63133"),
     "confusables.txt": ("security/14.0.0/confusables.txt",
                         "f901938af166c3afa471bd10c224b0979cd024340f290649e16b29f779d48bfe",
                         "8ea02bbe19f01d541a6387ab97b5f8ebf265fd794460c658679264ae5e7024ec"),
@@ -175,33 +172,19 @@ def code_points(field):
 
 def properties(data_dir):
     """Every property the rules read, from the data files."""
-    p = {"category": {}, "bidi": {}, "decomposition": {}, "upper": {}, "lower": {}, "fold": {}}
+    p = {"category": {}, "bidi": {}, "decomposition": {}}
     for f in lines(data_file("UnicodeData.txt", data_dir)):
         c = int(f[0], 16)
         p["category"][c], p["bidi"][c] = f[2], f[4]
         if f[5]:
             p["decomposition"][c] = f[5]
-        if f[12]:
-            p["upper"][c] = [int(f[12], 16)]
-        if f[13]:
-            p["lower"][c] = [int(f[13], 16)]
-    # Full case mappings where SpecialCasing gives an unconditional one.
-    for f in lines(data_file("SpecialCasing.txt", data_dir)):
-        if len(f) > 4 and f[4]:
-            continue
-        c = int(f[0], 16)
-        p["lower"][c] = [int(x, 16) for x in f[1].split()]
-        p["upper"][c] = [int(x, 16) for x in f[3].split()]
-    for f in lines(data_file("CaseFolding.txt", data_dir)):
-        if f[1] in ("C", "F"):
-            p["fold"][int(f[0], 16)] = [int(x, 16) for x in f[2].split()]
     p["age"] = {c: tuple(map(int, f[1].split("."))) for f in lines(data_file("DerivedAge.txt", data_dir))
                 for c in code_points(f[0])}
     p["script"] = {c: f[1] for f in lines(data_file("Scripts.txt", data_dir)) for c in code_points(f[0])}
     plist = collections.defaultdict(set)
     for f in lines(data_file("PropList.txt", data_dir)):
         plist[f[1]].update(code_points(f[0]))
-    p["white_space"] = plist["White_Space"] | plist["Pattern_White_Space"]
+    p["white_space"] = plist["White_Space"]
     p["ignorable"] = {c for f in lines(data_file("DerivedCoreProperties.txt", data_dir))
                       if f[1] == "Default_Ignorable_Code_Point" for c in code_points(f[0])}
     p["maybe"] = {c for f in lines(data_file("DerivedNormalizationProps.txt", data_dir))
@@ -209,71 +192,77 @@ def properties(data_dir):
     p["joining"] = {c: f[2] for f in lines(data_file("ArabicShaping.txt", data_dir)) for c in code_points(f[0])}
     p["line_break"] = {c: f[1] for f in lines(data_file("LineBreak.txt", data_dir)) for c in code_points(f[0])}
     p["word_break"] = {c: f[1] for f in lines(data_file("WordBreakProperty.txt", data_dir)) for c in code_points(f[0])}
+    p["width"] = {c: f[1] for f in lines(data_file("EastAsianWidth.txt", data_dir)) for c in code_points(f[0])}
     # Unicode's look-alike table (UTS #39): characters with one skeleton look alike.
     p["skeleton"] = {int(f[0], 16): tuple(int(x, 16) for x in f[1].split())
                      for f in lines(data_file("confusables.txt", data_dir))}
     return p
 
 
-def mapping(table, c):
-    return table.get(c, [c])
+HEX = "0123456789abcdef"
+SYSTEMS = ("macOS", "iOS", "Windows", "Android", "Linux")
+SIZE = 2048
 
 
-def rules(p):
-    """The rules on single characters, in order: (what a character must be,
-    the test). Each comment says what the rule protects; README.md says the
-    same for readers."""
-    def case_round_trip(c):
-        up = mapping(p["upper"], c)
-        return (mapping(p["lower"], c) == [c] and len(up) == 1 and mapping(p["lower"], up[0]) == [c]
-                and mapping(p["fold"], up[0]) == mapping(p["fold"], c))
-
-    def latin_greek_cyrillic_digit_ethiopic_canadian(c):
-        return ((p["script"].get(c) in ("Latin", "Greek", "Cyrillic") and c < 0x800)
-                or p["script"].get(c) in ("Ethiopic", "Canadian_Aboriginal") or 0x30 <= c <= 0x39)
-
+def constraints(p):
+    """RULES.md's constraints on single letters, in order: (name, test)."""
+    hex_classes = {p["skeleton"].get(ord(h), (ord(h),)) for h in HEX}
     return [
-        # GitHub refuses 4-byte UTF-8 in a status description, and characters
-        # beyond the plane need UTF-16 surrogate pairs, which software splits.
-        ("in the Basic Multilingual Plane", lambda c: c <= 0xFFFF),
-        ("assigned (not a surrogate)", lambda c: c in p["category"] and p["category"][c] != "Cs"),
-        # Fonts lag new letters: DejaVu, a common Linux default, lacks the
-        # Cyrillic letters Unicode 6.0 and 7.0 added.
-        ("assigned by Unicode 5.2 (2009) or earlier", lambda c: p["age"][c] <= (5, 2)),
-        # Letters and digits survive where symbols and punctuation are
-        # rewritten or dropped.
-        ("a lowercase letter (Ll), a caseless letter (Lo), or an ASCII digit",
-         lambda c: p["category"][c] in ("Ll", "Lo") or 0x30 <= c <= 0x39),
-        # Every character displays in the order it is stored, in any paragraph.
-        ("left-to-right: a letter of bidi class L, or a digit of class EN",
-         lambda c: p["bidi"][c] == ("EN" if p["category"][c] == "Nd" else "L")),
-        # Software normalizes text (older Mac file systems to NFD, web forms to
-        # NFC). A code point with no decomposition mapping is unchanged by NFD
-        # and NFKD, and so by NFC and NFKC, except the Hangul syllables, which
-        # decompose by rule.
-        ("unchanged by NFC, NFD, NFKC and NFKD",
+        ("C1 in the Basic Multilingual Plane, assigned, not a surrogate",
+         lambda c: c <= 0xFFFF and c in p["category"] and p["category"][c] != "Cs"),
+        ("C2 unchanged by NFC, NFD, NFKC and NFKD",
          lambda c: c not in p["decomposition"] and not 0xAC00 <= c <= 0xD7A3),
-        # Software that changes case leaves a codeword decodable: decoding
-        # reads each letter's uppercase as the letter.
-        ("its uppercase is one character, which lowercases and case-folds back to it", case_round_trip),
-        # The next three exclude every way two characters interact: invisible
-        # characters, two characters normalizing into one, cursive joining.
-        ("neither default-ignorable nor white space", lambda c: c not in p["ignorable"] and c not in p["white_space"]),
-        ("never the second half of a composition (no NFC or NFKC quick-check Maybe)", lambda c: c not in p["maybe"]),
-        ("non-joining (joining type U)", lambda c: p["joining"].get(c, "U") == "U"),
-        # A double-click selects the whole codeword (UAX #29 joins these).
-        ("joins its neighbours into one word (word break ALetter, or Numeric for a digit)",
-         lambda c: p["word_break"].get(c) in ("ALetter", "Numeric")),
-        # A codeword stays on one line (UAX #14 breaks between none of these).
-        ("never a line break beside its neighbours (line break AL, or NU for a digit)",
-         lambda c: p["line_break"].get(c) in ("AL", "NU")),
-        # A missing glyph shows as a box, and boxes hide which character is
-        # which: these scripts' fonts ship on the major platforms (macOS draws
-        # every Ethiopic and Canadian syllabic here; DejaVu lacks parts of the
-        # Latin and Cyrillic extension blocks above U+0800).
-        ("Latin, Greek or Cyrillic below U+0800, Ethiopic or Canadian syllabics, or an ASCII digit",
-         latin_greek_cyrillic_digit_ethiopic_canadian),
+        ("C3 a caseless letter (Lo) of a named script",
+         lambda c: p["category"][c] == "Lo" and p["script"].get(c) not in (None, "Common", "Inherited")),
+        ("C4 strongly left-to-right (bidi L)", lambda c: p["bidi"][c] == "L"),
+        ("C5 visible, never the second half of a composition, non-joining",
+         lambda c: c not in p["ignorable"] and c not in p["white_space"] and c not in p["maybe"]
+         and p["joining"].get(c, "U") == "U"),
+        ("C6 a word letter (ALetter) that never breaks a line (AL)",
+         lambda c: p["word_break"].get(c) == "ALetter" and p["line_break"].get(c) == "AL"),
+        ("C7 one terminal cell (East Asian Width N)", lambda c: p["width"].get(c, "N") == "N"),
+        ("C8 three bytes of UTF-8", lambda c: 0x800 <= c <= 0xFFFF),
+        ("C10 no hex digit or look-alike of one", lambda c: p["skeleton"].get(c, (c,)) not in hex_classes),
     ]
+
+
+def fonts(path):
+    """fonts.txt's results: [(name, system, tested, missing)]."""
+    def ranges(field):
+        out = set()
+        for r in field.split():
+            a, _, b = r.partition("-")
+            out.update(range(int(a, 16), int(b or a, 16) + 1))
+        return out
+    results, cur = [], None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("result "):
+            _, n, date, system, browser = line.split(" ")
+            assert system in SYSTEMS, line
+            cur = {"name": f"#{n} {system} {browser} {date}", "system": system}
+            results.append(cur)
+        elif line.startswith("tested "):
+            cur["tested"] = ranges(line[7:])
+        elif line.startswith("missing"):
+            cur["missing"] = ranges(line[8:])
+    return results
+
+
+def without_look_alikes(letters, skeletons):
+    """G3: of each class of look-alikes the lowest code point stays; then, while
+    a letter looks like a sequence of others, the one letter that ends the most
+    such spellings goes (the look-alike itself, or a piece of its spelling;
+    ties to the lowest code point)."""
+    classes = collections.defaultdict(list)
+    for c in letters:
+        classes[skeletons.get(c, (c,))].append(c)
+    kept = {min(cs) for cs in classes.values()}
+    while True:
+        spellings = sequence_look_alikes(kept, skeletons)
+        if not spellings:
+            return kept
+        counts = collections.Counter(x for whole, pieces in spellings.items() for x in {whole} | set(pieces))
+        kept.discard(max(counts, key=lambda c: (counts[c], -c)))
 
 
 def sequence_look_alikes(chars, skeletons):
@@ -301,12 +290,9 @@ def sequence_look_alikes(chars, skeletons):
     return out
 
 
-def ignored_ranges(p):
-    """The code points decoding ignores, as [first, last] ranges: White_Space
-    and Default_Ignorable_Code_Point (spaces, line ends, and the invisible
-    characters copying and line breaking insert)."""
+def ranges_of(points):
     out = []
-    for c in sorted(p["white_space"] | p["ignorable"]):
+    for c in sorted(points):
         if out and out[-1][1] == c - 1:
             out[-1][1] = c
         else:
@@ -323,78 +309,61 @@ def main():
     p = properties(data_dir)
     left = list(range(0x110000))
     print(f"{'removes':>9} {'left':>9}  rule")
-    for name, test in rules(p):
+    for name, test in constraints(p):
         kept = [c for c in left if test(c)]
         print(f"{len(left) - len(kept):9,} {len(kept):9,}  {name}")
         left = kept
-    # The last two rules read the characters together. First, of each class
-    # of look-alikes (characters with one skeleton in Unicode's confusables
-    # table, UTS #39), only the lowest code point stays: every character a
-    # person, or a machine reading a picture, compares then tells its class
-    # apart from every other, and a forger must match each one exactly.
-    classes = collections.defaultdict(list)
-    for c in left:
-        classes[p["skeleton"].get(c, (c,))].append(c)
-    kept = sorted(min(cs) for cs in classes.values())
-    print(f"{len(left) - len(kept):9,} {len(kept):9,}  the lowest code point of its class of look-alikes (UTS #39)")
-    left = kept
-    # Second, no character may look like a sequence of others: Unicode's table
-    # says m looks like rn, and a syllabic with a dot like the dot final and
-    # the syllabic. While some character's skeleton is the skeletons of other
-    # characters in a row, the one character that ends the most such
-    # spellings goes: the look-alike itself, or a piece of its spelling that
-    # is outside ASCII (ties to the lowest code point).
-    kept = set(left)
-    while True:
-        spellings = sequence_look_alikes(kept, p["skeleton"])
-        if not spellings:
+    # G1: letters every tested device drew, tested on each of the five systems.
+    results = fonts(ROOT / "alphabet" / "fonts.txt")
+    drawn = [c for c in left if {r["system"] for r in results if c in r["tested"]} == set(SYSTEMS)
+             and not any(c in r["missing"] for r in results)]
+    print(f"{len(left) - len(drawn):9,} {len(drawn):9,}  G1 drawn on every tested device ({len(results)} results)")
+    # G2 and G3: whole scripts, the largest first, until the letters taken, without look-alikes, reach SIZE.
+    by_script = collections.defaultdict(list)
+    for c in drawn:
+        by_script[p["script"][c]].append(c)
+    order = sorted(by_script, key=lambda s: (-len(by_script[s]), min(p["age"][c] for c in by_script[s]), s))
+    taken = []
+    for script in order:
+        taken.append(script)
+        kept = without_look_alikes([c for s in taken for c in by_script[s]], p["skeleton"])
+        if len(kept) >= SIZE:
             break
-        counts = collections.Counter(x for whole, pieces in spellings.items()
-                                     for x in {whole} | {c for c in pieces if c >= 0x80})
-        kept.discard(max(counts, key=lambda c: (counts[c], -c)))
-    print(f"{len(left) - len(kept):9,} {len(kept):9,}  looks like no sequence of the others (UTS #39)")
-    left = sorted(kept)
-    letters = "".join(map(chr, left))
-    upper = "".join(chr(mapping(p["upper"], c)[0]) for c in left)
-    ranges = ignored_ranges(p)
-    ignored = {c for a, b in ranges for c in range(a, b + 1)}
-    # Decoding reads each letter or its uppercase: every one distinct, none
-    # another letter, none ignored.
-    assert len(set(upper)) == len(upper), "every letter has its own uppercase"
-    assert not {u for u, c in zip(upper, letters) if u != c} & set(letters), "no uppercase is another letter"
-    assert not {ord(x) for x in letters + upper} & ignored, "no letter or uppercase is ignored"
+    assert len(kept) >= SIZE, "the scripts drawn everywhere hold too few letters"
+    print(f"{len(drawn) - len(kept):9,} {len(kept):9,}  G2 the {len(taken)} largest scripts; G3 no look-alikes among them")
+    # G4: the SIZE oldest, ties to the lowest code point.
+    letters = sorted(sorted(kept, key=lambda c: (p["age"][c], c))[:SIZE])
+    print(f"{len(kept) - len(letters):9,} {len(letters):9,}  G4 the oldest {SIZE:,}")
+    alphabet = "".join(map(chr, letters))
+    skipped = ranges_of(p["white_space"] | {0x00AD, 0x200B, 0x2060, 0xFEFF})
+    assert not set(letters) & {c for a, b in skipped for c in range(a, b + 1)}, "no letter is skipped"
     outputs = {
-        ROOT / "alphabet.txt": letters,
-        ROOT / "uppercase.txt": upper,
-        ROOT / "ignored.txt": "".join(f"{a:04X}..{b:04X}\n" for a, b in ranges),
+        ROOT / "alphabet.txt": alphabet,
+        ROOT / "skipped.txt": "".join(f"{a:04X}..{b:04X}\n" for a, b in skipped),
         ROOT / "lean" / "Sigil" / "Alphabet.lean": (
-            "/-! Generated by alphabet/alphabet.py from Unicode 14.0.0's data; do not edit.\n\n"
-            "The alphabet (`alphabet.txt`) and each character's uppercase (`uppercase.txt`), as code\n"
-            "points in the alphabet's order, and the code points decoding ignores (`ignored.txt`), as\n"
-            "[first, last] ranges. -/\n\n"
+            "/-! Generated by alphabet/alphabet.py from Unicode 14.0.0's data and alphabet/fonts.txt; do not edit.\n\n"
+            "The alphabet (`alphabet.txt`), as code points in the alphabet's order, and the code points\n"
+            "decoding skips (`skipped.txt`), as [first, last] ranges. -/\n\n"
             "namespace Sigil\n\n"
-            f"def alphabet : Array Nat := #[{', '.join(str(c) for c in left)}]\n\n"
-            f"def uppercase : Array Nat := #[{', '.join(str(ord(u)) for u in upper)}]\n\n"
-            f"def ignoredRanges : Array (Nat × Nat) := #[{', '.join(f'({a}, {b})' for a, b in ranges)}]\n\n"
+            f"def alphabet : Array Nat := #[{', '.join(str(c) for c in letters)}]\n\n"
+            f"def skippedRanges : Array (Nat × Nat) := #[{', '.join(f'({a}, {b})' for a, b in skipped)}]\n\n"
             "end Sigil\n"),
         ROOT / "typescript" / "alphabet.ts": (
-            "// Generated by alphabet/alphabet.py from Unicode 14.0.0's data; do not edit.\n"
-            f"export const ALPHABET: string = \"{letters}\";\n"
-
-            "// Each letter's uppercase, in the same order (uppercase.txt).\n"
-            f"export const UPPERCASE: string = \"{upper}\";\n"
-            "// The code points decoding ignores, as [first, last] ranges (ignored.txt).\n"
-            f"export const IGNORED: [number, number][] = {ranges};\n"),
+            "// Generated by alphabet/alphabet.py from Unicode 14.0.0's data and alphabet/fonts.txt; do not edit.\n"
+            f"export const ALPHABET: string = \"{alphabet}\";\n"
+            "// The code points decoding skips, as [first, last] ranges (skipped.txt).\n"
+            f"export const SKIPPED: [number, number][] = {skipped};\n"),
     }
     for path, content in outputs.items():
         if check:
             assert path.read_text(encoding="utf-8") == content, f"{path.name} is not this script's output"
         else:
             path.write_text(content, encoding="utf-8")
-    print(f"\n{math.log2(len(left)):.2f} bits for each character a person compares, "
-          f"{8 * math.log2(len(left)):.0f} for the first and last four")
-    b = letters.encode("utf-8")
-    print(f"{len(left):,} characters, U+{left[0]:04X}..U+{left[-1]:04X}; alphabet.txt SHA-256 "
+    scripts = collections.Counter(p["script"][c] for c in letters)
+    print("\n" + ", ".join(f"{s.replace('_', ' ')} {n}" for s, n in scripts.most_common()))
+    b = alphabet.encode("utf-8")
+    print(f"{len(letters):,} letters, U+{letters[0]:04X}..U+{letters[-1]:04X}, newest from Unicode "
+          f"{'.'.join(map(str, max(p['age'][c] for c in letters)))}; alphabet.txt SHA-256 "
           f"{hashlib.sha256(b).hexdigest()}, BLAKE3 {blake3(b).hex()}" + (" (checked)" if check else ""))
 
 

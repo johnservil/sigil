@@ -1,19 +1,20 @@
 # Sigil
 
-Sigil writes bytes as a sigil: one word of letters and digits that a person
+Sigil writes bytes as a sigil: one word of letters that a person
 can copy with a double-click, compare at a glance, and read back from a
 picture. A 256-bit hash becomes 26 characters, no two of which look alike.
 
 ```
 BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64 rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            as a sigil ᕖᣇጎʗƾኖᣊⷈeᑭɨᣫѯᖣቀⷃᣡᗯᕜᑡᔮᣥዲᑮᘜᒬ
+            as a sigil ᕜዀᎃᔨsᓙᖒᐑᑉᙫᕄǥᣗዄᒤᣞыᣧⷋⶍⶩᓖᕅᖇዥⶑ
 ```
 
-Its 1,353 characters are digits and letters of five scripts: Latin, Greek,
-Cyrillic, Ethiopic and Canadian syllabics. Every one runs left to right, and
-Unicode treats a run of them as one word that never breaks across lines. A
-sigil looks like nothing else in a text, and it looks wonderful.
+Its 1,337 characters are letters of five scripts: Latin, Greek, Cyrillic,
+Ethiopic and Canadian syllabics. Every one runs left to right, and Unicode
+treats a run of them as one word that never breaks across lines. None is a
+hex digit, so a sigil and hex are told apart at a glance. A sigil looks like
+nothing else in a text, and it looks wonderful.
 
 ## Try it
 
@@ -90,9 +91,10 @@ and decoding APIs and an executable-level Sigil proof remain open.
 
 ## Use it
 
-The implementations are in this repository; package releases are still to
-come. The browser playground and extension are ready to try from the checked-in
-files.
+The implementations are in this repository, and the Rust one is on
+crates.io as [`sigilcode`](https://crates.io/crates/sigilcode). The browser
+playground and extension are ready to try from the checked-in files.
+[CHANGELOG.md](CHANGELOG.md) says what changed, and when.
 
 Decoding takes the length in bytes that the sigil encodes. The encoder and
 decoder agree on it in advance: a 256-bit hash is always 32 bytes.
@@ -163,7 +165,7 @@ characters. Someone who wants a sigil that looks like yours must produce
 data whose sigil looks like it: for a hash, they can only try inputs until
 one hashes to a look-alike, and for a key, generate keys. Each character a
 person compares makes them match that character exactly, since no two
-characters of the alphabet look alike: a chance of 1 in 1,353, or 10.4
+characters of the alphabet look alike: a chance of 1 in 1,337, or 10.4
 bits, approximately, for every compared character. These are capacity
 estimates: valid sigils have dependent digits and a restricted first digit,
 so the 83-bit estimate for the first and last four is not a proved attack
@@ -225,7 +227,7 @@ recognition (OCR). Three properties serve it:
   tell every character apart.
 - **The check confirms a reading.** Every misread character, and every
   swap of neighbours, fails to decode; other errors fail all but once in
-  22,381 times for a 256-bit value. A reader unsure of a character passes
+  16,433 times for a 256-bit value. A reader unsure of a character passes
   its possible readings to `decode_readings`, which returns the data that
   the one valid reading encodes. Exactly one reading of a character decodes,
   so `decode_readings` recovers any one character, even one unread
@@ -233,61 +235,62 @@ recognition (OCR). Three properties serve it:
 
 ## The encoding
 
-Sigil encodes data of L bytes, L ≥ 1:
+Sigil encodes data of L bytes, L ≥ 1, with its alphabet of N = 2,048 letters
+(`alphabet.txt`, in ascending code point order: letter k is digit k), so each
+letter carries 11 bits.
 
-1. **Layout.** The room of n characters is R = ⌊N^n / 2^(8L)⌋, where
-   N = 1,353. The sigil has n characters, the fewest whose room holds a
-   prime larger than N (that is, R ≥ 1,361), and K is the largest prime at
-   most R. One character more than the data needs suffices at almost every
-   length: up to 1,024 bytes, at every length but 537 bytes, which takes
-   two.
-2. **Write.** The value w = d · K, where d is the data as a number, most
-   significant byte first, is written in base N with exactly n digits, most
-   significant first. Digit k is the k-th character of the alphabet
-   (`alphabet.txt`, in ascending code point order).
+1. **Mark.** Read the data as a number d of 8L bits, most significant byte
+   first, and put the two marker bits `01` between its high and low halves:
+   d′ = (4 · d_high + 1) · 2^(4L) + d_low, where d_high is the data's top 4L
+   bits and d_low its low 4L bits. d′ has 8L + 2 bits and is never zero.
+2. **Layout.** The sigil has n = ⌈(8L + 14) / 11⌉ letters, the fewest whose
+   room 2^(11n − 8L − 2) holds a prime larger than N (2,053 or more). K is
+   the largest prime at most that room.
+3. **Write.** w = d′ · K, written in base 2,048 with exactly n digits, most
+   significant first: each letter is the next 11 bits of w.
 
-| L (bytes) | 16 | 20 | 32 | 48 | 64 |
-|---|---|---|---|---|---|
-| n (characters) | 14 | 17 | 26 | 38 | 51 |
-| K | 202,441 | 116,747 | 22,381 | 2,473 | 370,529 |
+| data | 64-bit | 80-bit | 128-bit | 160-bit | 192-bit | 256-bit | 512-bit |
+|---|---|---|---|---|---|---|---|
+| n (letters) | 8 | 9 | 13 | 16 | 19 | 25 | 48 |
+| K | 4,194,301 | 131,071 | 8,191 | 16,381 | 32,749 | 131,071 | 16,381 |
+| a random string decodes once in | 2^24 | 2^19 | 2^15 | 2^16 | 2^17 | 2^19 | 2^16 |
 
-A decoder told L first drops every character that Unicode 14.0 marks
-White_Space or Default_Ignorable_Code_Point (the ranges in `ignored.txt`).
-It reads each remaining character as its digit, a letter's uppercase
-(`uppercase.txt`, in the alphabet's order) as the letter. It requires
-exactly n characters, each in the alphabet or its uppercase, and a value w
-below K · 2^(8L) (else the error is `range`) that is a multiple of K (else
-`check`). The data is w / K.
+A decoder told L first drops every character in `skipped.txt`: white space
+(Unicode 14.0's White_Space, which includes every kind of line break) and
+the soft hyphen, zero-width space, word joiner and byte order mark, which
+copying text can insert. It requires exactly n characters left (else the
+error is `length`), each a letter of the alphabet (else `character`), and a
+value w that is a multiple of K (else `check`) with w / K below 2^(8L + 2)
+(else `range`) and its marker bits `01` (else `marker`). The data is w / K
+with the marker taken out.
 
-The alphabet's size is chosen for 256-bit data: 25 characters hold it, and
-the 26th leaves room for K = 22,381.
+**The marker.** A format that succeeds Sigil's puts another value there,
+`10` or `11`, and then its strings never decode as Sigil's, nor Sigil's as
+its. The value `00` stays unused, so that no format's zero data is a string
+of the first letter. In the middle, the marker leaves the first and last
+letters 11 bits each, where people compare by eye. It also catches, about
+three times in four, a cluster of errors that reaches past the middle and
+escapes the check of K.
 
 <details>
 <summary>Why the check catches what it does</summary>
 
 Multiplying by K makes every sigil's value a multiple of K, and spreads
-that property over every character. Changing one character adds d · N^i for
-some 0 < |d| < N; swapping neighbours a and b adds (a − b) · N^i · (N − 1),
-and swapping characters two apart adds (a − b) · N^i · (N² − 1). K is a
-prime larger than N, so it divides none of these (N = 3 · 11 · 41,
-N − 1 = 2³ · 13², N + 1 = 2 · 677), and the value fails the check. Any other
-change leaves a multiple of K about once in K tries. This is the classic
-arithmetic code of coding theory, an AN code.
+that property over every letter. Changing one letter adds δ · 2^(11i) for
+some 0 < |δ| < 2,048; swapping neighbours a and b adds (a − b) · 2^(11i) ·
+(2^11 − 1), and swapping letters two apart adds (a − b) · 2^(11i) · (2^22 −
+1). K is a prime larger than 2,048, and 2^11 − 1 = 23 · 89 and
+2^22 − 1 = 3 · 23 · 89 · 683, so K divides none of these and the value fails
+the check. Any other change leaves a multiple of K about once in K tries,
+and then keeps the marker about once in four.
 
-Since one character's possible values differ by less than N, at most one of
+Since one letter's possible values differ by less than N, at most one of
 them gives a multiple of K: that is why `decode_readings` recovers any one
-character. The largest prime that fits uses all the room, so random errors
-pass once in about R tries, the least any code of this size allows.
-
-No code does more with one extra character. Correcting one misread
-character of a 256-bit sigil, without knowing which, means telling apart
-26 · 1,352 = 35,152 possible errors, 15.1 bits, and leaves room for 2^255.4
-values, fewer than 2^256. Catching every pair of errors leaves room for at
-most N^24 values, 2^249.6. A 27th character would make room for either.
+letter.
 
 Knowing the length in advance does two more things. It saves the padding
 and end markers other encodings need. And it turns truncation into an error:
-a sigil missing a character has the wrong length.
+a sigil missing a letter has the wrong length.
 </details>
 
 ## The alphabet
@@ -314,7 +317,8 @@ machine. Each rule keeps the characters that pass it:
 | never a line break beside its neighbours (line break AL, or NU for a digit) | 1,537 | 3,592 |
 | Latin, Greek or Cyrillic below U+0800, Ethiopic or Canadian syllabics, or an ASCII digit | 2,113 | 1,479 |
 | the lowest code point of its class of look-alikes (UTS #39) | 104 | 1,375 |
-| looks like no sequence of the others (UTS #39) | 22 | **1,353** |
+| looks like no sequence of the others (UTS #39) | 22 | 1,353 |
+| no hex digit (0-9, a-f) or a look-alike of one | 16 | **1,337** |
 
 <details>
 <summary>What each rule protects</summary>
@@ -353,6 +357,11 @@ machine. Each rule keeps the characters that pass it:
   that ends the most such spellings goes: the look-alike itself, or a piece
   of its spelling outside ASCII (ties to the lowest code point). Every
   ASCII digit and letter that the earlier rules keep stays but `m`.
+- **No hex digits.** The last rule drops `0`–`9` and `a`–`f`, whose
+  look-alikes the earlier rules already removed, so a sigil and hex never
+  share a character: a person or a program tells them apart at a glance,
+  at any length. Coming last, it leaves the look-alike rules' work as it
+  was.
 </details>
 
 ## Evidence
@@ -362,7 +371,7 @@ machine. Each rule keeps the characters that pass it:
   or invisible characters inserted, or letters in uppercase) and 352 errors,
   each of the kind it must give.
 - **The check** (`python/test.py`): in 20 random 256-bit sigils, each of
-  the 703,040 single changed characters and 978 swaps of characters one or
+  the 694,720 single changed characters and 979 swaps of characters one or
   two apart fails to decode. One unread character comes back alone every
   time. At every length to 1,024 bytes, K is a prime above N in the fewest
   characters.
