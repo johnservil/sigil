@@ -1,6 +1,6 @@
 [package]
 name = "sigilcode"
-version = "0.1.0"
+version = "0.1.0+81af550bfd3eb2aff85c3ddf0a21446e78a1809d"
 edition = "2021"
 description = "Bytes of a known length as a sigil: one word of letters, 25 for a 256-bit hash, selected whole by a double-click, no two letters alike, in linear and constant time, with a check that picks the right one of several readings"
 license = "MIT OR Apache-2.0 OR TGPPL-1.0" # OR BOSL-1.0, see LICENSE-BOSL.txt

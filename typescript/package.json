@@ -1,6 +1,6 @@
 {
   "name": "sigilcode",
-  "version": "0.1.0",
+  "version": "0.1.0+81af550bfd3eb2aff85c3ddf0a21446e78a1809d",
   "type": "module",
   "main": "dist/sigilcode.js",
   "types": "dist/sigilcode.d.ts",
