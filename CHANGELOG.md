@@ -26,5 +26,12 @@ What changed:
 - **Stricter reading:** decoding skips spaces, line breaks and the invisible
   characters copying inserts, and refuses everything else, so what you see
   is what decodes.
+- **Room for what comes next:** every sigil carries two marker bits, `01`,
+  between its data's halves. A later format puts another value there, so its
+  strings and Sigil's never decode as each other, and a string of another
+  format fails with its own error, `marker`.
+- **One answer from uncertain readings:** `decode_readings` returns the data
+  that the one valid reading encodes, or fails with `ambiguous` when several
+  readings decode, where it returned a list.
 
 The hash of nothing, `BLAKE3("")`, is now `ᢳᕌᔃጾዿᑂഔጕꔍⶰᣟꕄꕛቴⴲజᐽᙿᕯⶂጁᑃሃᛜጩ`.
