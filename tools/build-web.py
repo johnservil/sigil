@@ -17,7 +17,7 @@ parts = []
 for name in ("alphabet", "sigilcode"):
     text = (ROOT / "typescript" / "dist" / f"{name}.js").read_text()
     if name == "sigilcode":
-        line = 'import { ALPHABET, IGNORED, UPPERCASE } from "./alphabet.js";\n'
+        line = 'import { ALPHABET, SKIPPED } from "./alphabet.js";\n'
         assert text.count(line) == 1, "compiled codec's import changed"
         text = text.replace(line, "")
     text = re.sub(r"^export ", "", text, flags=re.M)

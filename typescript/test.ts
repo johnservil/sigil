@@ -1,6 +1,7 @@
 // The TypeScript implementation against vectors.json (run from the repository's root).
 import { readFileSync } from "node:fs";
 import { ALPHABET } from "./alphabet.js";
+const LETTERS = Array.from(ALPHABET);
 import { decode, decodeReadings, DecodeError, encode, layout } from "./sigilcode.js";
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
@@ -25,19 +26,17 @@ for (const b of v.bad) {
   }
   if (kind !== b.error) throw new Error(`${b.text}: ${kind}, not ${b.error}`);
 }
-if (layout(32).join() !== "26,22381") throw new Error("layout(32)");
+if (layout(32).join() !== "25,131063" || layout(8).join() !== "8,4193633") throw new Error("layout");
 {
   const g = v.good.find((x: { data: string }) => x.data.length === 64);
-  const chars = Array.from(g.text as string);
-  const readings = chars.map((ch, i) => (i === 5 ? "0" + ch + "ab" : ch));
-  const found = decodeReadings(readings, 32);
-  if (found.length !== 1 || hex(found[0]) !== g.data) throw new Error("decodeReadings");
-}
-{
-  // One unread character: every character of the alphabet in its place.
-  const g = v.good.find((x: { data: string }) => x.data.length === 64);
-  const readings = Array.from(g.text as string).map((ch, i) => (i === 11 ? ALPHABET : ch));
-  const found = decodeReadings(readings, 32);
-  if (found.length !== 1 || hex(found[0]) !== g.data) throw new Error("decodeReadings, one unread");
+  const letters = Array.from(g.text as string);
+  // Letter 5 read three ways, letter 11 unread altogether: the one data comes back.
+  const readings = letters.map((ch, i) => (i === 5 ? LETTERS[7] + ch + LETTERS[1500] : i === 11 ? ALPHABET : ch));
+  if (hex(decodeReadings(readings, 32)) !== g.data) throw new Error("decodeReadings");
+  // Letters 0 and 1 read two ways each, where the other two also decode (found by the reference).
+  const two = letters.map((ch, i) => (i === 0 ? ch + LETTERS[63] : i === 1 ? ch + LETTERS[2039] : ch));
+  let kind = "";
+  try { decodeReadings(two, 32); } catch (e) { kind = (e as DecodeError).kind; }
+  if (kind !== "ambiguous") throw new Error(`decodeReadings, two readings: ${kind}`);
 }
 console.log(`vectors: ${v.good.length} good, ${v.variants.length} variants and ${v.bad.length} bad agree`);
