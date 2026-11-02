@@ -1,5 +1,6 @@
-# Every check QUALITY.md lists as run on each push, except the slow
-# certificate tests (tools/test_certificate.py), which run by hand.
+# Every check QUALITY.md lists as run on each push. The kernel-checked known
+# answers and certificates (lean/Sigil/KnownAnswers.lean,
+# tools/test_certificate.py) run by hand.
 name: CI
 on: [push, pull_request]
 jobs:
@@ -37,5 +38,8 @@ jobs:
     - run: |
         curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
         echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-    - run: lake build && lake exe tests ../vectors.tsv
+    # Every proof, and the specification on the vectors; the kernel-checked
+    # known answers (Sigil.KnownAnswers) need more memory than the runner has,
+    # and run by hand with the certificate tests.
+    - run: lake build Sigil.Spec Sigil.Layout Sigil.Theorems Sigil.Errors Tests && lake exe tests ../vectors.tsv
       working-directory: lean
