@@ -17,8 +17,12 @@ What changed:
 - **No upper and lower case,** so software that changes case leaves a sigil
   as it was.
 - **Every letter is three bytes of UTF-8,** so every sigil of a size has the
-  same length however you count, and encoding in Rust takes the same time
-  whatever the data.
+  same length however you count.
+- **Linear time and memory:** encoding and decoding take time and memory in
+  proportion to the data's length, where they grew with its square before.
+- **The same time for any data:** the Rust crate is built to take the same
+  time to encode or decode, whatever the data's value, so timing reveals
+  nothing about it.
 - **Stricter reading:** decoding skips spaces, line breaks and the invisible
   characters copying inserts, and refuses everything else, so what you see
   is what decodes.
