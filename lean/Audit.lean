@@ -16,4 +16,5 @@ This checks the Lean definitions and proofs; it makes no claim about the Rust ex
 #print axioms Sigil.two_apart_swap_detected
 #print axioms Sigil.erased_digit_unique
 #print axioms Sigil.KnownAnswers.sequence_32
-#print axioms Sigil.KnownAnswers.uppercase_and_ignored
+#print axioms Sigil.KnownAnswers.skipped_characters
+#print axioms Sigil.KnownAnswers.marker_error

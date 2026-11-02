@@ -1,11 +1,11 @@
-import Sigil.Layout
+import Sigil.Theorems
 
 /-! # Error detection by the AN code
 
 These statements concern base-N digits and divisibility by the layout's K. They quantify over
 all byte lengths, digit positions and values, independently of a test corpus. The final section
 connects divisibility and single-digit rejection to the Lean decoder on canonical alphabet text.
-Case variants, ignored characters and the optimized Rust remain separate work.
+Skipped characters and the optimized Rust remain separate work.
 -/
 
 namespace Sigil
@@ -176,20 +176,16 @@ theorem decode_success_divisible (L : Nat) (ds : List Nat) (data : List UInt8)
   rw [decode_alphabet_digits L ds hlen hdigits] at h
   split at h
   · cases h
-  · split at h
-    · cases h
-    · exact Nat.dvd_of_mod_eq_zero (by omega)
+  · exact Nat.dvd_of_mod_eq_zero (by omega)
 
-/-- A nonmultiple of K is rejected by the decoder, with range taking precedence over check. -/
+/-- A nonmultiple of K is rejected by the decoder's check. -/
 theorem decode_nonmultiple (L : Nat) (ds : List Nat)
     (hlen : ds.length = (layout L).1) (hdigits : ∀ x ∈ ds, x < N)
     (hbad : ¬ (layout L).2 ∣ ofDigits ds) :
-    ∃ e, decode (ds.map (fun x => alphabet[x]!)) L = .error e := by
+    decode (ds.map (fun x => alphabet[x]!)) L = .error .check := by
   rw [decode_alphabet_digits L ds hlen hdigits]
-  by_cases hrange : (layout L).2 * 2 ^ (8 * L) ≤ ofDigits ds
-  · exact ⟨.range, by simp [hrange]⟩
-  · have hrem : ofDigits ds % (layout L).2 ≠ 0 := fun h => hbad (Nat.dvd_of_mod_eq_zero h)
-    exact ⟨.check, by simp [hrange, hrem]⟩
+  have hrem : ofDigits ds % (layout L).2 ≠ 0 := fun h => hbad (Nat.dvd_of_mod_eq_zero h)
+  simp [hrem]
 
 /-- Replacing one canonical alphabet digit of a successfully decoded sigil by a different
 alphabet digit makes the actual Lean decoder return an error. -/
@@ -207,7 +203,7 @@ theorem single_change_decode_rejected (L : Nat) (pre suffix : List Nat) (a b : N
     · subst x; exact hc
     · exact hrest x (List.mem_append_right _ h)
   have hv := decode_success_divisible L _ data hlen (hchars a ha) hvalid
-  exact decode_nonmultiple L _ (by simpa using hlen) (hchars b hb)
-    (single_change_detected L pre suffix a b ha hb hne hv)
+  exact ⟨.check, decode_nonmultiple L _ (by simpa using hlen) (hchars b hb)
+    (single_change_detected L pre suffix a b ha hb hne hv)⟩
 
 end Sigil

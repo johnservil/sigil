@@ -1,16 +1,25 @@
-import Sigil.Theorems
+import Sigil.Spec
 
 /-! # The layout's mathematical contract
 
 The trial-division predicate agrees with primality: a number at least two whose only natural
-number divisors are one and itself. The search chooses the largest such prime fitting the room,
-and the smallest character count whose room can hold a prime above the alphabet size.
+number divisors are one and itself. Every layout's K is such a prime, larger than the alphabet
+size, and fits the room beside the marked data; the layout's letter count is the fewest with room
+for any prime above the alphabet size.
 -/
 
 namespace Sigil
 
 /-- A prime is at least two and has only one and itself as natural-number divisors. -/
 def Prime (k : Nat) : Prop := 2 ≤ k ∧ ∀ d : Nat, d ∣ k → d = 1 ∨ d = k
+
+/-- Whether no `p` from `p₀` divides `k`, for `p` up to `√k`, trying at most `fuel` of them. -/
+def noDivisorFrom (k : Nat) : (fuel p₀ : Nat) → Bool
+  | 0, _ => true
+  | fuel + 1, p => k < p * p || (k % p ≠ 0 && noDivisorFrom k fuel (p + 1))
+
+/-- Whether `k` is prime, by trial division. -/
+def isPrime (k : Nat) : Bool := 2 ≤ k && noDivisorFrom k k 2
 
 /-- The trial-division loop tests exactly the divisors in its bounded interval up to √k. -/
 theorem noDivisorFrom_iff (k : Nat) : ∀ fuel p,
@@ -75,58 +84,64 @@ theorem isPrime_iff (k : Nat) : isPrime k = true ↔ Prime k := by
       have : k * 2 ≤ k * k := Nat.mul_le_mul_left k hk
       omega
 
-/-- The downward search either finds a mathematical prime or returns zero. -/
-theorem primeAtMost_zero_or_prime : ∀ r, primeAtMost r = 0 ∨ Prime (primeAtMost r)
-  | 0 => Or.inl rfl
-  | r + 1 => by
-    unfold primeAtMost
-    split
-    · exact Or.inr ((isPrime_iff _).mp ‹_›)
-    · exact primeAtMost_zero_or_prime r
+/-! ## The layout -/
 
-/-- The layout's K is mathematically prime, not merely accepted by its test. -/
+/-- The room's exponent is 12 to 22 at every length, and with it the letter count. -/
+theorem roomBits_range (L : Nat) : 12 ≤ roomBits L ∧ roomBits L ≤ 22 ∧
+    11 * letters L = 8 * L + 2 + roomBits L := by
+  simp only [roomBits, letters]; omega
+
+set_option maxHeartbeats 10000000 in
+/-- Each check prime is prime, larger than `N`, and at most its room. -/
+theorem checkPrimes_facts : ∀ i, i < 11 →
+    isPrime (checkPrimes.getD i 0) = true ∧ N < checkPrimes.getD i 0 ∧
+      checkPrimes.getD i 0 ≤ 2 ^ (i + 12) := by
+  decide +kernel
+
+theorem layout_K (L : Nat) : (layout L).2 = checkPrimes.getD (roomBits L - 12) 0 := by
+  simp only [layout]
+
 theorem K_prime (L : Nat) : Prime (layout L).2 := by
-  have hK := N_lt_K L
-  rcases primeAtMost_zero_or_prime (room L (layout L).1) with h | h
-  · change (layout L).2 = 0 at h
+  have := roomBits_range L
+  exact (isPrime_iff _).mp (checkPrimes_facts (roomBits L - 12) (by omega)).1
+
+/-- The layout's `K` is larger than `N`. -/
+theorem N_lt_K (L : Nat) : N < (layout L).2 := by
+  have := roomBits_range L
+  exact (checkPrimes_facts (roomBits L - 12) (by omega)).2.1
+
+theorem N_pow (n : Nat) : N ^ n = 2 ^ (11 * n) := by
+  rw [show N = 2 ^ 11 from rfl, ← Nat.pow_mul]
+
+/-- `K` times the marked data's bound fits in the sigil's `n` letters. -/
+theorem K_fits (L : Nat) : (layout L).2 * 2 ^ (8 * L + 2) ≤ N ^ (layout L).1 := by
+  have hr := roomBits_range L
+  have hK := (checkPrimes_facts (roomBits L - 12) (by omega)).2.2
+  rw [show roomBits L - 12 + 12 = roomBits L by omega] at hK
+  rw [layout_K, N_pow, show (layout L).1 = letters L from rfl, hr.2.2,
+    Nat.pow_add 2 (8 * L + 2) (roomBits L), Nat.mul_comm (2 ^ (8 * L + 2)) (2 ^ roomBits L)]
+  exact Nat.mul_le_mul_right _ hK
+
+/-- Fewer letters leave no room for any prime above `N` beside the marked data. -/
+theorem layout_minimal (L m p : Nat) (hm : m < (layout L).1) (_hp : Prime p)
+    (hfit : p * 2 ^ (8 * L + 2) ≤ N ^ m) : p ≤ N := by
+  have hr := roomBits_range L
+  have hm' : 11 * m + 11 ≤ 8 * L + 2 + 22 := by
+    have : m + 1 ≤ letters L := hm
     omega
-  · exact h
+  rw [N_pow] at hfit
+  have : N ^ m ≤ 2 ^ 11 * 2 ^ (8 * L + 2) := by
+    rw [N_pow, ← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega)
+  rw [N_pow] at this
+  have h := Nat.le_trans hfit this
+  exact Nat.le_of_mul_le_mul_right h (Nat.two_pow_pos _)
 
-/-- Every mathematical prime fitting the selected character count is at most K. -/
-theorem K_largest (L p : Nat) (hp : Prime p)
-    (hfit : p * 2 ^ (8 * L) ≤ N ^ (layout L).1) : p ≤ (layout L).2 := by
-  apply le_primeAtMost p ((isPrime_iff p).mpr hp)
-  exact (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr hfit
-
-/-- The upward search has rejected every earlier candidate, including when its fuel runs out. -/
-theorem firstFrom_minimal (L : Nat) : ∀ fuel n₀ m,
-    n₀ ≤ m → m < firstFrom L fuel n₀ → primeAtMost (room L m) ≤ N
-  | 0, _, _, hlo, hhi => by simp only [firstFrom] at hhi; omega
-  | fuel + 1, n, m, hlo, hhi => by
-    unfold firstFrom at hhi
-    split at hhi
-    · omega
-    · rename_i hn
-      by_cases e : m = n
-      · subst m; omega
-      · exact firstFrom_minimal L fuel (n + 1) m (by omega) hhi
-
-/-- Fewer characters cannot hold any prime above N beside L bytes. -/
-theorem layout_minimal (L m p : Nat) (hm : m < (layout L).1) (hp : Prime p)
-    (hfit : p * 2 ^ (8 * L) ≤ N ^ m) : p ≤ N := by
-  have hsmall := firstFrom_minimal L (8 * L + 2) 0 m (Nat.zero_le _) hm
-  have hp_le := le_primeAtMost p ((isPrime_iff p).mpr hp) (room L m)
-    ((Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr hfit)
-  omega
-
-/-- The layout's full mathematical contract: a prime above N, the largest that fits,
-using the fewest possible characters. Quantification covers every byte length. -/
+/-- The layout's full mathematical contract: a prime above N that fits beside the marked data,
+using the fewest possible letters. Quantification covers every byte length. -/
 theorem layout_contract (L : Nat) :
     let (n, K) := layout L
-    Prime K ∧ N < K ∧ K * 2 ^ (8 * L) ≤ N ^ n ∧
-    (∀ p, Prime p → p * 2 ^ (8 * L) ≤ N ^ n → p ≤ K) ∧
-    (∀ m, m < n → ∀ p, Prime p → p * 2 ^ (8 * L) ≤ N ^ m → p ≤ N) := by
-  exact ⟨K_prime L, N_lt_K L, K_fits L, K_largest L,
-    fun m hm p hp hfit => layout_minimal L m p hm hp hfit⟩
+    Prime K ∧ N < K ∧ K * 2 ^ (8 * L + 2) ≤ N ^ n ∧
+    (∀ m, m < n → ∀ p, Prime p → p * 2 ^ (8 * L + 2) ≤ N ^ m → p ≤ N) :=
+  ⟨K_prime L, N_lt_K L, K_fits L, fun m hm p hp hfit => layout_minimal L m p hm hp hfit⟩
 
 end Sigil

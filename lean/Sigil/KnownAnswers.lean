@@ -2,10 +2,9 @@ import Sigil.Spec
 
 /-! # Kernel-checked known answers
 
-These literals pin the format separately from its round-trip theorem. The first example is
-hand-calculable: 0 * 7129 = 0, written as two zero digits (U+0030). The other encodings were
-proposed by the Python reference; the kernel checks them against the Lean specification.
-`Tests.lean` additionally runs the full shared vector corpus using compiled evaluation.
+These literals pin the format separately from its round-trip theorem: the Python reference
+proposed them, and the kernel checks them against the Lean specification. `Tests.lean` also runs
+the full shared vector corpus using compiled evaluation.
 -/
 
 set_option maxRecDepth 100000
@@ -16,26 +15,26 @@ deriving instance DecidableEq for Except
 
 theorem zero :
     Sigil.encode ([0] : List UInt8) =
-    ([48, 48] : List Nat) := by decide +kernel
+    ([2339, 43524] : List Nat) := by decide +kernel
 
 theorem maximum_byte :
     Sigil.encode ([255] : List UInt8) =
-    ([11732, 5350] : List Nat) := by decide +kernel
+    ([43172, 5542] : List Nat) := by decide +kernel
 
 theorem leading_zero :
     Sigil.encode ([0, 1] : List UInt8) =
-    ([48, 116, 6367] : List Nat) := by decide +kernel
+    ([2310, 2321, 5691] : List Nat) := by decide +kernel
 
 theorem sequence_32 :
     Sigil.encode ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31] : List UInt8) =
-    ([48, 117, 1078, 111, 4942, 5489, 392, 5364, 4836, 4952, 5241, 4890, 671, 5421, 4706, 11715, 5565, 5506, 5596, 5582, 1279, 11740, 4922, 679, 5751, 5394] : List Nat) := by decide +kernel
+    ([2308, 2430, 5434, 43159, 5366, 43177, 6360, 3501, 42457, 43166, 42358, 5817, 4855, 42256, 11736, 2832, 42302, 5310, 4848, 5627, 5813, 42346, 3116, 42437, 3096] : List Nat) := by decide +kernel
 
 theorem decode_zero :
-    Sigil.decode [48, 48] 1 =
+    Sigil.decode [2339, 43524] 1 =
     .ok [0] := by decide +kernel
 
-theorem uppercase_and_ignored :
-    Sigil.decode [8203, 32, 65, 5260, 10] 1 =
+theorem skipped_characters :
+    Sigil.decode [8203, 32, 2343, 8288, 43186, 10] 1 =
     .ok [2] := by decide +kernel
 
 theorem length_error :
@@ -43,15 +42,19 @@ theorem length_error :
     .error (.length 0 2) := by decide +kernel
 
 theorem character_error :
-    Sigil.decode [8203, 95, 48] 1 =
-    .error (.character 2 95) := by decide +kernel
-
-theorem range_error :
-    Sigil.decode [11742, 11742] 1 =
-    .error (.range) := by decide +kernel
+    Sigil.decode [8203, 8238, 43524] 1 =
+    .error (.character 2 8238) := by decide +kernel
 
 theorem check_error :
-    Sigil.decode [48, 49] 1 =
+    Sigil.decode [2339, 43525] 1 =
     .error (.check) := by decide +kernel
+
+theorem range_error :
+    Sigil.decode [43594, 5438] 1 =
+    .error (.range) := by decide +kernel
+
+theorem marker_error :
+    Sigil.decode [2438, 43138] 1 =
+    .error (.marker) := by decide +kernel
 
 end Sigil.KnownAnswers

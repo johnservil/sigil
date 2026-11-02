@@ -28,7 +28,8 @@ def decodes (s : List Nat) (d : List UInt8) : Bool :=
   | .error _ => false
 
 def kind : DecodeError → String
-  | .length .. => "length" | .character .. => "character" | .range => "range" | .check => "check"
+  | .length .. => "length" | .character .. => "character" | .check => "check" | .range => "range"
+  | .marker => "marker"
 
 /-- The failures of one vector, empty when it passes. -/
 def test (line : String) : List String :=

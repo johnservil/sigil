@@ -345,6 +345,7 @@ def main():
             "The alphabet (`alphabet.txt`), as code points in the alphabet's order, and the code points\n"
             "decoding skips (`skipped.txt`), as [first, last] ranges. -/\n\n"
             "namespace Sigil\n\n"
+            "set_option maxRecDepth 100000 in\n"
             f"def alphabet : Array Nat := #[{', '.join(str(c) for c in letters)}]\n\n"
             f"def skippedRanges : Array (Nat × Nat) := #[{', '.join(f'({a}, {b})' for a, b in skipped)}]\n\n"
             "end Sigil\n"),

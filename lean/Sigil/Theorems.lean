@@ -1,11 +1,11 @@
-import Sigil.Spec
+import Sigil.Layout
 
 /-! # Decoding inverts encoding
 
 `decode_encode`: for any data `d`, `decode (encode d) d.length = .ok d`. The
-sections below build it from the specification's parts: the alphabet's characters are distinct
-and never ignored; the layout's `K` exceeds `N` and fits the room; bytes and digits
-convert back and forth. Every proof is checked by Lean's kernel, with no `native_decide`, and
+sections below build it from the specification's parts: the alphabet's letters are distinct
+and never skipped; the layout's `K` exceeds `N` and fits the room (`Layout.lean`); the marker goes
+in and comes out; bytes and digits convert back and forth. Every proof is checked by Lean's kernel, with no `native_decide`, and
 `decode_encode` rests on Lean's three standard axioms alone (`propext`, `Classical.choice`,
 `Quot.sound`). -/
 
@@ -22,7 +22,7 @@ theorem alphabet_ascending : ascending alphabet.toList = true := by decide +kern
 
 theorem alphabet_size : alphabet.size = N := by decide +kernel
 
-theorem alphabet_not_ignored : alphabet.toList.all (fun p => !ignored p) = true := by
+theorem alphabet_not_skipped : alphabet.toList.all (fun p => !skipped p) = true := by
   decide +kernel
 
 theorem pairwise_of_ascending : ∀ l : List Nat, ascending l = true → l.Pairwise (· < ·)
@@ -53,75 +53,53 @@ theorem digit?_alphabet (k : Nat) (hk : k < N) : digit? alphabet[k]! = some k :=
   have := idxOf?_of_pairwise (pairwise_of_ascending _ alphabet_ascending) k (by simpa using hs)
   rw [getElem!_pos alphabet k hs]
   simp only [digit?, Array.idxOf?_eq_toList, ← Array.getElem_toList, this]
-  rfl
 
-theorem ignored_alphabet (k : Nat) (hk : k < N) : ignored alphabet[k]! = false := by
+theorem skipped_alphabet (k : Nat) (hk : k < N) : skipped alphabet[k]! = false := by
   have hs : k < alphabet.size := by rw [alphabet_size]; exact hk
   rw [getElem!_pos alphabet k hs]
-  have := List.all_eq_true.mp alphabet_not_ignored alphabet[k] (by simp)
+  have := List.all_eq_true.mp alphabet_not_skipped alphabet[k] (by simp)
   simpa using this
 
-/-! ## The layout -/
+/-! ## The marker -/
 
-theorem primeAtMost_le : ∀ r, primeAtMost r ≤ r
-  | 0 => Nat.le_refl 0
-  | r + 1 => by
-    unfold primeAtMost
-    split
-    · exact Nat.le_refl _
-    · have := primeAtMost_le r; omega
+/-- With `H = 2^(4L)`, the marked value's quotient by `H` is `4 · (d / H) + 1` and its remainder
+is `d mod H`. -/
+theorem mark_div_mod (L d : Nat) :
+    mark L d / 2 ^ (4 * L) = 4 * (d / 2 ^ (4 * L)) + marker ∧ mark L d % 2 ^ (4 * L) = d % 2 ^ (4 * L) := by
+  have hH := Nat.two_pow_pos (4 * L)
+  have hr := Nat.mod_lt d hH
+  unfold mark
+  constructor
+  · rw [Nat.mul_comm, Nat.mul_add_div hH, Nat.div_eq_of_lt hr, Nat.add_zero]
+  · rw [Nat.mul_comm, Nat.mul_add_mod, Nat.mod_eq_of_lt hr]
 
-theorem le_primeAtMost (p : Nat) (hp : isPrime p = true) : ∀ r, p ≤ r → p ≤ primeAtMost r
-  | 0, h => by
-    have : p = 0 := by omega
-    subst this; simp [isPrime] at hp
-  | r + 1, h => by
-    unfold primeAtMost
-    split
-    · exact h
-    · rename_i hr
-      have : p ≠ r + 1 := fun e => hr (e ▸ hp)
-      exact le_primeAtMost p hp r (by omega)
+/-- The marked value of data below `2^(8L)` is below `2^(8L + 2)`. -/
+theorem mark_lt (L d : Nat) (hd : d < 2 ^ (8 * L)) : mark L d < 2 ^ (8 * L + 2) := by
+  have hH := Nat.two_pow_pos (4 * L)
+  have h8 : 2 ^ (8 * L) = 2 ^ (4 * L) * 2 ^ (4 * L) := by rw [← Nat.pow_add]; congr 1; omega
+  have h82 : 2 ^ (8 * L + 2) = 4 * 2 ^ (4 * L) * 2 ^ (4 * L) := by
+    rw [Nat.pow_add, h8]; simp only [Nat.mul_comm, Nat.mul_left_comm]
+  have hq : d / 2 ^ (4 * L) < 2 ^ (4 * L) := by
+    rw [Nat.div_lt_iff_lt_mul hH]; rw [h8] at hd; exact hd
+  have hr := Nat.mod_lt d hH
+  unfold mark marker
+  rw [h82]
+  have : (4 * (d / 2 ^ (4 * L)) + 1) * 2 ^ (4 * L) + 2 ^ (4 * L) ≤ 4 * 2 ^ (4 * L) * 2 ^ (4 * L) := by
+    rw [← Nat.succ_mul]
+    exact Nat.mul_le_mul_right _ (by omega)
+  omega
 
-theorem isPrime_1361 : isPrime 1361 = true := by decide +kernel
+/-- Taking the marker out gives back the data. -/
+theorem unmark_mark (L d : Nat) : unmark L (mark L d) = d := by
+  have ⟨hdiv, hmod⟩ := mark_div_mod L d
+  unfold unmark
+  rw [Nat.pow_add, show (2 : Nat) ^ 2 = 4 from rfl, ← Nat.div_div_eq_div_mul, hdiv, hmod]
+  rw [show (4 * (d / 2 ^ (4 * L)) + marker) / 4 = d / 2 ^ (4 * L) by unfold marker; omega]
+  exact Nat.div_add_mod' d (2 ^ (4 * L))
 
-theorem firstFrom_spec (L : Nat) : ∀ fuel n₀,
-    N < primeAtMost (room L (firstFrom L fuel n₀)) ∨ firstFrom L fuel n₀ = n₀ + fuel
-  | 0, _ => Or.inr rfl
-  | fuel + 1, n => by
-    unfold firstFrom
-    split
-    · exact Or.inl ‹_›
-    · rcases firstFrom_spec L fuel (n + 1) with h | h
-      · exact Or.inl h
-      · right; omega
-
-theorem two_pow_le_N_pow (k : Nat) : 2 ^ k ≤ N ^ k := Nat.pow_le_pow_left (by decide) k
-
-theorem room_last (L : Nat) : 1361 ≤ room L (8 * L + 2) := by
-  unfold room
-  rw [Nat.le_div_iff_mul_le (Nat.two_pow_pos _), Nat.pow_add]
-  have := two_pow_le_N_pow (8 * L)
-  have h2 : 1361 ≤ N ^ 2 := by decide
-  calc 1361 * 2 ^ (8 * L) ≤ N ^ 2 * N ^ (8 * L) := Nat.mul_le_mul h2 this
-    _ = N ^ (8 * L) * N ^ 2 := Nat.mul_comm _ _
-
-/-- The layout's `K` is larger than `N`. -/
-theorem N_lt_K (L : Nat) : N < (layout L).2 := by
-  simp only [layout]
-  rcases firstFrom_spec L (8 * L + 2) 0 with h | h
-  · exact h
-  · rw [h, Nat.zero_add]
-    have := le_primeAtMost 1361 isPrime_1361 _ (room_last L)
-    have : N < 1361 := by decide
-    omega
-
-/-- The data times `K` fits in the sigil's `n` characters. -/
-theorem K_fits (L : Nat) : (layout L).2 * 2 ^ (8 * L) ≤ N ^ (layout L).1 := by
-  simp only [layout]
-  have := primeAtMost_le (room L (firstFrom L (8 * L + 2) 0))
-  unfold room at this
-  exact (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mp this
+/-- The marker of a marked value is Sigil's. -/
+theorem mark_marker (L d : Nat) : mark L d / 2 ^ (4 * L) % 4 = marker := by
+  rw [(mark_div_mod L d).1]; unfold marker; omega
 
 /-! ## Bytes and digits -/
 
@@ -190,14 +168,15 @@ theorem mapM_ok {α β ε : Type} (F : α → Except ε β) (g : α → β) :
       mapM_ok F g l (fun x hx => h x (List.mem_cons_of_mem _ hx))]
     rfl
 
-/-- On alphabet digits of the specified length, decoding is exactly the AN code's range and
-remainder checks, followed by conversion of the quotient to bytes. -/
+/-- On alphabet digits of the specified length, decoding is exactly the AN code's check, the
+range and the marker, followed by taking the marker out and converting to bytes. -/
 theorem decode_alphabet_digits (L : Nat) (ds : List Nat)
     (hlen : ds.length = (layout L).1) (hdigits : ∀ x ∈ ds, x < N) :
     decode (ds.map (fun x => alphabet[x]!)) L =
-      if (layout L).2 * 2 ^ (8 * L) ≤ ofDigits ds then .error .range
-      else if ofDigits ds % (layout L).2 ≠ 0 then .error .check
-      else .ok (toBytes (ofDigits ds / (layout L).2) L) := by
+      if ofDigits ds % (layout L).2 ≠ 0 then .error .check
+      else if 2 ^ (8 * L + 2) ≤ ofDigits ds / (layout L).2 then .error .range
+      else if ofDigits ds / (layout L).2 / 2 ^ (4 * L) % 4 ≠ marker then .error .marker
+      else .ok (toBytes (unmark L (ofDigits ds / (layout L).2)) L) := by
   simp only [decode]
   generalize hs : ds.map (fun x => alphabet[x]!) = s
   have hchar : ∀ a ∈ s.zipIdx 1, ∃ x, x ∈ ds ∧ a.1 = alphabet[x]! := by
@@ -206,11 +185,11 @@ theorem decode_alphabet_digits (L : Nat) (ds : List Nat)
     rw [← hs, List.mem_map] at this
     obtain ⟨x, hx, e⟩ := this
     exact ⟨x, hx, e.symm⟩
-  have hfilter : (s.zipIdx 1).filter (fun x => !ignored x.fst) = s.zipIdx 1 := by
+  have hfilter : (s.zipIdx 1).filter (fun x => !skipped x.fst) = s.zipIdx 1 := by
     rw [List.filter_eq_self]
     intro a ha
     obtain ⟨x, hx, e⟩ := hchar a ha
-    rw [e, ignored_alphabet x (hdigits x hx)]
+    rw [e, skipped_alphabet x (hdigits x hx)]
     rfl
   have hslen : (s.zipIdx 1).length = (layout L).1 := by
     rw [List.length_zipIdx, ← hs, List.length_map, hlen]
@@ -237,15 +216,15 @@ theorem decode_alphabet_digits (L : Nat) (ds : List Nat)
 theorem decode_encode (d : List UInt8) : decode (encode d) d.length = .ok d := by
   have hK := N_lt_K d.length
   have hfit := K_fits d.length
-  have hlt := ofBytes_lt d
-  have hprod : ofBytes d * (layout d.length).2 < (layout d.length).2 * 2 ^ (8 * d.length) := by
-    rw [Nat.mul_comm (layout d.length).2]
-    exact Nat.mul_lt_mul_of_pos_right hlt (by omega)
-  have hw : ofBytes d * (layout d.length).2 < N ^ (layout d.length).1 := by omega
+  have hm := mark_lt d.length (ofBytes d) (ofBytes_lt d)
+  have hKpos : 0 < (layout d.length).2 := by omega
+  have hw : mark d.length (ofBytes d) * (layout d.length).2 < N ^ (layout d.length).1 := by
+    have := Nat.mul_lt_mul_of_pos_right hm hKpos
+    rw [Nat.mul_comm (2 ^ _)] at this
+    omega
   unfold encode
   rw [decode_alphabet_digits _ _ (toDigits_length _ _) (toDigits_lt _ _),
-    ofDigits_toDigits, Nat.mod_eq_of_lt hw]
-  simp [Nat.not_le_of_lt hprod, Nat.mul_mod_left,
-    Nat.mul_div_cancel _ (show 0 < (layout d.length).2 by omega), toBytes_ofBytes]
+    ofDigits_toDigits, Nat.mod_eq_of_lt hw, Nat.mul_div_cancel _ hKpos]
+  simp [Nat.mul_mod_left, Nat.not_le_of_lt hm, mark_marker, unmark_mark, toBytes_ofBytes]
 
 end Sigil
