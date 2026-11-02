@@ -1,5 +1,9 @@
 # Changes
 
+## Sigil 0.1.1, November 2026: a README on crates.io
+
+The crate's page on crates.io shows a README. The code is 0.1's.
+
 ## Sigil 0.1, November 2026: the first release
 
 Sigil's first release changes how sigils look, so a sigil made before it
