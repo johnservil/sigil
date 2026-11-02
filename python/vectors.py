@@ -7,8 +7,8 @@ must pass, from this (the reference) implementation.
 Deterministic: each value is SHA-256 of its length and index, so the file is
 the same on every machine. "good" lists data (hex) and its text; "bad" lists
 texts, the length asked for, and the error kind each must give; "variants" lists
-copies that differ from a codeword (ignored characters inserted, letters in
-uppercase) with the data each decodes to.
+copies that differ from a codeword (skipped characters inserted) with the data
+each decodes to.
 """
 import hashlib
 import json
@@ -31,10 +31,26 @@ def value(length, i):
     return out[:length]
 
 
-# Ignored characters a copy or a line break can insert: a space, a line end,
+# Skipped characters a copy or a line break can insert: a space, a line end,
 # a tab, a carriage return, a no-break space, a zero-width space, a soft
-# hyphen, a byte-order mark, an ideographic space, a line separator.
-SPACES = [" ", "\n", "\t", "\r\n", "\u00a0", "\u200b", "\u00ad", "\ufeff", "\u3000", "\u2028"]
+# hyphen, a byte-order mark, a word joiner, an ideographic space, a line
+# separator.
+SPACES = [" ", "\n", "\t", "\r\n", "\u00a0", "\u200b", "\u00ad", "\ufeff", "\u2060", "\u3000", "\u2028"]
+# Characters decoding refuses that a copy, an editor or a forger might put in
+# a sigil: a hex digit, a right-to-left override, a left-to-right mark, a
+# zero-width joiner, a variation selector, an ASCII letter, a CJK ideograph.
+REFUSED = ["a", "\u202e", "\u200e", "\u200d", "\ufe0f", "_", "\u4e00"]
+
+
+def text_of(w, n):
+    """The letters that write the value w in n digits."""
+    return "".join(B.ALPHABET[(w >> 11 * i) & 2047] for i in reversed(range(n)))
+
+
+def marked(data, marker):
+    half = 4 * len(data)
+    d = int.from_bytes(data, "big")
+    return (((d >> half) << 2 | marker) << half) | (d & ((1 << half) - 1))
 
 
 def vectors():
@@ -44,35 +60,29 @@ def vectors():
         for data in datas:
             text = B.encode(data)
             good.append({"data": data.hex(), "text": text})
-        # The codewords of no value at this length.
+        # The texts of no value at this length.
+        n, k = B.layout(length)
         text = B.encode(datas[2])
         bad += [
             {"text": text[:-1], "length": length, "error": "length"},
             {"text": text + text[0], "length": length, "error": "length"},
-            {"text": "_" + text[1:], "length": length, "error": "character"},
-            {"text": "\u4e00" + text[1:], "length": length, "error": "character"},
-            {"text": "\u0131" + text[1:], "length": length, "error": "character"},
             {"text": text[:-1] + " " + "\u200b", "length": length, "error": "length"},
+            {"text": text[:1] + "\u202e" + text[1:], "length": length, "error": "length"},
         ]
-        bad.append({"text": B.ALPHABET[-1] * len(text), "length": length, "error": "range"})
-        # One character changed: the first change of the last character that
-        # the check catches (rather than the range).
-        for d in range(1, B.N):
-            changed = text[:-1] + B.ALPHABET[(B.DIGIT[text[-1]] + d) % B.N]
-            try:
-                B.decode(changed, length)
-            except B.DecodeError as e:
-                if e.kind == "check":
-                    bad.append({"text": changed, "length": length, "error": "check"})
-                    break
-        # Copies that differ from the codeword and decode as it does: ignored
-        # characters inserted, and the codeword in uppercase, wholly or in part.
+        bad += [{"text": c + text[1:], "length": length, "error": "character"} for c in REFUSED]
+        # A multiple of K too large for the length, and the other markers.
+        bad.append({"text": text_of(((1 << 11 * n) - 1) // k * k, n), "length": length, "error": "range"})
+        bad += [{"text": text_of(marked(datas[2], m) * k, n), "length": length, "error": "marker"} for m in (0, 2, 3)]
+        # One letter changed, and two neighbours swapped: the check catches both.
+        bad.append({"text": text[:-1] + B.ALPHABET[(B.DIGIT[text[-1]] + 1) % B.N], "length": length, "error": "check"})
+        j = next((j for j in range(n - 1) if text[j] != text[j + 1]), None)
+        if j is not None:
+            bad.append({"text": text[:j] + text[j + 1] + text[j] + text[j + 2:], "length": length, "error": "check"})
+        # Copies that differ from the codeword and decode as it does: skipped
+        # characters inserted.
         for insert in SPACES:
             j = length % len(text)
             variants.append({"data": datas[2].hex(), "text": insert + text[:j] + insert + text[j:] + insert})
-        upper = "".join(B.UPPERCASE[B.DIGIT[c]] for c in text)
-        variants.append({"data": datas[2].hex(), "text": upper})
-        variants.append({"data": datas[2].hex(), "text": "".join(u if i % 2 else c for i, (c, u) in enumerate(zip(text, upper)))})
     return {"good": good, "variants": variants, "bad": bad}
 
 

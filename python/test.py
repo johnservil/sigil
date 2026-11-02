@@ -35,12 +35,16 @@ def main():
         assert error(b["text"], b["length"]) == b["error"], b
     print(f"vectors: {len(v['good'])} good, {len(v['variants'])} variants and {len(v['bad'])} bad agree")
 
-    assert B.LEAST_K == 1361 and B.layout(32) == (26, 22381)
+    assert B.layout(32) == (25, 131071) and B.layout(16) == (13, 8191)
     for length in range(1, 1025):
         n, k = B.layout(length)
-        assert B.N < k and B.is_prime(k) and k << 8 * length <= B.N ** n and B.N ** (n - 1) < B.LEAST_K << 8 * length, length
-    print("layouts (characters, K):", {length: B.layout(length) for length in (1, 8, 16, 20, 32, 48, 64)},
-          "; at every length to 1024 bytes K is a prime above N and n the fewest characters that hold one")
+        room = 1 << (11 * n - 8 * length - 2)
+        assert B.N < k <= room and B.is_prime(k) and (room >> 11) < 2053, length
+        assert all(not B.is_prime(c) for c in range(k + 1, room + 1)), length
+    print("layouts (letters, K):", {length: B.layout(length) for length in (1, 8, 10, 16, 20, 24, 32, 64)},
+          "; at every length to 1024 bytes K is the largest prime in the room and n the fewest letters that hold one above N")
+    # Every letter is three bytes of UTF-8, and none is a hex digit.
+    assert all(len(c.encode()) == 3 for c in B.ALPHABET) and not set(B.ALPHABET) & set("0123456789abcdefABCDEF")
 
     # The guarantees, on 256-bit values: every changed character and every
     # swap of characters one or two apart fails to decode, and one unread
@@ -53,21 +57,21 @@ def main():
         for j in range(len(sigil)):
             for c in B.ALPHABET:
                 if c != sigil[j]:
-                    assert error(sigil[:j] + c + sigil[j + 1:], 32) in ("range", "check")
+                    assert error(sigil[:j] + c + sigil[j + 1:], 32) == "check"
                     changed += 1
             for gap in (1, 2):
                 if j + gap < len(sigil) and sigil[j] != sigil[j + gap]:
                     t = list(sigil)
                     t[j], t[j + gap] = t[j + gap], t[j]
-                    assert error("".join(t), 32) in ("range", "check")
+                    assert error("".join(t), 32) == "check"
                     swapped += 1
         j = rng.randrange(len(sigil))
         readings = list(sigil)
         readings[j] = B.ALPHABET
-        assert B.decode_readings(readings, 32) == [data]
+        assert B.decode_readings(readings, 32) == data
         recovered += 1
-    print(f"every one of {changed} changed characters and {swapped} swaps of characters one or two apart fails to decode; "
-          f"one unread character comes back alone in {recovered} of {recovered}")
+    print(f"every one of {changed} changed letters and {swapped} swaps of letters one or two apart fails the check; "
+          f"one unread letter comes back alone in {recovered} of {recovered}")
 
     # Readings: one character read three ways, the right one among them.
     three = 0
@@ -79,9 +83,17 @@ def main():
         rng.shuffle(guesses)
         readings = list(sigil)
         readings[j] = "".join(guesses)
-        assert B.decode_readings(readings, 32) == [data]
+        assert B.decode_readings(readings, 32) == data
         three += 1
-    print(f"one character read three ways: the right data alone in {three} of 200")
+    print(f"one letter read three ways: the right data alone in {three} of 200")
+    # The marker in the middle leaves both edges free: over random 256-bit data,
+    # the first and the last letter each take more than 1,900 of the 2,048 values.
+    firsts, lasts = set(), set()
+    for i in range(20000):
+        sigil = B.encode(hashlib.sha256(b"edges" + i.to_bytes(4, "big")).digest())
+        firsts.add(sigil[0]); lasts.add(sigil[-1])
+    assert len(firsts) > 1900 and len(lasts) > 1900, (len(firsts), len(lasts))
+    print(f"the first letter took {len(firsts)} and the last {len(lasts)} of the 2,048 values over 20,000 random 256-bit sigils")
 
 
 if __name__ == "__main__":
