@@ -88,8 +88,10 @@ decoder both know L, as a program that stores 32-byte hashes does.
   digits. It costs a second character set in one word, and a few more
   characters.
 - **D3. Drawn everywhere.** Beyond R9's browsers, the default setups of
-  terminals and editors draw every character too (Emacs on macOS, by
-  default, drew 5 of 15 scripts as boxes, November 3, 2026).
+  terminals and editors draw every character too. Emacs on macOS drew 5 of
+  15 scripts as boxes (November 3, 2026): their fonts are among macOS's
+  hidden supplemental fonts, which Emacs does not search, and copying them
+  from /System/Library/Fonts/Supplemental to ~/Library/Fonts fixes it.
 - **D4. Fewest scripts.** Each script needs its own font, and is one more way
   for a word to show a box; fewer also make a word look even, and leave
   fewer pairs of scripts to check for look-alikes.
