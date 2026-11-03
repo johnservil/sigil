@@ -50,6 +50,25 @@ earlier goal leaves.
 | G3 | **No look-alikes.** Of the letters taken, no two look alike, and none looks like several others in a row, by Unicode's table of look-alikes (UTS #39). | A person comparing sigils by eye can tell every letter from every other. | Within each class of look-alikes, the letter with the lowest code point stays. While a letter looks like a sequence of others, the letter that ends the most such spellings goes. If too few letters remain, the next script is taken and this goal applies again. |
 | G4 | **Oldest first.** | An older letter is more likely to have a font on platforms nobody has tested: older systems, e-readers, embedded devices, PDF tools, terminals. | Of the letters left, the 2,048 added to Unicode earliest stay, ties to the lowest code point. |
 
+## Desiderata for the next version, in order
+
+What a successor to this version should aim for (Zooko, November 3,
+2026); the constraints above stay, except where an item names one it would
+loosen.
+
+1. **Shorter words**, in characters and as they look: more bits in each
+   character a person sees, by a larger alphabet or by marks on its letters
+   (each mark chosen so normalization leaves it in place, C2).
+2. **A prefix to speak and type** (Kris and Zooko): the first 28 bits or so
+   as hex digits, then sigil letters. A person can then say, hear and type
+   the prefix (into a search box, to find a commit), and the letters that
+   follow defeat the attack of matching a value's first 7 hex digits, which
+   is common. It costs a second character set in one word, and a few more
+   characters.
+3. **The same number of UTF-8 bytes** for every word of a preferred size
+   (256 bits, say), as C8 gives today. Low priority.
+4. **Few UTF-8 bytes.** Lower priority still.
+
 ## Beyond these rules
 
 - **Comparing by eye.** The look-alike rule makes comparing sigils by eye
