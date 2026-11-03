@@ -54,9 +54,13 @@ decoder both know L, as a program that stores 32-byte hashes does.
 - **R10. Nothing looks alike.** No two characters look alike, and no
   character looks like several in a row, by Unicode's table of look-alikes
   (UTS #39).
-- **R11. Never mistaken for hex.** Its letters include no hex digit and
-  nothing that looks like one; where a word holds hex on purpose (D2), the
-  hex is in a place of its own, never mixed among the letters.
+- **R11. Never mistaken for hex.** No whole word, of any value, reads as a
+  string of hex digits; where a word holds hex on purpose (D2), a reader
+  sees where the hex ends. Version 0.1 meets it by an alphabet with no hex
+  digit and nothing that looks like one (alphabet/RULES.md, C10). A design
+  could admit such letters if something else guarantees it for every
+  value, the zero value included, whose word is mostly its alphabet's first
+  letter.
 
 **Formats**
 
