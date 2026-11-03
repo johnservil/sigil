@@ -9,6 +9,11 @@ Two kinds of rule do the choosing. **Constraints** are what every sigil
 guarantees, and no letter may break one. **Goals** decide which of the
 letters that pass are kept, in a fixed order of priority.
 
+Each rule serves a requirement of [REQUIREMENTS.md](../REQUIREMENTS.md),
+which lists them all, for the encoding and the alphabet together: C1 serves
+R8; C2 and C3 R5; C4 to C6 R6; C7 R2; C8 D8; C9 R13 and R14; C10 R11; G1 R9;
+G2 D4; G3 R10; G4 D6.
+
 ## Inputs
 
 - Unicode 14.0.0's data files, each checked by its SHA-256 and BLAKE3
@@ -49,25 +54,6 @@ earlier goal leaves.
 | G2 | **Fewest scripts.** | Each script needs its own font, and a script of 50 letters appears in about half of all 256-bit sigils, so each script left out is one less way for many sigils to fail. Fewer font switches also make a sigil look even, and leave fewer pairs of scripts to check for look-alikes. | Whole scripts are taken, the largest first (ties to the script whose first letter is oldest, then by name), until they hold at least 2,048 letters. |
 | G3 | **No look-alikes.** Of the letters taken, no two look alike, and none looks like several others in a row, by Unicode's table of look-alikes (UTS #39). | A person comparing sigils by eye can tell every letter from every other. | Within each class of look-alikes, the letter with the lowest code point stays. While a letter looks like a sequence of others, the letter that ends the most such spellings goes. If too few letters remain, the next script is taken and this goal applies again. |
 | G4 | **Oldest first.** | An older letter is more likely to have a font on platforms nobody has tested: older systems, e-readers, embedded devices, PDF tools, terminals. | Of the letters left, the 2,048 added to Unicode earliest stay, ties to the lowest code point. |
-
-## Desiderata for the next version, in order
-
-What a successor to this version should aim for (Zooko, November 3,
-2026); the constraints above stay, except where an item names one it would
-loosen.
-
-1. **Shorter words**, in characters and as they look: more bits in each
-   character a person sees, by a larger alphabet or by marks on its letters
-   (each mark chosen so normalization leaves it in place, C2).
-2. **A prefix to speak and type** (Kris and Zooko): the first 28 bits or so
-   as hex digits, then sigil letters. A person can then say, hear and type
-   the prefix (into a search box, to find a commit), and the letters that
-   follow defeat the attack of matching a value's first 7 hex digits, which
-   is common. It costs a second character set in one word, and a few more
-   characters.
-3. **The same number of UTF-8 bytes** for every word of a preferred size
-   (256 bits, say), as C8 gives today. Low priority.
-4. **Few UTF-8 bytes.** Lower priority still.
 
 ## Beyond these rules
 

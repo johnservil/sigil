@@ -306,6 +306,8 @@ a sigil missing a letter has the wrong length.
 
 ## The alphabet
 
+[REQUIREMENTS.md](REQUIREMENTS.md) lists every constraint and desideratum
+on a sigil, the encoding's and the alphabet's together.
 [alphabet/RULES.md](alphabet/RULES.md) gives every rule that chooses the
 2,048 letters and the reason for each, so you can check whether you agree.
 `alphabet/alphabet.py` applies them to Unicode 14.0.0's data files and the
