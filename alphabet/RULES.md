@@ -11,8 +11,8 @@ letters that pass are kept, in a fixed order of priority.
 
 Each rule serves a requirement of [REQUIREMENTS.md](../REQUIREMENTS.md),
 which lists them all, for the encoding and the alphabet together: C1 serves
-R8; C2 and C3 R5; C4 to C6 R6; C7 R2; C8 D8; C9 R13 and R14; C10 R11; G1 R9;
-G2 D4; G3 R10; G4 D6.
+R6; C2 and C3 R3; C4 to C6 R4; C7 and C8 R2; C9 R10 and R11; C10 R8; G1 R7;
+G2 D7; G3 D4; G4 D9.
 
 ## Inputs
 
@@ -64,6 +64,11 @@ earlier goal leaves.
   language and offer to translate it, which replaces every sigil with
   question marks. Mark sigils with `translate="no"` on any page that shows
   them.
+- **Emacs on macOS.** macOS keeps the fonts for Tifinagh, Vai, Bamum,
+  Saurashtra and Cham among its hidden supplemental fonts, which browsers
+  use and Emacs does not search, so Emacs draws those letters as boxes.
+  Copying them from `/System/Library/Fonts/Supplemental` to
+  `~/Library/Fonts` fixes it.
 - **Width on screen.** Fonts give letters different widths, so a sigil's
   width in pixels varies. A page that draws each letter in a box of fixed
   width shows every sigil of a size at the same width.
