@@ -366,7 +366,11 @@ the other's.
   agreement too: the length sets the layout and makes truncation an error.
 - **qntm's** base2048, base32768 and base65536 pack binary into Unicode for
   services that count characters, and his definition of "safe" code points
-  (https://qntm.org/safe) is where this alphabet's rules begin.
+  (https://qntm.org/safe) is where this alphabet's rules begin. Sigil keeps
+  base2048's 11 bits a character, its letters chosen for people to tell
+  apart: one width, caseless, in common fonts, with no look-alikes or hex
+  digits. It adds a check that catches every one-letter change and swap of
+  neighbours, and decodes in constant time, for secrets.
 - **Bitcoin's base58** removed punctuation so that a double-click selects a
   whole address.
 - **Unicode's UTS #39** table of look-alikes defines which characters, and
