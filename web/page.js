@@ -7,35 +7,22 @@
   let observer = null;
   let scope = null;
 
-  // Short IDs need context, so ordinary seven-digit numbers remain untouched.
-  function shortCommit(node, text) {
-    const short = text.match(/^\s*([a-fA-F0-9]{7,12})\s*$/);
-    const link = node.parentElement.closest('a[href]');
-    if (!short || !link) return [];
-    const target = link.pathname.match(/\/(?:commit|commits)\/([a-fA-F0-9]{7,64})(?:\/|$)/);
-    if (!target || !target[1].toLowerCase().startsWith(short[1].toLowerCase())) return [];
-    return [{ 0: short[1], index: text.indexOf(short[1]), short: true }];
-  }
-
   function convert(node) {
     if (!node.isConnected || !node.parentElement || node.parentElement.closest(SKIP)) return;
     const text = node.data;
-    const full = [...text.matchAll(HASH)];
-    const matches = full.length ? full : shortCommit(node, text);
+    const matches = [...text.matchAll(HASH)];
     if (!matches.length || !node.parentElement.getClientRects().length) return;
     const fragment = document.createDocumentFragment();
     let start = 0;
     for (const match of matches) {
       fragment.append(document.createTextNode(text.slice(start, match.index)));
       const hex = match[0];
-      const padded = hex.length % 2 ? '0' + hex : hex;
-      const bytes = Uint8Array.from(padded.match(/../g), (b) => parseInt(b, 16));
+      const bytes = Uint8Array.from(hex.match(/../g), (b) => parseInt(b, 16));
       const span = document.createElement('span');
       span.dataset.sigilHex = hex;
       span.translate = false;  // a browser's translation would replace the sigil with question marks
       span.textContent = globalThis.SigilCode.encode(bytes);
-      const kind = match.short ? `Abbreviated commit (${hex.length} hex digits${hex.length % 2 ? '; one leading zero nibble padded' : ''})` : `Hex (${bytes.length} bytes)`;
-      span.title = `${hex}\n${kind}, displayed as a sigil. Toggle to restore hex.`;
+      span.title = `${hex}\nHex (${bytes.length} bytes), displayed as a sigil. Toggle to restore hex.`;
       span.style.cssText = 'white-space:nowrap;font-family:"Noto Sans Ethiopic", "Noto Sans Canadian Aboriginal", "Segoe UI", sans-serif;text-decoration:underline dotted;text-underline-offset:.2em';
       fragment.append(span);
       start = match.index + hex.length;

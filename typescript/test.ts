@@ -9,7 +9,7 @@ const bytes = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseI
 const v = JSON.parse(readFileSync("vectors.json", "utf-8"));
 for (const g of v.good) {
   const data = bytes(g.data);
-  if (encode(data) !== g.text) throw new Error(`encode ${g.data}`);
+  if (encode(data, g.form === "handled") !== g.text) throw new Error(`encode ${g.form} ${g.data}`);
   if (hex(decode(g.text, data.length)) !== g.data) throw new Error(`decode ${g.text}`);
 }
 for (const g of v.variants) {
@@ -26,15 +26,19 @@ for (const b of v.bad) {
   }
   if (kind !== b.error) throw new Error(`${b.text}: ${kind}, not ${b.error}`);
 }
-if (layout(32).join() !== "25,131063" || layout(8).join() !== "8,4193633") throw new Error("layout");
+if (layout(32).join() !== "22,4093" || layout(8).join() !== "5,131063") throw new Error("layout");
+if (layout(32, false).join() !== "25,131063" || layout(8, false).join() !== "8,4193633") throw new Error("layout, plain");
 {
-  const g = v.good.find((x: { data: string }) => x.data.length === 64);
-  const letters = Array.from(g.text as string);
-  // Letter 5 read three ways, letter 11 unread altogether: the one data comes back.
-  const readings = letters.map((ch, i) => (i === 5 ? LETTERS[7] + ch + LETTERS[1500] : i === 11 ? ALPHABET : ch));
-  if (hex(decodeReadings(readings, 32)) !== g.data) throw new Error("decodeReadings");
-  // Letters 0 and 1 read two ways each, where the other two also decode (found by the reference).
-  const two = letters.map((ch, i) => (i === 0 ? ch + LETTERS[63] : i === 1 ? ch + LETTERS[2039] : ch));
+  const g = v.good.find((x: { data: string; form: string }) => x.data.length === 64 && x.form === "handled");
+  const chars = Array.from(g.text as string); // the mark, 7 hex digits, then the letters
+  // One character uncertain, a letter read three ways, a letter unread or a hex
+  // digit unread: the one data comes back (a single change never passes the check).
+  for (const [at, choices] of [[13, LETTERS[7] + chars[13] + LETTERS[1500]], [19, ALPHABET], [3, "0123456789abcdef"]] as const) {
+    const readings = chars.map((ch, i) => (i === at ? choices : ch));
+    if (hex(decodeReadings(readings, 32)) !== g.data) throw new Error(`decodeReadings at ${at}`);
+  }
+  // The first two letters read two ways each, where the other two also decode (found by the reference).
+  const two = chars.map((ch, i) => (i === 8 ? ch + LETTERS[1] : i === 9 ? ch + LETTERS[2045] : ch));
   let kind = "";
   try { decodeReadings(two, 32); } catch (e) { kind = (e as DecodeError).kind; }
   if (kind !== "ambiguous") throw new Error(`decodeReadings, two readings: ${kind}`);

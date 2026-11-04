@@ -8,11 +8,15 @@
 <main>
   <header><a href="https://github.com/johnservil/sigil">Sigil</a><span>bytes, dressed for humans</span></header>
   <h1>A hash can look like this.</h1>
-  <p class="intro">One word. A double-click. Twenty-six characters for a 256-bit hash.</p>
+  <p class="intro">One word, selected whole by a double-click. Sigil 0.2, unreleased: two forms on trial.</p>
   <section class="card">
     <label for="hex">Your bytes, in hex</label>
     <textarea id="hex" rows="2" spellcheck="false" autocapitalize="off" autocomplete="off">af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</textarea>
     <div class="actions"><button id="random" type="button">Try random bytes</button><span id="size"></span></div>
+    <fieldset class="form"><legend>Form</legend>
+      <label><input type="radio" name="form" value="handled" checked> Handled: the first 7 hex digits, then letters</label>
+      <label><input type="radio" name="form" value="plain"> Plain: letters only</label>
+    </fieldset>
     <label>Your sigil</label>
     <div class="result"><output id="sigil" translate="no" aria-live="polite"></output></div>
     <div class="actions"><button id="copy" type="button">Copy sigil</button><span id="encode-status" role="status"></span></div>
@@ -22,7 +26,7 @@
     <label for="reading">Sigil to decode</label>
     <textarea id="reading" translate="no" rows="2" spellcheck="false" autocapitalize="off"></textarea>
     <label for="length">Original length in bytes</label>
-    <input id="length" type="number" min="1" max="256" value="32">
+    <input id="length" type="number" min="8" max="256" value="32">
     <p id="decode-status" role="status"></p><output id="decoded"></output>
   </details>
   <section class="card">
@@ -32,7 +36,7 @@
     <div id="hashes">
       <p><strong>256-bit hash</strong><br><code>af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</code></p>
       <p><strong>Full Git commit</strong><br><a href="https://github.com/johnservil/sigil/commit/716c98ca9f4336a45f51c15eeff0c9608c1002ae" id="commit">716c98ca9f4336a45f51c15eeff0c9608c1002ae</a></p>
-      <p><strong>Abbreviated Git commit</strong><br><a href="https://github.com/johnservil/sigil/commit/716c98ca9f4336a45f51c15eeff0c9608c1002ae">716c98c</a> — a short sigil for a short ID.</p>
+      <p><strong>Abbreviated Git commit</strong><br><a href="https://github.com/johnservil/sigil/commit/716c98ca9f4336a45f51c15eeff0c9608c1002ae">716c98c</a> stays as it is: it is the full commit's sigil's handle.</p>
     </div>
     <p><a href="https://github.com/johnservil/sigil/tree/main/web">Try the browser extension on GitHub →</a></p>
   </section>

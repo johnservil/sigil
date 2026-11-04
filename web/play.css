@@ -28,3 +28,7 @@ footer { font-size: .8em; opacity: .8; }
 .error { color: #b43131; }
 @media (prefers-color-scheme: dark) { :root { --paper: #191720; --ink: #eee9e1; --accent: #c1a4f5; --card: #24212d; --line: #46404f; } }
 @media (max-width: 500px) { main { padding: 20px 14px; } .card { padding: 18px; } header span { max-width: 10em; text-align: right; } #sigil { font-size: 29px; } #hex { min-height: 7em; } }
+fieldset.form { border: 0; margin: .6rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; }
+fieldset.form legend { font-size: .85em; font-weight: 650; padding: 0; margin-bottom: 6px; }
+fieldset.form label { font-weight: normal; display: inline-flex; gap: .35rem; align-items: center; margin: 0; }
+fieldset.form input { width: auto; margin: 0; padding: 0; }

@@ -8,7 +8,7 @@
   try {
     const vectors = await (await fetch('../vectors.json')).json();
     for (const v of vectors.good) {
-      check(SigilCode.encode(bytes(v.data)) === v.text, `bundle encode ${v.data}`);
+      check(SigilCode.encode(bytes(v.data), v.form === 'handled') === v.text, `bundle encode ${v.form} ${v.data}`);
       check(hexOf(SigilCode.decode(v.text, v.data.length / 2)) === v.data, 'bundle decode');
     }
     for (const v of vectors.variants) check(hexOf(SigilCode.decode(v.text, v.data.length / 2)) === v.data, 'bundle variant');
@@ -43,10 +43,9 @@
     check($('full').querySelectorAll('[data-sigil-hex]').length === 2, 'two complete hashes');
     check($('full').firstElementChild.textContent === SigilCode.encode(bytes(full)), 'replacement matches codec');
     check($('link').href === href, 'link destination preserved');
-    check($('short').firstElementChild.textContent === SigilCode.encode(bytes('0' + commit.slice(0, 7))), 'odd short ID pads a zero nibble');
-    check($('short').firstElementChild.title.includes('Abbreviated commit (7 hex digits'), 'short ID is labelled');
-    check($('even').firstElementChild.textContent === SigilCode.encode(bytes(commit.slice(0, 8))), 'even short ID');
-    for (const id of ['invalid', 'ordinary', 'boundary', 'edit', 'button', 'hidden', 'csshidden']) check(!$(id).querySelector('[data-sigil-hex]'), `skip ${id}`);
+    check($('link').firstElementChild.textContent.slice(1, 8) === full.slice(0, 7), 'the sigil begins with the hash\'s first 7 hex digits');
+    // A short commit ID is a sigil's handle already, and too short to be a sigil (8 bytes at least): it stays.
+    for (const id of ['short', 'even', 'invalid', 'ordinary', 'boundary', 'edit', 'button', 'hidden', 'csshidden']) check(!$(id).querySelector('[data-sigil-hex]'), `skip ${id}`);
     check($('input').value === full, 'form value unchanged');
     check($('attribute').title === full, 'attribute unchanged');
 
@@ -72,7 +71,7 @@
       document.head.append(script);
     });
     await inject();
-    check(!!$('short').querySelector('[data-sigil-hex]'), 'extension bundle enables');
+    check(!!$('link').querySelector('[data-sigil-hex]'), 'extension bundle enables');
     await inject();
     check(root.innerHTML === before, 'reinjection restores without double wrapping');
 
@@ -116,20 +115,27 @@
     const ethiopic = await doc.fonts.load('32px "Noto Sans Ethiopic"', 'ሀ');
     const canadian = await doc.fonts.load('32px "Noto Sans Canadian Aboriginal"', 'ᕖ');
     check(ethiopic.length > 0 && canadian.length > 0, 'bundled script fonts load');
-    field('hex').value = '00';
+    const zeros = '00'.repeat(8);
+    field('hex').value = zeros;
     field('hex').dispatchEvent(new Event('input'));
-    check(field('sigil').textContent === SigilCode.encode(bytes('00')), 'playground zero byte');
-    check(field('length').value === '1' && field('decoded').textContent === '00', 'playground roundtrip');
-    const letters = Array.from(SigilCode.encode(bytes('00')));
-    const other = letters[1] === letters[0] ? Array.from(SigilCode.encode(bytes('01')))[1] : letters[0];
-    field('reading').value = letters[0] + other;
+    check(field('sigil').textContent === SigilCode.encode(bytes(zeros)), 'playground eight zero bytes');
+    check(field('length').value === '8' && field('decoded').textContent === zeros, 'playground roundtrip');
+    const chars = Array.from(SigilCode.encode(bytes(zeros)));
+    const last = chars.at(-1), other = Array.from(SigilCode.encode(bytes('ff'.repeat(8)))).at(-1);
+    field('reading').value = chars.slice(0, -1).join('') + (other === last ? chars.at(-2) : other);
     field('reading').dispatchEvent(new Event('input'));
     check(field('decode-status').textContent.startsWith('check:'), 'playground rejects changed sigil');
+    field('hex').value = '00';
+    field('hex').dispatchEvent(new Event('input'));
+    check(field('copy').disabled && field('encode-status').textContent.includes('at least 8 bytes'), 'playground refuses a short value');
     field('hex').value = 'xyz';
     field('hex').dispatchEvent(new Event('input'));
     check(field('copy').disabled && field('sigil').textContent === '', 'invalid input clears stale output');
     field('random').click();
-    check(field('hex').value.length === 64 && Array.from(field('sigil').textContent).length === 25, 'random example');
+    check(field('hex').value.length === 64 && Array.from(field('sigil').textContent).length === 30, 'random example, handled: the mark, 7 hex digits, 22 letters');
+    doc.querySelector('input[name=form][value=plain]').click();
+    check(Array.from(field('sigil').textContent).length === 25 && field('decoded').textContent === field('hex').value, 'random example, plain: 25 letters, decoded');
+    doc.querySelector('input[name=form][value=handled]').click();
     field('toggle').click();
     check(!!doc.querySelector('#hashes [data-sigil-hex]'), 'playground toggle');
     field('toggle').click();

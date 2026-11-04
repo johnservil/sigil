@@ -1,6 +1,8 @@
-// Sigil: bytes of a known length written as a sigil, one word of letters that
-// a double-click selects whole, with no two letters alike, and a check that
-// confirms a reading or picks the right one of several.
+// Sigil: bytes of a known length written as a sigil, one word that a
+// double-click selects whole, of letters with no two alike, and a check that
+// confirms a reading or picks the right one of several. A sigil has one of two
+// forms: handled, which begins with the value's first 7 hex digits, and plain,
+// all letters.
 //
 // The specification is README.md ("The encoding"); python/sigilcode.py is the
 // reference implementation and vectors.json the tests every implementation
@@ -13,6 +15,9 @@ export const N = LETTERS.length;
 if (N !== 2048) throw new Error("the alphabet must have 2,048 letters");
 const DIGIT = new Map(LETTERS.map((c, i) => [c, i]));
 const MARKER = 1n;
+export const MARK = "\u200e";
+const HANDLE = 7; // hex digits, 28 bits
+const isHex = (ch: string) => /^[0-9a-fA-F]$/.test(ch);
 
 export class DecodeError extends Error {
   // "length", "character", "check", "range", "marker", or, from decodeReadings, "ambiguous".
@@ -61,52 +66,80 @@ function checkPrime(room: number): number {
   }
 }
 
-// [n, K] for data of `length` bytes (at least 1): n = ceil((8 * length + 14) / 11)
-// letters, and K, the check prime of the room 2^(11n - 8 * length - 2).
-export function layout(length: number): [number, number] {
-  if (!(length >= 1)) throw new Error("Sigil encodes at least one byte");
-  const n = Math.ceil((8 * length + 14) / 11);
-  return [n, checkPrime(2 ** (11 * n - 8 * length - 2))];
+// [n, K] for data of `length` bytes (at least 8), handled or plain: the letters
+// carry bits = 8 * length - 28 of the data handled, all 8 * length plain;
+// n = ceil((bits + 14) / 11) letters, and K, the check prime of the room
+// 2^(11n - bits - 2).
+export function layout(length: number, handle = true): [number, number] {
+  if (!(length >= 8)) throw new Error("Sigil encodes at least 8 bytes");
+  const bits = 8 * length - (handle ? 4 * HANDLE : 0);
+  const n = Math.ceil((bits + 14) / 11);
+  return [n, checkPrime(2 ** (11 * n - bits - 2))];
 }
 
 const toBig = (data: Uint8Array) => data.reduce((w, b) => (w << 8n) | BigInt(b), 0n);
 
-export function encode(data: Uint8Array): string {
-  const [n, k] = layout(data.length);
-  const half = BigInt(4 * data.length);
+// `rest`, of `bits` bits, with the marker between its high and low halves.
+function marked(rest: bigint, bits: number): bigint {
+  const half = BigInt(bits / 2);
+  return ((((rest >> half) << 2n) | MARKER) << half) | (rest & ((1n << half) - 1n));
+}
+
+// N^n mod k, for the handle's place in the check.
+function placeOfHandle(n: number, k: number): bigint {
+  let m = 1n;
+  for (let i = 0; i < n; i++) m = (m * BigInt(N)) % BigInt(k);
+  return m;
+}
+
+export function encode(data: Uint8Array, handle = true): string {
+  const [n, k] = layout(data.length, handle);
+  const K = BigInt(k);
   const d = toBig(data);
-  const marked = ((((d >> half) << 2n) | MARKER) << half) | (d & ((1n << half) - 1n));
-  const w = marked * BigInt(k);
-  const out: string[] = [];
-  for (let i = n - 1; i >= 0; i--) out.push(LETTERS[Number((w >> BigInt(11 * i)) & 2047n)]);
+  const bits = 8 * data.length - (handle ? 4 * HANDLE : 0);
+  const top = d >> BigInt(bits);
+  // r < K makes top * N^n + t a multiple of K (0 for the plain form).
+  const r = (((-top * placeOfHandle(n, k)) % K) + K) % K;
+  const t = marked(d & ((1n << BigInt(bits)) - 1n), bits) * K + r;
+  const out: string[] = handle ? [MARK, top.toString(16).padStart(HANDLE, "0")] : [];
+  for (let i = n - 1; i >= 0; i--) out.push(LETTERS[Number((t >> BigInt(11 * i)) & 2047n)]);
   return out.join("");
 }
 
-// White space and four invisible characters copying inserts, which decoding skips.
+// White space, the mark, and four invisible characters copying inserts, which decoding skips.
 function skipped(ch: string): boolean {
   const p = ch.codePointAt(0)!;
   return SKIPPED.some(([a, b]) => a <= p && p <= b);
 }
 
+// Either form, told by the first character: hex digits are no letters.
 export function decode(sigil: string, length: number): Uint8Array {
-  const [n, k] = layout(length);
-  const letters = Array.from(sigil)
+  const chars = Array.from(sigil)
     .map((ch, i): [string, number] => [ch, i])
     .filter(([ch]) => !skipped(ch));
-  if (letters.length !== n) throw new DecodeError("length", `${letters.length} letters; ${length} bytes take ${n}`);
-  let w = 0n;
-  for (const [ch, i] of letters) {
+  const handled = chars.length > 0 && isHex(chars[0][0]);
+  const [n, k] = layout(length, handled);
+  const h = handled ? HANDLE : 0;
+  if (chars.length !== h + n)
+    throw new DecodeError("length", `${chars.length} characters; ${length} bytes take ${h + n}${handled ? " with the handle" : ""}`);
+  const code = (ch: string) => ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0");
+  let top = 0n, t = 0n;
+  chars.forEach(([ch, i], j) => {
+    if (j < h) {
+      if (!isHex(ch)) throw new DecodeError("character", `character ${i + 1} (U+${code(ch)}) is not a hex digit of the handle`);
+      top = (top << 4n) | BigInt(parseInt(ch, 16));
+      return;
+    }
     const d = DIGIT.get(ch);
-    if (d === undefined)
-      throw new DecodeError("character", `character ${i + 1} (U+${ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}) is not a letter of the alphabet`);
-    w = (w << 11n) | BigInt(d);
-  }
+    if (d === undefined) throw new DecodeError("character", `character ${i + 1} (U+${code(ch)}) is not a letter of the alphabet`);
+    t = (t << 11n) | BigInt(d);
+  });
   const K = BigInt(k);
-  if (w % K !== 0n) throw new DecodeError("check", "the check fails: a letter was misread or changed");
-  const marked = w / K, half = BigInt(4 * length);
-  if (marked >> BigInt(8 * length + 2)) throw new DecodeError("range", `its value is too large for ${length} bytes: a letter was misread or changed`);
-  if (((marked >> half) & 3n) !== MARKER) throw new DecodeError("marker", "its marker is not Sigil's: a string of another format, or a changed letter");
-  let v = ((marked >> (half + 2n)) << half) | (marked & ((1n << half) - 1n));
+  if ((top * placeOfHandle(n, k) + t) % K !== 0n) throw new DecodeError("check", "the check fails: a character was misread or changed");
+  const m = t / K, bits = 8 * length - 4 * h, half = BigInt(bits / 2);
+  if (m >> BigInt(bits + 2)) throw new DecodeError("range", `its value is too large for ${length} bytes: a letter was misread or changed`);
+  if (((m >> half) & 3n) !== MARKER) throw new DecodeError("marker", "its marker is not Sigil's: a string of another format, or a changed letter");
+  let v = (top << BigInt(bits)) | ((m >> (half + 2n)) << half) | (m & ((1n << half) - 1n));
   const data = new Uint8Array(length);
   for (let i = length - 1; i >= 0; i--) {
     data[i] = Number(v & 0xffn);
