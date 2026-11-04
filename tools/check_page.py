@@ -5,7 +5,7 @@ result sent as a GitHub issue that tools/import-fonts.py reads.
 Its result block, the contract with import-fonts.py:
 
     <the browser's user agent>
-    Sigil font test 0.2: <count> candidates, set <fingerprint>
+    Sigil font test 0.2, page 2: <count> candidates, set <fingerprint>
     Drawn in full: <scripts> of <scripts> scripts
 
     <Script>: <drawn>/<count>[ missing <hex ranges>]
@@ -18,6 +18,10 @@ import json
 import re
 
 ROUND = "0.2"
+# The page's measurement: page 2 draws each letter in a canvas a glyph cannot
+# leave (page 1's 40 pixels clipped macOS's Canadian syllabics, whose cut
+# halves then drew alike, Sam's result of November 4).
+PAGE = 2
 
 
 def candidates(text):
@@ -72,7 +76,7 @@ def page(candidates_txt, fonts_txt, sigilcode, letters):
     words = wall(sigilcode, letters)
     data = {
         "scripts": {s.replace("_Aboriginal", ""): "".join(map(chr, v)) for s, v in scripts.items()},
-        "count": count, "set": fingerprint(candidates_txt), "round": ROUND,
+        "count": count, "set": fingerprint(candidates_txt), "round": ROUND, "page": PAGE,
         "tested": tested_so_far(fonts_txt),
     }
     wall_html = "".join(f'<span class="sigil" title="{h}">{w}</span>' for h, w in words)
@@ -145,11 +149,13 @@ if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues)
 // A letter is missing when it draws like a code point no font has, or like
 // another candidate: distinct letters never draw alike, and a font of last
 // resort (Apple's draws one box a Unicode block) draws a block's letters alike.
-const c = document.createElement('canvas'); c.width = c.height = 40;
+// Each letter at 32 pixels in the middle of a 96-pixel canvas, so that no
+// glyph leaves it, whatever its font's metrics.
+const c = document.createElement('canvas'); c.width = c.height = 96;
 const g = c.getContext('2d', {{ willReadFrequently: true }});
 function pixels(ch) {{
-  g.clearRect(0, 0, 40, 40); g.font = '32px sans-serif'; g.fillStyle = '#000'; g.textBaseline = 'top';
-  g.fillText(ch, 2, 2); return g.getImageData(0, 0, 40, 40).data.join(',');
+  g.clearRect(0, 0, 96, 96); g.font = '32px sans-serif'; g.fillStyle = '#000'; g.textBaseline = 'middle'; g.textAlign = 'center';
+  g.fillText(ch, 48, 48); return g.getImageData(0, 0, 96, 96).data.join(',');
 }}
 const tofu = new Set(['\\u0378', '\\u0379', '\\uFFFE', '\\uFFFF'].map(pixels));
 // Each letter drawn once.
@@ -167,7 +173,7 @@ for (const [s, chars] of Object.entries(DATA.scripts)) {{
   lines.push(`${{s}}: ${{all.length - miss.length}}/${{all.length}}` + (miss.length ? ' missing ' + rs.map(([a, b]) => a === b ? a.toString(16) : a.toString(16) + '-' + b.toString(16)).join(' ') : ''));
 }}
 const nscripts = Object.keys(DATA.scripts).length;
-const summary = `${{ua}}\\nSigil font test ${{DATA.round}}: ${{DATA.count}} candidates, set ${{DATA.set}}\\nDrawn in full: ${{full}} of ${{nscripts}} scripts\\n\\n` + lines.join('\\n');
+const summary = `${{ua}}\\nSigil font test ${{DATA.round}}, page ${{DATA.page}}: ${{DATA.count}} candidates, set ${{DATA.set}}\\nDrawn in full: ${{full}} of ${{nscripts}} scripts\\n\\n` + lines.join('\\n');
 $('out').textContent = summary;
 const drawn = DATA.count - missing.size;
 $('thanks').textContent = `Thank you for testing! Your device drew ${{drawn.toLocaleString()}} of the ${{DATA.count.toLocaleString()}} letters` +

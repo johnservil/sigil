@@ -46,7 +46,7 @@ try:
             f"http://127.0.0.1:{server.server_port}/web/check.html",
         ], text=True, capture_output=True, timeout=120).stdout
     lines = html.unescape(re.search(r'<pre id="out">(.*?)</pre>', page, re.S)[1]).split("\n")
-    assert re.fullmatch(r"Sigil font test 0\.2: \d+ candidates, set [0-9a-f]{12}", lines[1]), lines[1]
+    assert re.fullmatch(r"Sigil font test 0\.2, page \d+: \d+ candidates, set [0-9a-f]{12}", lines[1]), lines[1]
     assert re.fullmatch(r"Drawn in full: \d+ of \d+ scripts", lines[2]) and lines[3] == "", lines[2:4]
     assert all(re.fullmatch(r"[A-Za-z_]+: \d+/\d+( missing [0-9a-f -]+)?", l) for l in lines[4:]), lines[4:]
     assert re.search(r'<p class="thanks" id="thanks">Thank you', page), "the page thanks its visitor"

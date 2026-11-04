@@ -68,7 +68,7 @@ def result(n, issue, page):
     lines = [l for l in block[1].splitlines() if l.strip()]
     ua, missing, total = lines[0], [], 0
     tested = [c for v in check_page.candidates(page).values() for c in v]
-    want = f"Sigil font test {check_page.ROUND}: {len(tested)} candidates, set {check_page.fingerprint(page)}"
+    want = f"Sigil font test {check_page.ROUND}, page {check_page.PAGE}: {len(tested)} candidates, set {check_page.fingerprint(page)}"
     assert lines[1] == want, f"issue {n}: {lines[1]!r}, where candidates.txt is {want!r}"
     for line in lines[2:]:
         if line.startswith("Drawn in full:"):
