@@ -63,12 +63,12 @@ def vectors():
             form = "handled" if handled else "plain"
             for data in datas:
                 good.append({"form": form, "data": data.hex(), "text": B.encode(data, handled)})
-            n, k = B.layout(length, handled)
+            n, k = B.layout(length)
             text = B.encode(datas[2], handled)
-            start = L if handled else 0  # the first letter
-            handle, rest, bits = parts(datas[2]) if handled else (0, int.from_bytes(datas[2], "big"), 8 * length)
+            start = L if handled else B.PREFIX  # the first letter after the handle
+            handle, rest, bits = parts(datas[2])
             r = B.offset(handle, n, k)
-            write = (lambda t: B.word(handle, t, n)) if handled else (lambda t: B.letters(t, n))
+            write = lambda t: B.word(handle, t, n, handled)
             bad += [
                 {"text": text[:-1], "length": length, "error": "length"},
                 {"text": text + text[-1], "length": length, "error": "length"},
@@ -81,6 +81,9 @@ def vectors():
             if handled:
                 bad.append({"text": text[:L - 1] + text[L:], "length": length, "error": "length"})
                 bad += [{"text": text[:2] + c + text[3:], "length": length, "error": "character"} for c in REFUSED_IN_HANDLE]
+            else:
+                # The handle's letters with the plain form's version bit of another version.
+                bad.append({"text": B.letters(handle << 1 | (1 - B.PLAIN_VERSION), B.PREFIX) + text[B.PREFIX:], "length": length, "error": "marker"})
             # A value of the check too large for the length, and the other
             # markers (00, which stays unused, and 10 and 11, a successor's).
             top = ((1 << 11 * n) - 1 - r) // k * k + r
