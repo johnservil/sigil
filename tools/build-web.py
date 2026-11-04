@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Bundle the compiled TypeScript codec for the playground and extension, and
-write the font and selection test pages from alphabet.txt and the reference.
+write the test pages: the font test for volunteers (web/check.html, published as
+sigil-candidates' check.html), and the font and selection tests, from
+alphabet.txt, alphabet/candidates.txt and the reference.
 
 Compile first: tsc -p typescript
 Then: python3 tools/build-web.py [--check]
@@ -87,6 +89,11 @@ copy = ('<!doctype html><html lang="en" translate="no"><meta charset="utf-8"><ti
         "document.getElementById('out').textContent = out.join('\\n');\n"
         "</script>\n")
 outputs[ROOT / "copytest.html"] = copy.encode("utf-8")
+sys.path.insert(0, str(ROOT / "tools"))
+import check_page
+outputs[ROOT / "web" / "check.html"] = check_page.page(
+    (ROOT / "alphabet" / "candidates.txt").read_text(encoding="utf-8"),
+    (ROOT / "alphabet" / "fonts.txt").read_text(encoding="utf-8"), sigilcode, letters).encode("utf-8")
 for name in ("LICENSE-MIT", "LICENSE-APACHE", "LICENSE-TGPPL", "LICENSE-BOSL.txt"):
     outputs[ROOT / "web" / "extension" / name] = (ROOT / name).read_bytes()
 for path, data in outputs.items():

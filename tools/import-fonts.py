@@ -2,16 +2,17 @@
 
     python3 tools/import-fonts.py N...
 
-Each issue N is a result the check page sent
-(https://johnservil.github.io/sigil-candidates/check.html): the browser's
-user agent, then a line a script, "Script: drawn/all", with "missing" and
-the code points it drew as boxes, in hex ranges, in one fenced block (a
-submitter's note beside it stays in the issue). It becomes `result N`,
-dated by the issue and named by system and browser, tested on the
-characters the latest result tested (the page's candidate set), and missing
-what the issue lists. A result already in the file, an issue whose counts
-do not add up to that set, or a line the page never writes stops the
-import, named.
+Each issue N is a result the font test page sent (tools/check_page.py,
+published as https://johnservil.github.io/sigil-candidates/check.html), in
+one fenced block: the browser's user agent, the line naming the page's
+candidates by count and fingerprint, and a line a script, "Script:
+drawn/all", with "missing" and the code points it drew as boxes, in hex
+ranges (a submitter's note beside the block stays in the issue). It becomes
+`result N`, dated by the issue and named by system and browser, tested on
+alphabet/candidates.txt's letters, and missing what the issue lists. A
+result already in the file, a page whose candidates are not
+candidates.txt's, counts that do not add up, or a line the page never
+writes stops the import, named.
 """
 
 import json
@@ -20,7 +21,10 @@ import sys
 import urllib.request
 from pathlib import Path
 
-FONTS = Path(__file__).resolve().parent.parent / "alphabet" / "fonts.txt"
+ROOT = Path(__file__).resolve().parent.parent
+FONTS = ROOT / "alphabet" / "fonts.txt"
+sys.path.insert(0, str(ROOT / "tools"))
+import check_page
 ISSUE = "https://api.github.com/repos/johnservil/sigil-candidates/issues/{}"
 
 
@@ -55,14 +59,19 @@ def name(ua):
     return f"{system} {browser}"
 
 
-def result(n, issue, tested):
+def result(n, issue, page):
+    """fonts.txt's lines for issue n, sent by the page whose candidates are
+    `page` (candidates.txt's text)."""
     # The page's result is the issue's fenced block; a note around it stays in the issue.
     block = re.search(r"```\n(.*?)\n```", issue["body"], re.S)
     assert block, f"issue {n}: no result block"
     lines = [l for l in block[1].splitlines() if l.strip()]
     ua, missing, total = lines[0], [], 0
-    for line in lines[1:]:
-        if line.startswith("Scripts drawn in full:"):
+    tested = [c for v in check_page.candidates(page).values() for c in v]
+    want = f"Sigil font test {check_page.ROUND}: {len(tested)} candidates, set {check_page.fingerprint(page)}"
+    assert lines[1] == want, f"issue {n}: {lines[1]!r}, where candidates.txt is {want!r}"
+    for line in lines[2:]:
+        if line.startswith("Drawn in full:"):
             continue
         m = re.fullmatch(r"([A-Za-z_]+): (\d+)/(\d+)(?: missing ([0-9a-f -]+))?", line)
         assert m, f"issue {n}: a line the page never writes: {line!r}"
@@ -82,11 +91,11 @@ def main():
     assert numbers, __doc__
     text = FONTS.read_text()
     have = [int(n) for n in re.findall(r"^result (\d+) ", text, re.M)]
-    tested = expand(re.findall(r"^tested (.*)$", text, re.M)[-1])
+    page = (ROOT / "alphabet" / "candidates.txt").read_text(encoding="utf-8")
     for n in numbers:
         assert n not in have, f"result {n} is in fonts.txt already"
         with urllib.request.urlopen(ISSUE.format(n)) as r:
-            text = text.rstrip("\n") + "\n\n" + result(n, json.load(r), tested)
+            text = text.rstrip("\n") + "\n\n" + result(n, json.load(r), page)
         have.append(n)
     FONTS.write_text(text)
 
