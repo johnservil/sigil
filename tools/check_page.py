@@ -49,7 +49,7 @@ def tested_so_far(results):
 
 
 def wall(sigilcode, letters):
-    """Handled sigils of 256-bit values that together use every letter: from
+    """Hex-prefixed sigils of 256-bit values that together use every letter: from
     a deterministic pool, the sigil with the most letters not yet used, until
     none is left unused (greedy, so a few more than the fewest)."""
     pool = []

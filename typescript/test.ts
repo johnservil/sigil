@@ -9,7 +9,7 @@ const bytes = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (x) => parseI
 const v = JSON.parse(readFileSync("vectors.json", "utf-8"));
 for (const g of v.good) {
   const data = bytes(g.data);
-  if (encode(data, g.form === "handled") !== g.text) throw new Error(`encode ${g.form} ${g.data}`);
+  if (encode(data, g.form === "hex-prefixed") !== g.text) throw new Error(`encode ${g.form} ${g.data}`);
   if (hex(decode(g.text, data.length)) !== g.data) throw new Error(`decode ${g.text}`);
 }
 for (const g of v.variants) {
@@ -28,7 +28,7 @@ for (const b of v.bad) {
 }
 if (layout(32).join() !== "22,65519" || layout(8).join() !== "5,2096881") throw new Error("layout");
 {
-  const g = v.good.find((x: { data: string; form: string }) => x.data.length === 64 && x.form === "handled");
+  const g = v.good.find((x: { data: string; form: string }) => x.data.length === 64 && x.form === "hex-prefixed");
   const chars = Array.from(g.text as string); // the mark, 8 hex digits, then the letters
   // One character uncertain, a letter read three ways, a letter unread or a hex
   // digit unread: the one data comes back (a single change never passes the check).

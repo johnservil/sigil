@@ -38,7 +38,7 @@ fn vectors() {
             "good" => {
                 let data = bytes(f[2]);
                 let text = unescape(f[3]);
-                let encoded = if f[1] == "handled" {
+                let encoded = if f[1] == "hex-prefixed" {
                     sigilcode::encode(&data)
                 } else {
                     sigilcode::encode_plain(&data)
@@ -80,7 +80,7 @@ fn readings() {
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../vectors.tsv")).unwrap();
     let line = tsv
         .lines()
-        .find(|l| l.starts_with("good\thandled\t") && l.split('\t').nth(2).unwrap().len() == 64)
+        .find(|l| l.starts_with("good\thex-prefixed\t") && l.split('\t').nth(2).unwrap().len() == 64)
         .unwrap();
     let f: Vec<&str> = line.split('\t').collect();
     let chars: Vec<String> = f[3].chars().map(String::from).collect(); // the mark, 8 hex digits, the letters
@@ -202,8 +202,8 @@ fn random_inputs() {
             // Re-encoded in the text's form, it is the text's characters, the
             // skipped ones aside (lowercase: random corruption adds no case).
             let kept: String = text.chars().filter(|c| !skipped.contains(c)).collect();
-            let handled = kept.chars().next().is_some_and(|c| c.is_ascii_hexdigit());
-            let again = if handled {
+            let hex_prefixed = kept.chars().next().is_some_and(|c| c.is_ascii_hexdigit());
+            let again = if hex_prefixed {
                 sigilcode::encode(&decoded)
             } else {
                 sigilcode::encode_plain(&decoded)

@@ -1,27 +1,27 @@
 {
  "good": [
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000",
    "text": "‎00000000ऄओꬣⶔऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffff",
    "text": "‎ffffffffꬨᣗऌഛᐥ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0598810a25f3aaa0",
    "text": "‎0598810aೡᖥዶᑼꬥ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "1d0257723ddbdc03",
    "text": "‎1d025772ቍⷞⷎᗄᛪ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "3a2cd27851f0efae",
    "text": "‎3a2cd278ጀᒄᔔઋᒖ"
   },
@@ -51,27 +51,27 @@
    "text": "ሯᑁᘑጀᒄᔔઋᒖ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000",
    "text": "‎00000000ऄऄꬤⵘऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffff",
    "text": "‎ffffffffꬤⵖऊᔕᔻ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "2cee520dea980bad29",
    "text": "‎2cee520dꗽⶬኻꛝꢛ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ac0134b71c1f0b4276",
    "text": "‎ac0134b7ఌᘆᖄᛞቓ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "cf45b050cab7d8d89c",
    "text": "‎cf45b050ⷖവꖸቸঅ"
   },
@@ -101,27 +101,27 @@
    "text": "ꔟඅશⷖവꖸቸঅ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000",
    "text": "‎00000000ऄऄઑꢊऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffff",
    "text": "‎ffffffffꬨᓔꖪચꬌቩ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "e748dba41d50567316b3",
    "text": "‎e748dba4ఘᒬऒબቊꢦ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "25b21923145555aae0c5",
    "text": "‎25b21923સᘠꚮତᛕꔞ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "d1992a6c0fce2546e253",
    "text": "‎d1992a6cઐᑖഗᓷᓛᔝ"
   },
@@ -151,27 +151,27 @@
    "text": "ꔱⷌᗵઐᑖഗᓷᓛᔝ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000",
    "text": "‎00000000ऄऄऋꬨᑐऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffff",
    "text": "‎ffffffffꬨꘗꬍअඛꛈᐡ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "3195a5829b185a69584850",
    "text": "‎3195a582ᗵᣏᔮꬔꚲꔹꔺ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "5588cd43145823fa6fe6f4",
    "text": "‎5588cd43સⵓꗶᖂउፒમ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "45bd11dce4cdcca239336a",
    "text": "‎45bd11dcꗒᎄየᖟᐎኗપ"
   },
@@ -201,27 +201,27 @@
    "text": "ንꗰᓌꗒᎄየᖟᐎኗપ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000",
    "text": "‎00000000ऄऄऄᔕꕘᔖऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᚩꬨऄጏꬨಬꬥ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "31e02f4bcb8af339c6b0d592",
    "text": "‎31e02f4bꔁଅዚኡꖢꔑꖆᗈ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "65a23de0a2d3160143bf6292",
    "text": "‎65a23de0ᘽᐥᣝᑶᘫউથፈ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "1c7bba6b538c42e952daf599",
    "text": "‎1c7bba6bግኝⵂᖌॐᘋንഗ"
   },
@@ -251,27 +251,27 @@
    "text": "ఐꖘᗳግኝⵂᖌॐᘋንഗ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000",
    "text": "‎00000000ऄऄऄॻꬃऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᘡꬨꚮशꬨꬡᑴ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "2ae998ab9a1db37259afb1a14b",
    "text": "‎2ae998abᗭᢳᔱꕹꬌᚭꢍኃ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "19b9ab51b735b0acd6f966ba78",
    "text": "‎19b9ab51ᣎᑖᕩఆኒᐓᙡꬕ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "2c5e13f6d4cdddd1b6edcbb52e",
    "text": "‎2c5e13f6ꕌధছᘠᒊઢᘸሄ"
   },
@@ -301,27 +301,27 @@
    "text": "ഹꚳꬉꕌధছᘠᒊઢᘸሄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000",
    "text": "‎00000000ऄऄऄइꬨᒓऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꖈꬨꬠअమꬨꢳᖉ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "7e282474b931c0fd17138c204376",
    "text": "‎7e282474ᣠᒲꗦᐹబഞዘഭᢹ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "4c3a03aeeff6c42691d02cce4fed",
    "text": "‎4c3a03aeꚭᖿશቋᑍጙᕉᑛጟ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "b3b8d09c8bbee70186219a92fda3",
    "text": "‎b3b8d09cᕵꗆᕤꘜନඔⶮᒉᔉ"
   },
@@ -351,27 +351,27 @@
    "text": "ᢲⶳഋᕵꗆᕤꘜନඔⶮᒉᔉ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄቤꘫऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᣘꬨꬨᔖಡꬨꬨꔉᘗ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "4f334095012fbbc0942d4aebf7b12e",
    "text": "‎4f334095ऍᔁኴꘑꖽዟദᘳජᕲ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "757e43499f167f1f972b5bdecfe678",
    "text": "‎757e4349ᘚᕔዾহⷁहዃᓚᙶಕ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "d80a0f59882c8e527a0d649ea1e263",
    "text": "‎d80a0f59ᕙቔዹᔶᐦቼꚢⶤરꛘ"
   },
@@ -401,27 +401,27 @@
    "text": "ꕨዴꕚᕙቔዹᔶᐦቼꚢⶤરꛘ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄणꢞऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬦᔕꬨꬨꢎতꬨꬨꬦল"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "4bbbde755de886a522d91c5cfc2e36d1",
    "text": "‎4bbbde75ᎇᣏⶋⶾശൻᙾꢉᕧଣ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "7c9c27639a86abcdab731be732e48634",
    "text": "‎7c9c2763ᗰዝᙁꗺඬᚻꢊጲꕞચ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "23b3f5ec68899866834cb011283a1608",
    "text": "‎23b3f5ecᑓᛋᙚꖫቄꕨಶસⷋᛓ"
   },
@@ -451,27 +451,27 @@
    "text": "ಡᘟᓭᑓᛋᙚꖫቄꕨಶસⷋᛓ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄअꬥᘥऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬦꔤꬨꬨꬤईⵗꬨꬨꬑङ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "add9d8ffc209b29a5f13c2956f7ac31c3f",
    "text": "‎add9d8ffⶃᑆኾᣗᗰꖁᚴᐗᣛᖳಮ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "62fd375ff124cfde914c6bec6d617cf967",
    "text": "‎62fd375fꚷॽଵᑷൾꔴኪኻరᢼᣩ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ae390a03938d18a267b5745ca2dccd26c2",
    "text": "‎ae390a03ᖷᣣᑴᔏᘭવఖꗔଣᘑꚬ"
   },
@@ -501,27 +501,27 @@
    "text": "ᚻⷃᔜᖷᣣᑴᔏᘭવఖꗔଣᘑꚬ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄమꬅऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꗻꬨꬨꬨⵘरꬨꬨꬨꬌꔜ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "32b1693f443050753def6d546e1fb2c87d8b",
    "text": "‎32b1693fኆᓺሾⵤꔦᔠᣲⴳꢰᙅኇᓰ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "bf48b28ddc4b1748040a79b43baea4a11c9f",
    "text": "‎bf48b28dꖌኖᎌॼኟഖणꢎరᛊቡᔃ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "2c22af31ee156d62c0397f530d67f2803af2",
    "text": "‎2c22af31ꘪᗓᙸᙝᘙፎᗂఐᑔⵙଶᓳ"
   },
@@ -551,27 +551,27 @@
    "text": "സଉꔇꘪᗓᙸᙝᘙፎᗂఐᑔⵙଶᓳ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄओꬣⶔऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨⴴꬨꬨꬨꢮऌᓔꬨꬨꬨꗣꖠ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "6e68ab8ba41949f8af49551cfc67ddccb48c24",
    "text": "‎6e68ab8bᙇᘙઘঐᒷዹꕸᙀઋഹꗱᙛꬔ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "50ac4e0d172ea6b9647988335bcfe2fd763712",
    "text": "‎50ac4e0dଛᒋᗨᘭᓓᙥᓂᖗᎂꕦኰᣊᐹ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "77ea124a274c697b70b5dbcf20bcce2b9d9171",
    "text": "‎77ea124aഎጻമᙝᕔᘳᚦᑜሷጭऍᗼꢢ"
   },
@@ -601,27 +601,27 @@
    "text": "ᓔድᖰഎጻമᙝᕔᘳᚦᑜሷጭऍᗼꢢ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄꬤⵘऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬤⵗꬨꬨꬨꬦऊᔕꬨꬨꬨꬥऽ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "a3bb174b0a91df6a8ef0aaefc361fec5d6208876",
    "text": "‎a3bb174bঙᑸঔᗖᑜᗃꬑጛⵁᚥନᘜᕧ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "8cfc4882c5802cf5b19b763ea25914ecea359c0c",
    "text": "‎8cfc4882ⶦᔒሤꖅᢼᕱᓼᓝඑꕅᑈಎᕄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "eb5943a585ec68eeb37eeee53e9235ba1065966f",
    "text": "‎eb5943a5ᕄᛍሦಶᐋᙺঔᕉᗄᓡꚤᗆꛅ"
   },
@@ -651,27 +651,27 @@
    "text": "ꘆⷓꗶᕄᛍሦಶᐋᙺঔᕉᗄᓡꚤᗆꛅ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄઑꢊऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᓔꬨꬨꬨꬨꖪચꬨꬨꬨꬨꬔጕ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "4e17b2ceda3f1f3e4c20d453da7d61276be954c779",
    "text": "‎4e17b2ceꕺᔾቿᒢꖍપꛒⶋᢼꚳᛥಫᐔፔ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "1281b77435d516eba762012563d8f388eb8bc9cfca",
    "text": "‎1281b774ሌᕸꚹኀⵆꔲኗዹᕙᔍቷⶑᖚᢽ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "a8a4a8688e87296ef58d212723cd9ab3ba9eef43b5",
    "text": "‎a8a4a868ᖌꘜᘋᑣꘙᐫⶩቓᔮꗶꢓፋኪଽ"
   },
@@ -701,27 +701,27 @@
    "text": "ᙬಸଶᖌꘜᘋᑣꘙᐫⶩቓᔮꗶꢓፋኪଽ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऋꬨᑐऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꘗꬨꬨꬨꬨꬍअඛꬨꬨꬨꬨꛕೲ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "bef26393de27b5723d8e5f2aae0633168351602e55d2",
    "text": "‎bef26393ꖛൽᒺꖓꚵᓷඣᕅꗻᖻⵉഇኔᖄᒒ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "78c5e20028d5d931ecce69d373cd61f6ffc89aa91389",
    "text": "‎78c5e200ജᚧশઢᔀᢹꖭᙍውᒄꖧᗎᖢळૠ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "8871672cd017df6f934fd19e5bfb497ee0c3fcc00fbf",
    "text": "‎8871672cꔥᛈዞⵤᑼꖭഇꕡધಫᑤᓎᎇꗡᎅ"
   },
@@ -751,27 +751,27 @@
    "text": "ᕛᕱⷜꔥᛈዞⵤᑼꖭഇꕡધಫᑤᓎᎇꗡᎅ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄᔕꕘᔖऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᚩꬨꬨꬨꬨꬨऄጏꬨꬨꬨꬨꬨঙᔹ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0f47a47aad233c562d4ea0f60974f8df57a6b8a5f11a5f",
    "text": "‎0f47a47aᚱꖳኙᔡᒡꢔᙣሑઅꘖડꕟꗑꔸꗖᒠ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "38fa7d510488485835155f81b876af38ca4da833091174",
    "text": "‎38fa7d51नቫሄⴾᕡᓫᕼෆꖍꗿᐫᗏᐿዑⴻශ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "90718901010663cd7ae22a6a3c6342b74632e2331a64cc",
    "text": "‎90718901ऌඳኁꢖቊॷతᐉᓻᚵᗋୠᓯᘩೱఫ"
   },
@@ -801,27 +801,27 @@
    "text": "ᖞᕺቧऌඳኁꢖቊॷతᐉᓻᚵᗋୠᓯᘩೱఫ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄॻꬃऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᘡꬨꬨꬨꬨꬨꚮशꬨꬨꬨꬨꬨꬠᐷ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "9d426b88960fc1592ab13edc36078194e7d063d1cb1daed1",
    "text": "‎9d426b88ᗌኖഋሆසኝઇᗵফᙶጷॐᒼमᑽघ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "b3b2491bff3f431b1dd90ef74fe2555634c999c3e1abbf75",
    "text": "‎b3b2491bꬡᗰঈꚸሲᐶᒜጇᣣᑛꚿഗᛞᙒᑓᔘ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "92dd9c61d5013352ad3a6be272aec3921f5942b3cf70f3b1",
    "text": "‎92dd9c61ꕍᣤꔭᕭᙍᖱᖝಉᣎꗳꢳቷⴳᑇᐾᑍ"
   },
@@ -851,27 +851,27 @@
    "text": "ᖲꘗଥꕍᣤꔭᕭᙍᖱᖝಉᣎꗳꢳቷⴳᑇᐾᑍ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄइꬨᒓऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꖈꬨꬨꬨꬨꬨꬠअమꬨꬨꬨꬨꬨꢪଏ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "266e8fbcd7d454ec3a5739c179dacda776bd390cf91b7e67df",
    "text": "‎266e8fbcꕦᔸᑴᓘझᘀꕦᔹઝꖾᣨፙꖶಡᑴනᛨ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "6d666d9d916edc4f826282047c7eed394e9f0990b2424c98ed",
    "text": "‎6d666d9dᖦᐝᓍኗꔀᙋꔒጫમଓꔸꖾఔꗖᒇᙹⶤ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "c75365b594b2c4498abbb03952251a86d5c7734ce520b5cc10",
    "text": "‎c75365b5ᗁᔟⷌඐতꛤꗐᐰꢤᓻᕰᙔᓝꕕᣛꛑꚬ"
   },
@@ -901,27 +901,27 @@
    "text": "ⶺᗶᑽᗁᔟⷌඐতꛤꗐᐰꢤᓻᕰᙔᓝꕕᣛꛑꚬ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄቤꘫऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᣘꬨꬨꬨꬨꬨꬨᔖಡꬨꬨꬨꬨꬨꬨꖁᕹ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "098236a86eaa131df5a4858b1aa3a1e38b64cf1aa38fe948c7ed",
    "text": "‎098236a8ᒈඩᔱꕒᕹৠⶠনᐝᔁඬᘽᘹሱᒧᗘꕻዯ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "85ae8ab553eac741e0260b7a41c0dd8b9272bd62353fb007e81a",
    "text": "‎85ae8ab5ጐቘደଖᗀબꘕᕈᣎዯሆቧꖾቕణᗐꢄꗂ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "45447971487b6ce06098c499681e2e0907f5f7f91936093c829a",
    "text": "‎45447971ካⶹኇᕏሐᘷഷᐦᢹಫጒᑛढᓋꗸᔙᓮఇ"
   },
@@ -951,27 +951,27 @@
    "text": "ኒಢፖካⶹኇᕏሐᘷഷᐦᢹಫጒᑛढᓋꗸᔙᓮఇ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄणꢞऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬦᔕꬨꬨꬨꬨꬨꬨꢎতꬨꬨꬨꬨꬨꬨꬦቍ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "dc221a383d948012004f943267fe6c7e98ca67add151e2840044c5",
    "text": "‎dc221a38ቋእৱꢜꢐᙁᓦᎅⶎᔅꖊꖓᔭጕഢሿඉꖟ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "8d0ac3b297fda89a4a2e8421b89daad8091a35b4612e432b04baeb",
    "text": "‎8d0ac3b2ᗛঋቺፈঐᢸⷋᐗኗꔮᕘᐵቊᔠᔈᐶᔧꖠ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "484eafe6a1a8369b022a6750099514904f75663d11794f1a19535a",
    "text": "‎484eafe6ᘱዪⶕᕩᘡᚼᙻᑘᘦⵟᑐకᗜⵢፎಛᙝቲ"
   },
@@ -1001,27 +1001,27 @@
    "text": "ኪᒾꢚᘱዪⶕᕩᘡᚼᙻᑘᘦⵟᑐకᗜⵢፎಛᙝቲ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄअꬥᘥऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬦꔤꬨꬨꬨꬨꬨꬨꬤईⵗꬨꬨꬨꬨꬨꬨꬠዄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00abd2eddaf634f0b0324da5cc71d2207299cdafcaadb8138edf4195",
    "text": "‎00abd2edꕿᚷଭᙰᔩଛଜᛅሷᎏൠᒀগᢷኼꖨजꗁଋ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "3648fdae3fb188931f9292c016e2a659e08b15a6faf795c3bda84b8c",
    "text": "‎3648fdaeቢቪৎᢰⵆᔏሩꗬᢻሔⴳᔝઘⷙठૡᕡౡᑐ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "cd82996059b0651b9bf92196cb7af612f0854d6cc3b22e1ceece5962",
    "text": "‎cd829960ፁନሷශꬥዠቁତꔴᚡᣣꔲଓᙈᙹᢵᣤᔢኪ"
   },
@@ -1051,27 +1051,27 @@
    "text": "ꔑૡጴፁନሷශꬥዠቁତꔴᚡᣣꔲଓᙈᙹᢵᣤᔢኪ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄమꬅऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꗻꬨꬨꬨꬨꬨꬨꬨⵘरꬨꬨꬨꬨꬨꬨꬨꛛᒢ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "38b45606cda2740e95ba6890fa5d1e929f8cae49d5bb70a4e6694ea5de",
    "text": "‎38b45606ꔒओᙆᚳಮᑑᑪꔓધఢगⶏꕷপꖵᔾꛛঅᑉꗿ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0c8dee494484a5f3ab453832dbd44c759bc3fd50b97743b008444d9d50",
    "text": "‎0c8dee49ኊనᐗⶬᒣᗯमহꘞಹᑐᓬटഛᙧᒛষⶋᛑମ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ad462f4b4f5223e8953df02d71f42f4f7c10949adf61a152d1b0e25026",
    "text": "‎ad462f4bያᕪᒠᐳꗖꖶᓂꗡꚭᙡᑈᣊୠꢉहᛑካጌᔮᗽ"
   },
@@ -1101,27 +1101,27 @@
    "text": "ᚴටꔻያᕪᒠᐳꗖꖶᓂꗡꚭᙡᑈᣊୠꢉहᛑካጌᔮᗽ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄओꬣⶔऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨⴴꬨꬨꬨꬨꬨꬨꬨꢮऌᓔꬨꬨꬨꬨꬨꬨꬨꖩꛀ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "5af35af0b55cd7194df1324d2f05978f79eb80dcfdcf5e78b769136e1784",
    "text": "‎5af35af0ᢿᣊꔃవඌఘළꬎጴꚪꛗꖔኺꢧनᓫᛒጷᛈዒᓧ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "e61e924816dbeeef0d62ee5d2e04304bfda69ef69f343ee961840c696be8",
    "text": "‎e61e9248ଘꕴጤꢬᙡᔓᑾꖼᗠಙᕓዟසᒽᙞᐺꗡഅൠꛝጊ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "1a696251546f7ae1c887a61b5e2385f617c69242d549ca43a8275e6ab6b5",
    "text": "‎1a696251ጕᐷꛔᐇꢓꚨᎆᓕᣡॹᐨপᣫᓠꢣꢜᗨᣫꚽꔽቒ"
   },
@@ -1151,27 +1151,27 @@
    "text": "ହዅᖾጕᐷꛔᐇꢓꚨᎆᓕᣡॹᐨপᣫᓠꢣꢜᗨᣫꚽꔽቒ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄꬤⵘऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬤⵗꬨꬨꬨꬨꬨꬨꬨꬦऊᔕꬨꬨꬨꬨꬨꬨꬨꬤᛉ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "4fb20eec7fc70dfe885b71c2dbe0eae87cb5c9db65ea65a20535a917e03ea6",
    "text": "‎4fb20eecᔒᗥኩᛞቫዣᖲꛆᕠᒣᛠᔛᖵభᑕꖁꗀᗎꗱⶲꔆ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "099f9be58bb449bd4c67a30f8b972fd2b747266c16d7646233d5a6a1fc8c83",
    "text": "‎099f9be5ᕳꖌభᛄএᓪሆꔟᑇዛꕐᔧꘉⶐꖵᐆೡᚭᚧꛚᕶ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "3562fc32914b3ec70adc9e25146eac83bb690a6dba67eba38166be0faa8f68",
    "text": "‎3562fc32ᖣᔤলશञቸጟꔄᖆඑᕚవꢈᕈᑰሜᕰᙎቾઉञ"
   },
@@ -1201,27 +1201,27 @@
    "text": "ሉଢপᖣᔤলશञቸጟꔄᖆඑᕚవꢈᕈᑰሜᕰᙎቾઉञ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄઑꢊऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᓔꬨꬨꬨꬨꬨꬨꬨꬨꖪચꬨꬨꬨꬨꬨꬨꬨꬨꬃጘ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "39dfa17e966ffddd5b41eaf58da470e2634e43c30f8213268b73e24dff20a413",
    "text": "‎39dfa17eᗏගఆꬠꘝⷖꔏⵢꢅಊᒄᓫቒⵥᔰඒഔምᔏጿᘾೞ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "9e614bee6f27ba24357eb49bc068e3609c81dafbf1dd51ec06606a09c6584226",
    "text": "‎9e614beeᒌचరᛠᒦᗣॾಠᑜନⶡዑᘁኪሪᚶꬣናᣰঞഉᒃ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "dc6f8642fdd4cb4001e0bbfa8c77deb197bd67f90550472a6134fe37612d24b3",
    "text": "‎dc6f8642ꬋఫॹयওॳቿᖥⴰᒏᖧꕜᓌꖖꕓሷಌᐳꢍꕪꔝખ"
   },
@@ -1251,27 +1251,27 @@
    "text": "ꖍᓶᖟꬋఫॹयওॳቿᖥⴰᒏᖧꕜᓌꖖꕓሷಌᐳꢍꕪꔝખ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऋꬨᑐऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꘗꬨꬨꬨꬨꬨꬨꬨꬨꬍअඛꬨꬨꬨꬨꬨꬨꬨꬨꛁፆ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "d74cbd711f02b006e34893df4101e5a1c11b9b4f805617caedca36a0b5b62462af",
    "text": "‎d74cbd71దભᗝगᔲঌᕑꛜቇꬋꖁᐱᘐജꬒᙻખⵡቡሱካಽඨ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "d666410964695078f70b28a5cb1645870cf522bc7b3de6aa9e823d2e8c88e239d2",
    "text": "‎d6664109ᐯችᔓᛊⵃꛞധᖞතቖଯꔳᓬⷂꢊꕑቮᒦᢲധꔼకᕞ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ee503a23cb7ffb33c4321842a5db74e8e369832b713e172dcf398b278897a58879",
    "text": "‎ee503a23ꔀꚴꢕᘛᒦೠᛕᙑꬥᒃଷᐎઇꖔሰⵥඖꬊꖶꖮᔠବᘱ"
   },
@@ -1301,27 +1301,27 @@
    "text": "ꚠᔤᕞꔀꚴꢕᘛᒦೠᛕᙑꬥᒃଷᐎઇꖔሰⵥඖꬊꖶꖮᔠବᘱ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄᔕꕘᔖऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᚩꬨꬨꬨꬨꬨꬨꬨꬨꬨऄጏꬨꬨꬨꬨꬨꬨꬨꬨꬨሟᔉ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "7911b508c0ab000d2ab101e1ec4e71764fa0c33f9ae1756abcb6b8b918a30baa1b45",
    "text": "‎7911b508ⵞଫजᚫᒎಶᒥሥꚭખଐꘖᒒጊᗓᖃꗸፉꬖሓᒨᘛꢝᙝ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "1aa28b3280e882317adeba644e809c09b9070243b6e6dd9ace2988d710264e8fc524",
    "text": "‎1aa28b32ᔝଳᚠᕵꬣଖᖤᘕꬅᙫኊꕟଚᘌꬑᗍᘠᣎᗗⵜꢒᛄꕧᑬ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "5dc5f2eb2e85dffbfe7712e96ff9bc4296cdd46848b9e58dd6f6312496b8853c00bf",
    "text": "‎5dc5f2ebඍభঽꔇજᔚଘኳኇകꘊᕙቅઞઙᘳⶬꔛᣓᒷଋᓳෂቾ"
   },
@@ -1351,27 +1351,27 @@
    "text": "ᎇඕᣭඍభঽꔇજᔚଘኳኇകꘊᕙቅઞઙᘳⶬꔛᣓᒷଋᓳෂቾ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄॻꬃऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᘡꬨꬨꬨꬨꬨꬨꬨꬨꬨꚮशꬨꬨꬨꬨꬨꬨꬨꬨꬨꬢᙧ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ea790876499770f6c6930ab37ffb8989f449897565ed117f80604c3c20d49f92f93bb9",
    "text": "‎ea790876ኵᘡᓎꛢఉꗧꬑඥⵓઅᕃवᔓᕢᐟᒬᖪᒛꖫᕮᒂⷜজꘇ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "a78ab0795e6d5b7a176e2b2ffdb02a34f6f1698a5d11386b241bc70f327c47c4e61437",
    "text": "‎a78ab079ᎌኣᗏᗸዺछꖘআꛆꗇᓀᑫያᗸᘀꢓᕂᔳꖌꛘⶰఅᒃᖘ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "2327ee8a42d0519ab4a38a8dabe2d21eae23d84075ed9b463b3b9c820211b2c8cee591",
    "text": "‎2327ee8aቻᑛꛞⶊඥᒟᢼꕫᓻᙓꘉശᙌघಖᘞሉᑽⵓꔌꔲᛇꖡᕡ"
   },
@@ -1401,27 +1401,27 @@
    "text": "ಙበᘻቻᑛꛞⶊඥᒟᢼꕫᓻᙓꘉശᙌघಖᘞሉᑽⵓꔌꔲᛇꖡᕡ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄइꬨᒓऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꖈꬨꬨꬨꬨꬨꬨꬨꬨꬨꬠअమꬨꬨꬨꬨꬨꬨꬨꬨꬨꢎᔣ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "47842ca1efa0a6d14f4e1c81d2f677fd945759051b98f55253ea88e159a0727bf139c88f",
    "text": "‎47842ca1ꚪꗆఫⵤटꔮዂⷃᙪⶌᖓꢑᐳቜಉభढᔵୟඕᙤⶀঝፇፋ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "9a4a8dc5db9393457b66918c275e68540ca25dc53dd126f49b4684b69eab4bc71c2e96d1",
    "text": "‎9a4a8dc5ꖅᔂⷞⷌꖝనᐖꢅയᣡঊꕐᗚඬⶻᐈᒦꛃᗖⵡછꗚᗛꬂસ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "5153ecf51b2487873d3b15f4be3a20ba3542c87b2d654a5aa242037eb288466ca64a3a2f",
    "text": "‎5153ecf5అలጹᣊᙨሉᒀᗤᢺઑሏᘍገባપᘋᕪᚣൻટఛസዠઈᓤ"
   },
@@ -1451,27 +1451,27 @@
    "text": "ዻᘝቈఅలጹᣊᙨሉᒀᗤᢺઑሏᘍገባપᘋᕪᚣൻટఛസዠઈᓤ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄቤꘫऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᣘꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨᔖಡꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨⶬᣦ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "56eac745c790a4bfef8eeebb2b9f1981f0d609a5ac1c17a73cdd20afdf38e589e1c6f97d4f",
    "text": "‎56eac745ⶼዜኮᎊᣕꕞꕦⷄᙆꗣഹጿভቩᑴዌᗾᒋᛙᔿꛜⷈᙣꕦᒠᐮ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "a3f48ea986f7775335d7eb0e15704fd8cb7c5dfb28f7dfafdb1b1cb0ef0958a7f9463db3cd",
    "text": "‎a3f48ea9ᕎᗌኃꢄठꗽቹዡቆઇᛔᙠꗐᙱᕛꖣꕵꖓꗺअડఖꢜᔗᕑᕳ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "2d088c20448b76a8a74ede4091a54ab7befbfb93358ee8602d45f9b9adcf1765df56261e0f",
    "text": "‎2d088c20ኊኬᔪᐸᣘᓓⴽᕌगᗨᒔዢꔝऽᛧᔰᗦචᎊⷛꘋⶶᙹᐐᗛጿ"
   },
@@ -1501,27 +1501,27 @@
    "text": "ർኈॼኊኬᔪᐸᣘᓓⴽᕌगᗨᒔዢꔝऽᛧᔰᗦචᎊⷛꘋⶶᙹᐐᗛጿ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄणꢞऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬦᔕꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꢎতꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨጶ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "15a4f1d6f5a3bb15bdc415ab4ec60e9f415ca9f6bd029d785ec79058525141eca38644ce69e6",
    "text": "‎15a4f1d6ꛜᚵନጌॼᒯꢢꗵᓹఌଷආꚬᗈꢤⶁᒨꕽఌꗶⵢꗓᗺথꔉዏ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "7c0cf5c4084268cd311e58e19ac9f399f022633d6630404375ff2a61cbd1e96bda1fb9c1f4a7",
    "text": "‎7c0cf5c4ॾॲକଈጂᗟⶃᘎⴵଷጭᗈᚭᒚሙዃቺલᗙꕱቧⴻꕄᓝદᘕ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "f64c0a08943e17b57233f2f0a2e76392cfce69ad98b2ea536f2b73ebd6597efb622addcdc1ec",
    "text": "‎f64c0a08ᖽદदआꗰᗨጭୱඝಊꖏꛌᔅબⶻꢯᙞᕹᘷᙟꔗᐒᓂఽꕘᕵ"
   },
@@ -1551,27 +1551,27 @@
    "text": "ꛤᐌᔦᖽદदआꗰᗨጭୱඝಊꖏꛌᔅબⶻꢯᙞᕹᘷᙟꔗᐒᓂఽꕘᕵ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄअꬥᘥऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬦꔤꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬤईⵗꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬍꖦ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "5c9ac146136605f9a9a99381272f2703a364beb97409b330346464e4ef1ae4d458805bc3b7cb92",
    "text": "‎5c9ac146યଭሇᖂᙙഫॼᑧढⶵᘝᕪኧᗬᐆꕸഏꢭጀᢰፀపሣᛔඕᗀሜ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "01f9e23ea66b29bf9232382036756290046ef4fe09a29d9b3cd400c8b5f763b99d1cd8a5eccef8",
    "text": "‎01f9e23eᙙᖹᓂⵓഗጣᕌᙶಛଦᖵটⵍᘀꕦⵇቓᘮᔬචझꚾᕉꘫঠᘾಮ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "9ca3b693df3d7065f2020255024fbcc8a871ea4ced169b5003adb0e8cdc235955c6bb2ccb0c724",
    "text": "‎9ca3b693ꖢꖽዿᕅएदᙝഽꛄଈሰⷃፉሴᒺᚽኳቭᛩꕑळॻꢤᔟᗥꔗዼ"
   },
@@ -1601,27 +1601,27 @@
    "text": "ᘅఛᙍꖢꖽዿᕅएदᙝഽꛄଈሰⷃፉሴᒺᚽኳቭᛩꕑळॻꢤᔟᗥꔗዼ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄऄమꬅऄऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꗻꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨⵘरꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꚮꔍ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "591c0a231ca84c0822a77801758502b86f7866ad3da53aece8a951ecac4b65a96d284e6634cd1f8d",
    "text": "‎591c0a23ఓቤዣᙀટፇᚺమᕭቤዙኇሂᒧꔹህᒷሎᛍኗᑒᛦᐛᣮዙఓᗡⷜ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "6c71eff841a3ec40f83340134eb5f0bf8fd85f3bcad2bfb60f0b03274e1ea7e4f204f97077b04ea6",
    "text": "‎6c71eff8ቲଲꚪᎁঋⶍᓥୱወꔗᐳዽየऌᚢꬔᗏᖫጭኬቹᕧᐉଔᒉঝఞᔥ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "2ac77b99783a3264bced48fd308622d19c2d4cc77302d706862e78defd15770e6943079ad5959541",
    "text": "‎2ac77b99ᓖⶹꚸᐱᔶᣗᘛᣴᐏꗅሜᗉꬋꢳꘇᣌಈⵈঝఫዝሹᐽશഭᖺፍᑰ"
   },
@@ -1651,27 +1651,27 @@
    "text": "ബሼꗞᓖⶹꚸᐱᔶᣗᘛᣴᐏꗅሜᗉꬋꢳꘇᣌಈⵈঝఫዝሹᐽશഭᖺፍᑰ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄቤꘫऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᣘꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨᔖಡꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬣꖅ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "1220079193017f9fdb306b3f8cf4302381851edcdb440f8aecf662b21aeb6d49dbd6d1f144b44338335a3e99d04a4784",
    "text": "‎12200791ᖳꗁᒗꘘᣱపራᕋᎁᗮꛁᖊᓋવᑥቱᛦᗏᖂꔗⶶᐜᢾঙଏꕻꔲኺꔙᑐꔁᖔኄമ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "82e233df38dcbcf7c6260e2f28d1c6c3ab84766bd41ee2a9f1606ca69dd6b0bdcc63ad66c03febad2256ea2ff8bcefac",
    "text": "‎82e233dfሤꕘඡꕼꢗᘍഖᕡꚵጷꗾꢍఉᗇጰꛀᔃꗈഹⶸሾଦፉᐂᘔഭఙꬋఖꗗᛎᔺꢘᙸ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "268c4083796976952cf92ee2d7d6fee4bf5ecdc7306dc92e2d4b16149c276400962ca7603624ba1ce559e00fef0b65cf",
    "text": "‎268c4083ᓠതᎆථቘᓔભᒨꔾⷓᗚꔣૐⶕᐪꗪᖠᙁᑺᗝᔧভᑙᕟᖊᚬኽꢬᓜᗈᓼꘂᐽዽ"
   },
@@ -1701,27 +1701,27 @@
    "text": "ഇᐚశᓠതᎆථቘᓔભᒨꔾⷓᗚꔣૐⶕᐪꗪᖠᙁᑺᗝᔧভᑙᕟᖊᚬኽꢬᓜᗈᓼꘂᐽዽ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄꬤⵘऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬤⵗꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬦऊᔕꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬦን"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "e3cafae872c167c9f0382aafbcbd00785ae062540754e637e4b9efd08758bf6e8f9d3c456e9bab7584913a4242a6967e3bee4a1fa7640444db7a97cc38b80516",
    "text": "‎e3cafae8ᒧᗎዠᕺꗵꚧᗇঘᛎዯꖘጵጉꛠꗷⵞदሤᙪᕍফጿꖏഐᗩᓘᔃᑞᓽገᣳଖኙዎଆⶨయᒶఫঠᔓఈએഩᙼ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "cd804ee61c144b59ebd16bf3c9ef1886685f57b2419995fd86f6e6d9627c298d95fed4113d62b1f0bb36c9a4a496bfe95df1d8226d2547e7e33939ef1996f12b",
    "text": "‎cd804ee6ఌአⶵᘕᗬᒒᣳᘶᐯᖊሿꘚફᓓᐜꬠધፚᕰዢⷞቄଖᗡᗟᔳᕏᢿꘜጭᢴଈꕷኢꖛይᙅଥᚱഎᚨషክꘖꢚ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "985a985a7655f8474791f936750c59ab41cc79274a4a7ca971fb36181ffed5e0ed13963948d9f0692c4367a8fcf0dc335b4d058987a3c3d072210353804e200a",
    "text": "‎985a985aᓅඒጨꕏꔗꛕꖆᗨᙝᘳᒏസಸഌᗶᙋꗬዺᕻᚮᘩꕵጩᘷᐴᛉꢎⶢᛗꖊኻꔻᓡꖨꗉᙆનഞꗗᗅᓩዖయഉᛚ"
   },
@@ -1751,27 +1751,27 @@
    "text": "ᗞꕌଖᓅඒጨꕏꔗꛕꖆᗨᙝᘳᒏസಸഌᗶᙋꗬዺᕻᚮᘩꕵጩᘷᐴᛉꢎⶢᛗꖊኻꔻᓡꖨꗉᙆનഞꗗᗅᓩዖయഉᛚ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄᔕꕘᔖऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨᚩꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨऄጏꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꛏᓭ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "9e2421aca77def943527ac1fb94085118281bfd2eaa09efe5f468722658389250ed7aa27d8df2c71277b71f57ccbe1bcb88ac8163e8b3767672c743e480c5474433ae19d8b21791783a91f396db84dd439eb1baf31e9815e53c18127190dfea4f301c37b",
    "text": "‎9e2421acᙢᣙꖹᛥకᑠಎᓿꔭᓬᕯଇሚᙓኴᕫᗝꕥආꔲᐈᓱᕩጰꗗሉጕતᔗᘚॿഩೠᘯዿᕵᖊᒾꔗᐟᘷᑥꛝᕣꢆꬍⵙᚶᒇⷋౘዊᐓዉරꖤᓱଫಡꕈⷃናᑔጵᗁꚯበఒꖵꢃᔦᐨ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0f8591dafed53cfbae04bea502c8b7f59eed58162478663d796dbf38247a5953ae019a62417949e64da1f3dd782bd2cb2b0379db93357593ff551dafde60500b17c10c9dff42b76b5b67700af7e435a8395d81860a3ba1113963f9517e347afcc9ce49bb",
    "text": "‎0f8591daꬕጧዡयᐏଋઑꕕⶦᛝᕫᚤꔝమᓺඝሮꘐꗿᓂઇⴴତඋꖂఈᙾᚿꖡⵕᗗፓᢼⷜᣚꗟጅኗᔪꔂവꛤॳክቶᗛᖪꢌᖇጲवꚤꗻᙘሓፙᢰᖜፌహሗऐᢰకጜᔷቅኩᒑⵁሬꔕ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "c47405a7ce66e5cf3dcb0a5f9eb4861e96fe3db5823730ae5d34179b4798c649306ae10f93ed3b906a3858dc69051516ec182c35bbac95b2ab4671d5d645594190ae04172b31a511539401ca2a2be4211490cec75dbcd22184356d6dbd1fa962eff5d20a",
    "text": "‎c47405a7ꔗꛌᒳꕮತተᓓቧණኝᐗኧෂଟꔜፃꬒᑘसᕒሖⶂೞꖮዠኑዊᒶꛊꔺᓜउᘾꖠርꬕᛃቲሬኸᕖᕤᓇᐓꛌጌሓⶇᛄᑞዪൺରꘘጀꗦටꛤᖭꗖᎄሷఞሱᐷᙺꗱᔅඬⶴౡᘪ"
   },
@@ -1801,27 +1801,27 @@
    "text": "ⶠᘦᑟꔗꛌᒳꕮತተᓓቧණኝᐗኧෂଟꔜፃꬒᑘसᕒሖⶂೞꖮዠኑዊᒶꛊꔺᓜउᘾꖠርꬕᛃቲሬኸᕖᕤᓇᐓꛌጌሓⶇᛄᑞዪൺରꘘጀꗦටꛤᖭꗖᎄሷఞሱᐷᙺꗱᔅඬⶴౡᘪ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
    "text": "‎00000000ऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄమꬅऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄऄ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
    "text": "‎ffffffffꬨꗻꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨⵘरꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬨꬦᙪ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "bead0c7b16a2083e5ff91dc9b86d33de72fb7fef2935e48f7fa1b1d6cd5ef745cf51885f1b7576316dccd77d943aced957b51e6b327d08ba02b97889ad1f219a12a48caebe16d27cca5f4a3a154019e29d783d1f60534e79d1f9e0952555197a6bc3f7971ef2af6b5caf6d2ede1db86fc0f6bde330e301170a972d20fe6b0b44",
    "text": "‎bead0c7bଗৠᔗᖰꕳꚠᗭዩᛠಏꚶᓌᗎରꘙᐢપꔮશᔾঘᙯሥꖎᒒጟᗮᕦᗡౡᕅꗣᘘꢩዣቌᐪꚷᚠቒঢযౘঈᐪጳᘔꕶᖪᓵᓙઇꔦಥᐅᖱᖭତዋఢଔᗖബꢗᔍᓃർඳꔎꗨሎᗢᖻꛕᔭೲⶻᗲᘑඉꕿᓟᑪఘᗵꛆꔥকᖼᘛꗫᗗ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "e12c86d6aeb143deb1017b95f0b9b41027a9c24e42e25ca0db60342aa8771cf456ccba854658807b1ad2ae1b398d6acdda608cdd569be1099cad9277cbc785c00029574335387951208973d8675d057a9615239215d45f5012a005ad3447f6087453a25bfe3e0aa2065db7c7ce10adbf8050df87340f197ce4590d1c944d1a39",
    "text": "‎e12c86d6ᚿᓭꖘᑸꔯᑗᒮᚧઞⶓጞᓊⷆᖭⷍᗁꕰઙቨᗷꔈᗏඓክᑠꢏꚡआናꘛখᖣꛖጎଅᙚᛩᒆⶺᐯᗰⷀᕁᣊलᙾᓹഥꗹꘉඎൽᓢଭꗵꕙⵢষᔐऎᖂऐᔴᖹኲጮᐭኦꚻዦꬦॿꖘꔷगಘጆᑄઠશᖘዽꕓᙐዜⷂᗥቋએफግለ"
   },
   {
-   "form": "handled",
+   "form": "hex-prefixed",
    "data": "d2e070dedda238026b80ff3fd3284a0fdb58f28b4cddb055ee1af9ef92996abc23b3607c256cbc523a61b3ca151b9ff9b3818cc020167d60595fe7a236d5c1e591ca39374efcd52df44d2ed60ed303e8f6508ccc84f277f9bd89e30dc4fd112a85da0dfbda08f7f8187e2dd0aea1703ff1759653074596328090d90a627faa15",
    "text": "‎d2e070deꖖꬔᘭᘾᙒꔙጛନᐒᔀጢᚵఝዤꔮೠᚢമꔲඒᐫଙꢗꖅଜᚢꔍꬡෂᛪⵓⵂᣳᗓⶶᣧᐜᖥखꖛꕼꔚꘂරⷋᔊᕆᖂඐꘚᘬᑉॴⵟፍಸꗉꔛꚮꖪഡꖝᗵꔙᙐඌሗዉᖿⴹලᘿଡꖓቖሴⶈᒣणꗝᒏᘜᘑᘭꔉᒘꢉꖭᑖሑᑈᗀ"
   },

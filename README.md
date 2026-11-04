@@ -6,7 +6,7 @@ hash becomes its first 8 hex digits and 22 letters, no two of which look
 alike.
 
 > **This branch is Sigil 0.2, unreleased.** Its sigils and 0.1's never
-> decode as each other's. Two forms are on trial: handled, which begins with
+> decode as each other's. Two forms are on trial: hex-prefixed, which begins with
 > the value's first 8 hex digits, which start with git's short hash, and
 > plain, which writes those digits as 3 letters. After them both forms have
 > the same letters.
@@ -120,7 +120,7 @@ Rust (`rust/`, crate `sigilcode`, no runtime dependencies), in time linear
 in the data's length and constant whatever its value:
 
 ```rust
-let sigil = sigilcode::encode(&digest);        // handled; encode_plain for letters only
+let sigil = sigilcode::encode(&digest);        // hex-prefixed; encode_plain for letters only
 let back = sigilcode::decode(&sigil, 32)?;     // either form; Err(DecodeError)
 ```
 
@@ -279,7 +279,7 @@ after it carry the other b = 8L − 32 bits, the same letters in both forms.
 3. **Write.** t = m · K + r, where r < K makes the number h · 2048^n + t a
    multiple of K: r = (−h · 2048^n) mod K. The letters write t in base 2,048
    with exactly n digits, most significant first.
-4. **The handle, in either form.** Handled: U+200E LEFT-TO-RIGHT MARK, then
+4. **The handle, in either form.** Hex-prefixed: U+200E LEFT-TO-RIGHT MARK, then
    h as 8 lowercase hex digits. Plain: 2h + v as 3 letters (33 bits), where
    v is the plain form's version bit, 0 in this version.
 
@@ -287,7 +287,7 @@ after it carry the other b = 8L − 32 bits, the same letters in both forms.
 |---|---|---|---|---|---|---|---|
 | n (letters after the handle) | 5 | 6 | 10 | 13 | 16 | 22 | 45 |
 | K | 2,096,881 | 65,519 | 4,093 | 8,179 | 16,381 | 65,519 | 8,179 |
-| handled: characters (with 8 hex digits) | 13 | 14 | 18 | 21 | 24 | 30 | 53 |
+| hex-prefixed: characters (with 8 hex digits) | 13 | 14 | 18 | 21 | 24 | 30 | 53 |
 | a random string decodes once in | 2^23 | 2^18 | 2^14 | 2^15 | 2^16 | 2^18 | 2^15 |
 | plain: letters (with 3 for the handle) | 8 | 9 | 13 | 16 | 19 | 25 | 48 |
 | a random string decodes once in | 2^24 | 2^19 | 2^15 | 2^16 | 2^17 | 2^19 | 2^16 |
@@ -297,7 +297,7 @@ A decoder told L first drops every character in `skipped.txt`: white space
 hyphen, zero-width space, word joiner and byte order mark, which copying
 text can insert, and the left-to-right mark. The first character left tells
 the form: a hex digit begins a handle, and hex digits are no letters. The
-decoder requires exactly 8 + n characters left (handled) or 3 + n (plain),
+decoder requires exactly 8 + n characters left (hex-prefixed) or 3 + n (plain),
 else the error is `length`; each a hex digit of either case in the handle
 and a letter of the alphabet elsewhere, else `character`; plain, the version
 bit v of this version, else `marker`; the number h · 2048^n + t a multiple
@@ -305,7 +305,7 @@ of K, else `check`; m = ⌊t / K⌋ below 2^(b + 2), else `range`; and m's
 marker bits `01`, else `marker`. The data is h's 32 bits, then m with the
 marker taken out.
 
-**The markers.** Sigil 0.1 and 0.2 both use `01`. A handled sigil never
+**The markers.** Sigil 0.1 and 0.2 both use `01`. A hex-prefixed sigil never
 reads as 0.1's, since 0.1 has no hex digits; a 0.1 sigil of 32 bytes has as
 many letters as a plain 0.2 one, and decodes as one about once in 2^19. A
 format that succeeds Sigil's puts another value there, `10` or `11`, and
@@ -441,6 +441,15 @@ python3 tools/test-web.py                     # Chromium required
 (cd lean && lake build && lake exe tests ../vectors.tsv)   # the specification and its proofs, with Lean 4.31
 python3 tools/test_certificate.py            # answers checked by Lean's kernel, wrong ones refused
 ```
+
+## Thanks
+
+Kris Nuttycombe proposed the handle, which lets a sigil be spoken and
+searched by the hex digits git prints. He named its form hex-prefixed, and
+suggested showing the bytes and their sigil at one size, so that their
+lengths compare at a glance. Everyone who ran the font test chose the
+alphabet with us: their results are in `alphabet/font-tests`, each as they
+sent it.
 
 ## License
 

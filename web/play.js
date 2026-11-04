@@ -1,8 +1,8 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const hexOf = (data) => Array.from(data, (b) => b.toString(16).padStart(2, '0')).join('');
-  const KEYS = ['hex', 'handled', 'plain'];
-  const NAMES = { hex: 'the hex', handled: 'the handled sigil', plain: 'the plain sigil' };
+  const KEYS = ['hex', 'prefixed', 'plain'];
+  const NAMES = { hex: 'the hex', prefixed: 'the hex-prefixed sigil', plain: 'the plain sigil' };
   let current = {};
 
   function decode() {
@@ -29,9 +29,9 @@
       if (hex.length > 512) throw new Error('Try up to 256 bytes in this playground. The library supports longer values.');
       const bytes = Uint8Array.from(hex.match(/../g), (b) => parseInt(b, 16));
       if (bytes.length < 8) throw new Error('Sigil encodes at least 8 bytes (16 hex digits).');
-      current = { hex: hexOf(bytes), handled: SigilCode.encode(bytes, true), plain: SigilCode.encode(bytes, false) };
+      current = { hex: hexOf(bytes), prefixed: SigilCode.encode(bytes, true), plain: SigilCode.encode(bytes, false) };
       $('encode-status').textContent = `${bytes.length} bytes. Double-click any of them to select it whole.`;
-      $('reading').value = current.handled;
+      $('reading').value = current.prefixed;
       $('length').value = bytes.length;
       decode();
     } catch (error) {

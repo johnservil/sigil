@@ -9,7 +9,7 @@ const SKIPPED = [[9, 13], [32, 32], [133, 133], [160, 160], [173, 173], [5760, 5
 // Sigil: bytes of a known length written as a sigil, one word that a
 // double-click selects whole, of letters with no two alike, and a check that
 // confirms a reading or picks the right one of several. A sigil has one of two
-// forms: handled, which begins with the value's first 8 hex digits, and plain,
+// forms: hex-prefixed, which begins with the value's first 8 hex digits, and plain,
 // which writes those 32 bits as 3 letters; after them both forms have the same
 // letters.
 //
@@ -128,15 +128,15 @@ function decode(sigil, length) {
     const chars = Array.from(sigil)
         .map((ch, i) => [ch, i])
         .filter(([ch]) => !skipped(ch));
-    const handled = chars.length > 0 && isHex(chars[0][0]);
+    const hexPrefixed = chars.length > 0 && isHex(chars[0][0]);
     const [n, k] = layout(length);
-    const h = handled ? HANDLE : PREFIX;
+    const h = hexPrefixed ? HANDLE : PREFIX;
     if (chars.length !== h + n)
-        throw new DecodeError("length", `${chars.length} characters; ${length} bytes take ${h + n}${handled ? " with the hex handle" : ""}`);
+        throw new DecodeError("length", `${chars.length} characters; ${length} bytes take ${h + n}${hexPrefixed ? " with the hex handle" : ""}`);
     const code = (ch) => ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
     let head = 0n, t = 0n;
     chars.forEach(([ch, i], j) => {
-        if (j < h && handled) {
+        if (j < h && hexPrefixed) {
             if (!isHex(ch))
                 throw new DecodeError("character", `character ${i + 1} (U+${code(ch)}) is not a hex digit of the handle`);
             head = (head << 4n) | BigInt(parseInt(ch, 16));
@@ -151,9 +151,9 @@ function decode(sigil, length) {
             t = (t << 11n) | BigInt(d);
     });
     // Plain, the handle's letters end in the plain form's version bit.
-    if (!handled && (head & 1n) !== PLAIN_VERSION)
+    if (!hexPrefixed && (head & 1n) !== PLAIN_VERSION)
         throw new DecodeError("marker", "its version bit is not Sigil 0.2's: a string of another version, or a changed letter");
-    const top = handled ? head : head >> 1n;
+    const top = hexPrefixed ? head : head >> 1n;
     const K = BigInt(k);
     if ((top * placeOfHandle(n, k) + t) % K !== 0n)
         throw new DecodeError("check", "the check fails: a character was misread or changed");

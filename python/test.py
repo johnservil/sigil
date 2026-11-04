@@ -27,7 +27,7 @@ def main():
     v = json.loads((ROOT / "vectors.json").read_text(encoding="utf-8"))
     for g in v["good"]:
         data = bytes.fromhex(g["data"])
-        assert B.encode(data, g["form"] == "handled") == g["text"] and B.decode(g["text"], len(data)) == data, g
+        assert B.encode(data, g["form"] == "hex-prefixed") == g["text"] and B.decode(g["text"], len(data)) == data, g
     for g in v["variants"]:
         data = bytes.fromhex(g["data"])
         assert B.decode(g["text"], len(data)) == data, g
@@ -45,8 +45,8 @@ def main():
     # A random string of the right characters decodes once in 2^(handle bits +
     # 11n - 8L): the data's 2^(8L) words among them all (the plain handle's
     # letters hold 33 bits).
-    for handled, head in ((True, 32), (False, 33)):
-        print(f"  {'handled' if handled else 'plain'}: a random string decodes once in",
+    for hex_prefixed, head in ((True, 32), (False, 33)):
+        print(f"  {'hex-prefixed' if hex_prefixed else 'plain'}: a random string decodes once in",
               {length: f"2^{head + 11 * B.layout(length)[0] - 8 * length}" for length in (8, 16, 20, 24, 32, 48, 64)})
     print("  at every length to 1024 bytes n is the fewest letters whose room holds a prime above N")
     # Every letter is three bytes of UTF-8, and none is a hex digit.
@@ -55,11 +55,11 @@ def main():
     # D1: the handle is the data's hex, its first 7 digits; R2: every sigil of
     # a length is the same size however it is counted; D12: sigils sort as
     # their values do, by code point, UTF-8 and UTF-16.
-    for length, handled in [(length, handled) for length in (8, 20, 32, 64) for handled in (True, False)]:
+    for length, hex_prefixed in [(length, hex_prefixed) for length in (8, 20, 32, 64) for hex_prefixed in (True, False)]:
         datas = [hashlib.sha256(b"order" + bytes([length]) + i.to_bytes(2, "big")).digest() * 2 for i in range(300)]
         datas = [d[:length] for d in datas] + [bytes(length), b"\xff" * length]
-        words = [B.encode(d, handled) for d in datas]
-        if handled:
+        words = [B.encode(d, hex_prefixed) for d in datas]
+        if hex_prefixed:
             assert all(w[0] == B.MARK and w[1:1 + B.HANDLE] == d.hex()[:B.HANDLE] for w, d in zip(words, datas))
             # Both forms have the same letters after the handle.
             assert all(w[1 + B.HANDLE:] == B.encode(d, False)[B.PREFIX:] for w, d in zip(words, datas))
@@ -79,25 +79,25 @@ def main():
     rng = random.Random(1)
     changed = swapped = recovered = 0
     for i in range(20):
-        handled = i % 2 == 0
-        start = 1 + B.HANDLE if handled else B.PREFIX
+        hex_prefixed = i % 2 == 0
+        start = 1 + B.HANDLE if hex_prefixed else B.PREFIX
         data = hashlib.sha256(b"guarantees" + bytes([i])).digest()
-        sigil = B.encode(data, handled)
-        for j in range(1 if handled else 0, len(sigil)):
-            for c in ("0123456789abcdef" if handled and j < start else B.ALPHABET):
+        sigil = B.encode(data, hex_prefixed)
+        for j in range(1 if hex_prefixed else 0, len(sigil)):
+            for c in ("0123456789abcdef" if hex_prefixed and j < start else B.ALPHABET):
                 if c != sigil[j]:
                     # In the plain handle's last letter a change may reach the version bit.
-                    assert error(sigil[:j] + c + sigil[j + 1:], 32) in (("check",) if handled or j < start - 1 else ("check", "marker"))
+                    assert error(sigil[:j] + c + sigil[j + 1:], 32) in (("check",) if hex_prefixed or j < start - 1 else ("check", "marker"))
                     changed += 1
             for gap in (1, 2):
                 if j + gap < len(sigil) and sigil[j] != sigil[j + gap]:
                     t = list(sigil)
                     t[j], t[j + gap] = t[j + gap], t[j]
-                    across = handled and (j < start) != (j + gap < start)
-                    assert error("".join(t), 32) in ((("character",) if across else ("check",)) if handled or j + gap < start - 1 else ("check", "marker"))
+                    across = hex_prefixed and (j < start) != (j + gap < start)
+                    assert error("".join(t), 32) in ((("character",) if across else ("check",)) if hex_prefixed or j + gap < start - 1 else ("check", "marker"))
                     swapped += 1
         unread = [(rng.randrange(start, len(sigil)), B.ALPHABET),
-                  (rng.randrange(1, start), "0123456789abcdef") if handled else (rng.randrange(0, start), B.ALPHABET)]
+                  (rng.randrange(1, start), "0123456789abcdef") if hex_prefixed else (rng.randrange(0, start), B.ALPHABET)]
         for j, choices in unread:
             readings = list(sigil)
             readings[j] = choices

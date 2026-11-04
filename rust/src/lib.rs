@@ -1,7 +1,7 @@
 //! Sigil: bytes of a known length written as a sigil, one word that a
 //! double-click selects whole, of letters with no two alike, and a check that
 //! confirms a reading or picks the right one of several. A sigil has one of two
-//! forms: handled, which begins with the value's first 8 hex digits, and plain,
+//! forms: hex-prefixed, which begins with the value's first 8 hex digits, and plain,
 //! which writes those 32 bits as 3 letters; after them both forms have the
 //! same letters.
 //!
@@ -25,7 +25,7 @@
 //! high and low halves, r < K the number that makes h * 2048^n + t a
 //! multiple of K.
 //!
-//! - Handled: U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase hex digits, the letters.
+//! - Hex-prefixed: U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase hex digits, the letters.
 //! - Plain: h and the plain form's version bit (0) as 3 letters, the same letters.
 //!
 //! Decoding tells the forms apart by the first character, checks the plain
@@ -344,7 +344,7 @@ impl Nat {
     }
 }
 
-/// `data`'s sigil in the handled form: the mark, the data's first 8 hex
+/// `data`'s sigil in the hex-prefixed form: the mark, the data's first 8 hex
 /// digits, and ceil((8 * len - 18) / 11) letters. Its protection against
 /// look-alikes holds for data that looks random (a secure hash's output, a
 /// key, a random identifier): hash or jumble structured data before encoding
@@ -354,12 +354,12 @@ pub fn encode(data: &[u8]) -> String {
 }
 
 /// `data`'s sigil in the plain form: the handle's 32 bits and the version bit
-/// as 3 letters, then the handled form's letters. At least 8 bytes.
+/// as 3 letters, then the hex-prefixed form's letters. At least 8 bytes.
 pub fn encode_plain(data: &[u8]) -> String {
     encode_form(data, false)
 }
 
-fn encode_form(data: &[u8], handled: bool) -> String {
+fn encode_form(data: &[u8], hex_prefixed: bool) -> String {
     let length = data.len();
     let (n, k, bits) = layout(length);
     let (width, half) = ((11 * n).max(8 * length), bits / 2);
@@ -376,7 +376,7 @@ fn encode_form(data: &[u8], handled: bool) -> String {
     let (t, carry) = marked.times(k).plus(r);
     debug_assert_eq!(carry, 0, "t fits");
     let mut out = String::with_capacity(4 + HANDLE + 3 * n);
-    if handled {
+    if hex_prefixed {
         out.push(MARK);
         for i in (0..HANDLE).rev() {
             out.push(hex_digit((top >> (4 * i)) & 15));
@@ -402,20 +402,20 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
         .filter(|&(_, ch)| !is_skipped(ch))
         .peekable();
     // The form, by the first character: hex digits are no letters.
-    let handled = chars.peek().is_some_and(|&(_, ch)| hex_of(ch).1);
+    let hex_prefixed = chars.peek().is_some_and(|&(_, ch)| hex_of(ch).1);
     let (n, k, bits) = layout(length);
-    let h = if handled { HANDLE } else { PREFIX };
+    let h = if hex_prefixed { HANDLE } else { PREFIX };
     let (width, half) = ((11 * n).max(8 * length), bits / 2);
     let (mut head, mut t) = (0u64, Nat::zero(width));
     let (mut count, mut refused) = (0, None);
     for (i, ch) in chars {
-        let (value, hit) = if count < h && handled {
+        let (value, hit) = if count < h && hex_prefixed {
             hex_of(ch)
         } else {
             digit_of(ch)
         };
         if count < h {
-            head = if handled {
+            head = if hex_prefixed {
                 head << 4 | value
             } else {
                 head << 11 | value
@@ -424,7 +424,7 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
             t.or_at(11 * (h + n - 1 - count), value);
         }
         if !hit && refused.is_none() {
-            refused = Some((i + 1, ch, count < h && handled));
+            refused = Some((i + 1, ch, count < h && hex_prefixed));
         }
         count += 1;
     }
@@ -442,10 +442,10 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
         });
     }
     // Plain, the handle's letters end in the plain form's version bit.
-    if !handled && head & 1 != PLAIN_VERSION {
+    if !hex_prefixed && head & 1 != PLAIN_VERSION {
         return Err(DecodeError::Marker);
     }
-    let top = if handled { head } else { head >> 1 };
+    let top = if hex_prefixed { head } else { head >> 1 };
     // t - r, where r makes top * 2048^n + t a multiple of K: a multiple of K
     // itself exactly when the check passes, and then m * K.
     let r = mod_k(k - mod_k(top * place_of_handle(n, k), k), k);

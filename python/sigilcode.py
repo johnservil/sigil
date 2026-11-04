@@ -1,11 +1,11 @@
 """Sigil: bytes of a known length written as a sigil, one word that a
 double-click selects whole, of letters with no two alike, and a check that
 confirms a reading or picks the right one of several. A sigil has one of two
-forms: handled, which begins with the value's first 8 hex digits, and plain,
+forms: hex-prefixed, which begins with the value's first 8 hex digits, and plain,
 which writes those 32 bits as 3 letters; after them both forms have the same
 letters.
 
-    encode(data, handle=True) -> str              # the sigil, handled or plain
+    encode(data, handle=True) -> str              # the sigil, hex-prefixed or plain
     decode(sigil, length) -> bytes                # either form; or raises DecodeError
     decode_readings(readings, length) -> bytes    # the one reading that decodes
 
@@ -17,7 +17,7 @@ The handle h is the data's first 32 bits. After it come n = ceil((8 * length
 marker bits 01 between its high and low halves, and r < K the number that
 makes h * N^n + t a multiple of K.
 
-- Handled: U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase hex digits, the letters.
+- Hex-prefixed: U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase hex digits, the letters.
 - Plain: h and the plain form's version bit, 0, as 3 letters (33 bits), the
   same letters.
 
@@ -125,14 +125,14 @@ def letters(t, n):
     return "".join(ALPHABET[(t >> 11 * i) & 2047] for i in reversed(range(n)))
 
 
-def word(handle, t, n, handled=True):
+def word(handle, t, n, hex_prefixed=True):
     """The sigil of a handle and the letters' value t, in either form."""
-    head = MARK + f"{handle:08x}" if handled else letters(handle << 1 | PLAIN_VERSION, PREFIX)
+    head = MARK + f"{handle:08x}" if hex_prefixed else letters(handle << 1 | PLAIN_VERSION, PREFIX)
     return head + letters(t, n)
 
 
 def encode(data: bytes, handle=True) -> str:
-    """`data`'s sigil: handled, the mark, the handle's 8 hex digits and
+    """`data`'s sigil: hex-prefixed, the mark, the handle's 8 hex digits and
     layout(len(data))[0] letters of the alphabet; or plain, the handle as 3
     letters and the same letters. Its protection against look-alikes holds
     for data that looks random (a secure hash's output, a key, a random
@@ -154,26 +154,26 @@ def decode(sigil: str, length: int) -> bytes:
     it are skipped."""
     chars = [(i, ch) for i, ch in enumerate(sigil) if not skipped(ch)]
     # The form, by the first character: hex digits are no letters.
-    handled = bool(chars) and chars[0][1] in HEX
+    hex_prefixed = bool(chars) and chars[0][1] in HEX
     n, k = layout(length)
-    h = HANDLE if handled else PREFIX
+    h = HANDLE if hex_prefixed else PREFIX
     if len(chars) != h + n:
         raise DecodeError("length", f"{len(chars)} characters; {length} bytes take {h + n}"
-                          f"{' with the hex handle' if handled else ''}")
+                          f"{' with the hex handle' if hex_prefixed else ''}")
     head = t = 0
     for j, (i, ch) in enumerate(chars):
-        if j < h and handled and ch not in HEX:
+        if j < h and hex_prefixed and ch not in HEX:
             raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a hex digit of the handle")
-        if (j >= h or not handled) and ch not in DIGIT:
+        if (j >= h or not hex_prefixed) and ch not in DIGIT:
             raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a letter of the alphabet")
         if j < h:
-            head = head << 4 | HEX[ch] if handled else head << 11 | DIGIT[ch]
+            head = head << 4 | HEX[ch] if hex_prefixed else head << 11 | DIGIT[ch]
         else:
             t = t << 11 | DIGIT[ch]
     # Plain, the handle's letters end in the plain form's version bit.
-    if not handled and head & 1 != PLAIN_VERSION:
+    if not hex_prefixed and head & 1 != PLAIN_VERSION:
         raise DecodeError("marker", "its version bit is not Sigil 0.2's: a string of another version, or a changed letter")
-    handle = head if handled else head >> 1
+    handle = head if hex_prefixed else head >> 1
     if (handle * pow(N, n, k) + t) % k:
         raise DecodeError("check", "the check fails: a character was misread or changed")
     m, bits = t // k, 8 * length - 4 * HANDLE

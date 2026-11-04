@@ -11,7 +11,7 @@ Terms: the **data** is the value, L bytes long, at least 8. A **word** is its si
 a **character** is one thing a person sees in it. Encoder and decoder both
 know L, as a program that stores 32-byte hashes does. The **handle** is the
 data's first 32 bits, at a word's start. A word has one of two **forms**:
-handled, whose handle is 8 hex digits a person can say and type (D1), and
+hex-prefixed, whose handle is 8 hex digits a person can say and type (D1), and
 plain, whose handle is 3 letters; after the handle both forms have the same
 letters. (On this branch both are on trial; Zooko decides whether 0.2 keeps
 the plain form.)
@@ -111,7 +111,7 @@ So a handle, or any part of a word, finds a value and never proves one:
   marks itself as one, never decodes, and this format's words never decode
   as the other's. A plain word of 32 bytes has as many letters as a 0.1
   word, so a 0.1 word read as plain 0.2 decodes about once in 2^19, where
-  its check, its version bit and its marker happen to pass; a handled word
+  its check, its version bit and its marker happen to pass; a hex-prefixed word
   never does.
 
 **Timing and cost**
