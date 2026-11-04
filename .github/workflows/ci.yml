@@ -4,13 +4,20 @@
 name: CI
 on: [push, pull_request]
 jobs:
+  # Every Python file runs under CPython and PyPy alike.
   python:
+    strategy:
+      matrix:
+        python: ["3.12", "pypy3.10"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - run: python3 alphabet/alphabet.py --check   # downloads Unicode 14.0.0's data, checked by SHA-256 and BLAKE3
-    - run: python3 python/vectors.py --check
-    - run: python3 python/test.py
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python }}
+    - run: python alphabet/alphabet.py --check   # downloads Unicode 14.0.0's data, checked by SHA-256 and BLAKE3
+    - run: python python/vectors.py --check
+    - run: python python/test.py
   rust:
     runs-on: ubuntu-latest
     steps:
