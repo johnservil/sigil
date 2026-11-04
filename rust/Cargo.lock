@@ -9,7 +9,7 @@ source = "git+https://github.com/johnservil/BLAKE3?rev=83ab942a9c0bd5bd86a7f4472
 
 [[package]]
 name = "sigilcode"
-version = "0.1.1+a04b2b9b525bd58126b62bb66938f58b2adeb53f"
+version = "0.1.2+5404f5e7b0912b58eb7d34006c7fb5c73cd4ecc7"
 dependencies = [
  "clocks",
 ]

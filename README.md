@@ -4,6 +4,18 @@ Sigil writes bytes as a sigil: one word of letters that a person can copy
 with a double-click, recognize at a glance, and read back from a picture. A
 256-bit hash becomes 25 letters, no two of which look alike.
 
+> **Sigil 0.1 has a known flaw.** Unicode 15.1 (2023) changed the rules for
+> 52 of its letters, from the Cham script, so current browsers and other
+> software may break a line beside one and draw a sigil across two lines.
+> About half of all 256-bit sigils hold such a letter. A double-click still
+> selects the whole sigil, and a copy still decodes.
+>
+> **Sigil 0.2 is coming, and it is a new format:** neither version reads
+> the other's sigils. Its letters stay unbroken under every Unicode release
+> since 6.0, and each sigil begins with its value's first 7 hex digits, as
+> git shows a short hash. If you are choosing a format to store or show
+> values in, wait for 0.2.
+
 ```
 BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64 rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
