@@ -1,6 +1,6 @@
 # Changes
 
-## Sigil 0.1.2, November 2026: a warning
+## Sigil 0.1.2+5404f5e7b0912b58eb7d34006c7fb5c73cd4ecc7, November 2026: a warning
 
 The README, here and on crates.io, warns of 0.1's known flaw: Unicode 15.1
 changed the rules for 52 of its letters, from the Cham script, so current
