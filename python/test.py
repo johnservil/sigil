@@ -53,7 +53,7 @@ def main():
     # Every letter is three bytes of UTF-8, and none is a hex digit.
     assert all(len(c.encode()) == 3 for c in B.ALPHABET) and not set(B.ALPHABET) & set("0123456789abcdefABCDEF")
 
-    # D3: the handle is the data's hex, its first 7 digits; R2: every sigil of
+    # D1: the handle is the data's hex, its first 7 digits; R2: every sigil of
     # a length is the same size however it is counted; D12: sigils sort as
     # their values do, by code point, UTF-8 and UTF-16.
     for length, handled in [(length, handled) for length in (8, 20, 32, 64) for handled in (True, False)]:

@@ -313,7 +313,7 @@ def main():
     drawn = [c for c in left if {r["system"] for r in results if c in r["tested"]} == set(SYSTEMS)
              and not any(c in r["missing"] for r in results)]
     print(f"{len(left) - len(drawn):9,} {len(drawn):9,}  drawn on every tested device, {len(results)} results (R7)")
-    # D1 within R10 and R11: as many letters as possible, a power of two, so
+    # D2 within R10 and R11: as many letters as possible, a power of two, so
     # that each letter is a whole number of bits.
     size = 1 << (len(without_look_alikes(drawn, skeleton)).bit_length() - 1)
     # D7 and D4: whole scripts, the largest first (ties to the script whose
@@ -335,11 +335,11 @@ def main():
     # D9: the oldest, ties to the lowest code point.
     letters = sorted(sorted(kept, key=lambda c: (age[c], c))[:size])
     print(f"{len(kept) - len(letters):9,} {len(letters):9,}  the oldest {size:,} (D9), "
-          f"{size:,} the largest power of two R10, R11 and D1 allow")
+          f"{size:,} the largest power of two R10, R11 and D2 allow")
     alphabet = "".join(map(chr, letters))
     # R5: what copying inserts, which decoding skips: white space, soft
     # hyphen, zero-width space, word joiner, byte order mark; and R4's
-    # left-to-right mark, which the encoder writes before a handle (D3).
+    # left-to-right mark, which the encoder writes before a handle (D1).
     skipped = ranges_of(newest["white_space"] | {0x00AD, 0x200B, 0x200E, 0x2060, 0xFEFF})
     assert not set(letters) & {c for a, b in skipped for c in range(a, b + 1)}, "no letter is skipped"
     source = f"Unicode {NEWEST}'s data (and every release's since {RELEASES[0]}) and alphabet/fonts.txt"

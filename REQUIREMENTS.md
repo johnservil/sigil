@@ -10,7 +10,10 @@ first.
 Terms: the **data** is the value, L bytes long, at least 8. A **word** is its sigil, and
 a **character** is one thing a person sees in it. Encoder and decoder both
 know L, as a program that stores 32-byte hashes does. The **handle** is a
-word's first characters, hex digits a person can say and type (D3).
+word's first characters, hex digits a person can say and type (D1). A word
+has one of two **forms**: handled, which begins with the handle, and plain,
+all letters. (On this branch both are on trial; Zooko decides whether 0.2
+keeps the plain form.)
 
 ## Harms the user guards against: confusion and disclosure
 
@@ -42,7 +45,7 @@ So a handle, or any part of a word, finds a value and never proves one:
 - **A program that looks a value up by its handle chooses only when exactly
   one value matches.** With more, it shows them all and lets the user
   choose, or asks for more of the value. Git refuses an ambiguous short
-  hash, and a git that reads sigils keeps that rule. In D3's example
+  hash, and a git that reads sigils keeps that rule. In D1's example
   this is the duty of the second user's git, since the format cannot
   enforce it.
 - **Even one match may be the attacker's**, where the user's own value is
@@ -62,14 +65,14 @@ So a handle, or any part of a word, finds a value and never proves one:
   jumble it first (as F4Jumble does); for hashes, keys and random
   identifiers, jumbling buys nothing. A jumbled value's handle is the hex
   of the jumbled bytes, so it no longer matches what other tools print
-  (D3).
+  (D1).
 
 ## Constraints
 
 **The data**
 
-- **R1. Lossless.** Every value of every length L ≥ 8 has one word, the
-  one the encoder writes, and decoding that word gives the value back.
+- **R1. Lossless.** Every value of every length L ≥ 8 has one word in each
+  form, the one the encoder writes, and decoding that word gives the value back.
   Decoding also accepts exactly the other spellings that R3 and R5 allow,
   and nothing else. A value shorter than 8 bytes has no sigil.
 - **R2. The same size however it is counted.** Every word of L bytes has the
@@ -87,7 +90,7 @@ So a handle, or any part of a word, finds a value and never proves one:
 - **R4. One gesture selects and copies it.** A double-click selects the
   whole word, no line breaks inside it, and it displays in the order it is
   stored, in any paragraph. Its characters are visible, but for invisible
-  marks that keep it in order (D3's handle needs one), and none joins its
+  marks that keep it in order (D1's handle needs one), and none joins its
   neighbours or changes their shape.
 - **R5. What copying adds, decoding skips.** The decoder drops white space
   and the invisible characters that copying text inserts (soft hyphen,
@@ -101,11 +104,13 @@ So a handle, or any part of a word, finds a value and never proves one:
 - **R7. Drawn.** The default fonts of macOS, iOS, Windows, Android and Linux
   draw every character in a browser, so no word shows a box.
 - **R8. Never mistaken for hex.** No whole word, of any value, reads as a
-  string of hex digits; where a word holds hex on purpose (D3), a reader
+  string of hex digits; where a word holds hex on purpose (D1), a reader
   sees where the hex ends.
 - **R9. Its own.** A word of another format, or of a later version that
   marks itself as one, never decodes, and this format's words never decode
-  as the other's.
+  as the other's. A plain word has 0.1's layout and marker, so only the
+  alphabet tells it from a 0.1 word: a 0.1 word read as 0.2 decodes about
+  once in 2^19 at 32 bytes, where the check happens to pass.
 
 **Timing and cost**
 
@@ -125,16 +130,7 @@ So a handle, or any part of a word, finds a value and never proves one:
 
 ## Desiderata, most important first
 
-- **D1. Shorter words**, in characters and as they look: more bits in each
-  character a person sees, by a larger alphabet, or by marks on letters
-  that R3 leaves in place.
-- **D2. Mistakes detected.** Decoding fails on the likely mistakes: one
-  character changed, neighbours swapped, characters two apart swapped, a
-  character missing or extra. And a random string of the right length
-  rarely decodes. The more mistakes caught, and the rarer a random string
-  decodes, the better. Detection comes before correction (D5): the two
-  compete with each other, and with D1, for the same characters.
-- **D3. A handle to speak and type** (Kris and Zooko): the word begins
+- **D1. A handle to speak and type** (Kris and Zooko): the word begins
   with the same 7 hex digits that a hex encoding of the data begins with,
   lowercase, then letters that carry the rest of the data. Before the hex
   comes U+200E LEFT-TO-RIGHT MARK, invisible, as the word's first code
@@ -151,6 +147,15 @@ So a handle, or any part of a word, finds a value and never proves one:
   32-byte value. It also makes the front of a word cheaper to forge: 7
   hex digits hold 28 bits, where 7 letters would hold 77, and people check
   fronts.
+- **D2. Shorter words**, in characters and as they look: more bits in each
+  character a person sees, by a larger alphabet, or by marks on letters
+  that R3 leaves in place.
+- **D3. Mistakes detected.** Decoding fails on the likely mistakes: one
+  character changed, neighbours swapped, characters two apart swapped, a
+  character missing or extra. And a random string of the right length
+  rarely decodes. The more mistakes caught, and the rarer a random string
+  decodes, the better. Detection comes before correction (D5): the two
+  compete with each other, and with D2, for the same characters.
 - **D4. Characters hard to confuse.** The fewer characters that look like
   one another, or like several in a row, and the less alike they look, the
   better; Unicode's table of look-alikes (UTS #39) is one measure.
@@ -215,7 +220,7 @@ names the constraint or desideratum it serves.
 
 Three more steps choose among the letters left:
 
-- **The size (R10, R11, D1):** the largest power of two that the letters
+- **The size (R10, R11, D2):** the largest power of two that the letters
   left fill once look-alikes go, so each letter is a whole number of bits.
   A size between powers of two needs an encoding in fixed blocks to stay
   linear; at the sizes R7 leaves, that gains 2-4% in length.
