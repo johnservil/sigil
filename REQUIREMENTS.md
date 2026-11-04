@@ -9,7 +9,49 @@ first.
 
 Terms: the **data** is the value, L bytes long. A **word** is its sigil, and
 a **character** is one thing a person sees in it. Encoder and decoder both
-know L, as a program that stores 32-byte hashes does.
+know L, as a program that stores 32-byte hashes does. The **handle** is a
+word's first characters, hex digits a person can say and type (D3).
+
+## Adversarial confusion: the user's to guard against
+
+A sigil helps a person tell apart values that chance made; it cannot help
+with values an attacker made. Attackers steal from cryptocurrency users this
+way all the time. In one pattern, called address poisoning, they make a
+value whose word looks like one the victim uses, and wait for the victim to
+copy theirs. The attacker chooses the value, so no format prevents this.
+Every program that shows, accepts or looks up sigils guards against it, and
+its documentation tells its users how. There are two attacks, as against a
+hash function:
+
+- **Matching a value the user has**, like a second preimage. The user makes
+  V1; the attacker then makes V2, whose word shares V1's handle, or its
+  first and last characters. This is the common attack. Each character the
+  attacker matches multiplies the work: the handle's 7 hex digits take
+  about 2^28 tries, under a second on one GPU for a hash, and each letter
+  2^11 more.
+- **Making values that match one another**, like a collision. The attacker
+  makes two or more values together, whose words look alike, shows the user
+  one, and later puts another in its place. Matching a handle this way
+  takes about 2^14 tries. It is rare in practice, and that makes it
+  dangerous. Users, defenders and security engineers tend to assume it
+  away, and a check of a value against the user's own does nothing against
+  a pair the attacker made.
+
+So a handle, or any part of a word, finds a value and never proves one:
+
+- **A program that looks a value up by its handle chooses only when exactly
+  one value matches.** With more, it shows them all and lets the user
+  choose, or asks for more of the value. Git refuses an ambiguous short
+  hash, and a git that reads sigils keeps that rule. In D3's example
+  this is the duty of the second user's git, since the format cannot
+  enforce it.
+- **Even one match may be the attacker's**, where the user's own value is
+  not among those the program searched. Where a value matters (a payment,
+  a signature, a release), the program compares the whole value with one
+  from a source the user trusts.
+- **A program comparing two words is safer than an eye.** Characters hard
+  to confuse (D4) make comparing by eye safer, but nobody has measured how
+  many characters a person reliably compares.
 
 ## Constraints
 
@@ -23,9 +65,11 @@ know L, as a program that stores 32-byte hashes does.
 
 **Handling by software**
 
-- **R3. Normalization and case leave a word unchanged.** NFC, NFD, NFKC,
-  NFKD and changes of case change no character, so every copy of a word is
-  the same bytes, and search boxes, `grep`, databases and git find it.
+- **R3. Normalization leaves a word unchanged, and case leaves its value.**
+  NFC, NFD, NFKC and NFKD change no character, so every copy of a word is
+  the same bytes, and search boxes, `grep`, databases and git find it. A
+  change of case changes only the handle's hex digits, and the word decodes
+  to the same value; the letters have no case.
 - **R4. One gesture selects and copies it.** A double-click selects the
   whole word, no line breaks inside it, and it displays in the order it is
   stored, in any paragraph. Its characters are visible, and none joins its
@@ -65,12 +109,15 @@ know L, as a program that stores 32-byte hashes does.
   character missing or extra. And a random string of the right length
   rarely decodes. The more mistakes caught, and the rarer a random string
   decodes, the better.
-- **D3. A prefix to speak and type** (Kris and Zooko): the first bits as
-  hex digits, at least 24 and at most 32, 28 best, then letters. A person
-  can say, hear and type the prefix (into a search box, to find a commit),
-  and the letters after it defeat the common attack of a value that matches
-  another's first hex digits. It costs a second character set in one word,
-  and a few more characters.
+- **D3. A handle to speak and type** (Kris and Zooko): the word begins
+  with the same 7 hex digits that a hex encoding of the data begins with,
+  lowercase, then letters that carry the rest of the data. So one person
+  can read a commit's short hash off unmodified git, which prints those 7
+  digits, and say it on the phone; another types it into a git that shows
+  sigils, and both name the same commit. A handle that differed from the
+  hex would be a second short form of one value, worse than none. It costs
+  a second character set in one word, and about four characters for a
+  32-byte value.
 - **D4. Characters hard to confuse.** The fewer characters that look like
   one another, or like several in a row, and the less alike they look, the
   better; Unicode's table of look-alikes (UTS #39) is one measure.
@@ -82,9 +129,9 @@ know L, as a program that stores 32-byte hashes does.
 - **D7. Fewest scripts.** Each script needs its own font, and is one more way
   for a word to show a box; fewer also make a word look even, and leave
   fewer pairs of scripts to compare for look-alikes.
-- **D8. The ends carry the data.** The first and last characters carry as
-  many bits of the value as any other, since people compare words by their
-  ends.
+- **D8. The ends carry the data.** The last characters, and the first
+  after the handle, carry as many bits of the value as any other, since
+  people compare words by their ends.
 - **D9. Oldest characters first.** A character added to Unicode early is
   more likely drawn on platforms nobody has tested: older systems,
   e-readers, PDF tools.
@@ -95,9 +142,6 @@ know L, as a program that stores 32-byte hashes does.
 
 ## Left to callers
 
-- **Comparing.** A program comparing two words is safer than an eye:
-  characters hard to confuse (D4) make comparing by eye safer, but nobody
-  has measured how many characters a person reliably compares.
 - **Jumbling.** The data goes into the word in order. A caller whose data is
   built of parts a forger can copy may jumble it first (as F4Jumble does);
   for hashes, keys and random identifiers, jumbling buys nothing.
