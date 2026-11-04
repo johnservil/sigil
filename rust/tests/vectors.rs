@@ -71,7 +71,7 @@ fn vectors() {
             _ => panic!("a line of vectors.tsv: {line}"),
         }
     }
-    assert_eq!((good, variants, bad), (370, 962, 1443));
+    assert_eq!((good, variants, bad), (370, 962, 1480));
 }
 
 #[test]
@@ -83,7 +83,7 @@ fn readings() {
         .find(|l| l.starts_with("good\thandled\t") && l.split('\t').nth(2).unwrap().len() == 64)
         .unwrap();
     let f: Vec<&str> = line.split('\t').collect();
-    let chars: Vec<String> = f[3].chars().map(String::from).collect(); // the mark, 7 hex digits, the letters
+    let chars: Vec<String> = f[3].chars().map(String::from).collect(); // the mark, 8 hex digits, the letters
     let alphabet =
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../alphabet.txt")).unwrap();
     // One character uncertain: a letter read three ways (two of them wrong),
@@ -117,12 +117,12 @@ fn readings() {
         );
     }
     // Two letters each read two ways, where the other two readings also decode
-    // (the first two letters as digits 1 and 2,045, found by the reference):
+    // (the first two letters as digits 31 and 2,031, found by the reference):
     // the readings leave two data, and decode_readings says so.
     let letter = |d: usize| alphabet.chars().nth(d).unwrap();
     let mut two: Vec<String> = chars.clone();
-    two[8] = format!("{}{}", chars[8], letter(1));
-    two[9] = format!("{}{}", chars[9], letter(2045));
+    two[9] = format!("{}{}", chars[9], letter(31));
+    two[10] = format!("{}{}", chars[10], letter(2031));
     let two: Vec<&str> = two.iter().map(String::as_str).collect();
     assert_eq!(
         sigilcode::decode_readings(&two, 32).unwrap_err().kind(),

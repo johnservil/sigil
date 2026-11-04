@@ -1,31 +1,35 @@
 //! Sigil: bytes of a known length written as a sigil, one word that a
 //! double-click selects whole, of letters with no two alike, and a check that
 //! confirms a reading or picks the right one of several. A sigil has one of two
-//! forms: handled, which begins with the value's first 7 hex digits, and plain,
-//! all letters.
+//! forms: handled, which begins with the value's first 8 hex digits, and plain,
+//! which writes those 32 bits as 3 letters; after them both forms have the
+//! same letters.
 //!
 //! ```
 //! let sigil = sigilcode::encode(&[0xab; 32]);
-//! assert!(sigil.starts_with("\u{200e}abababa"));
-//! assert_eq!(sigil.chars().count(), 1 + 7 + 22);
+//! assert!(sigil.starts_with("\u{200e}abababab"));
+//! assert_eq!(sigil.chars().count(), 1 + 8 + 22);
 //! assert_eq!(sigilcode::decode(&sigil, 32).unwrap(), [0xab; 32]);
 //! let plain = sigilcode::encode_plain(&[0xab; 32]);
 //! assert_eq!(plain.chars().count(), 25);
+//! // After the handle, the two forms have the same letters.
+//! assert!(sigil.chars().skip(9).eq(plain.chars().skip(3)));
 //! assert_eq!(sigilcode::decode(&plain, 32).unwrap(), [0xab; 32]);
 //! ```
 //!
 //! The specification is the repository's README.md ("The encoding"). Letters
 //! are base 2,048, 11 bits each; K is a prime larger than 2,048.
 //!
-//! - Handled: U+200E LEFT-TO-RIGHT MARK, the data's first 28 bits as 7
-//!   lowercase hex digits, then letters writing t = m * K + r: m the rest of
-//!   the data with the marker bits 01 between its high and low halves, r < K
-//!   the number that makes handle * 2048^n + t a multiple of K.
-//! - Plain: letters writing m * K, m the whole data with the marker between
-//!   its halves.
+//! The handle h is the data's first 32 bits. After it come letters writing
+//! t = m * K + r: m the rest of the data with the marker bits 01 between its
+//! high and low halves, r < K the number that makes h * 2048^n + t a
+//! multiple of K.
 //!
-//! Decoding tells the forms apart by the first character, checks the multiple
-//! of K, which catches every changed character and every swap of characters
+//! - Handled: U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase hex digits, the letters.
+//! - Plain: h and the plain form's version bit (0) as 3 letters, the same letters.
+//!
+//! Decoding tells the forms apart by the first character, checks the plain
+//! form's version bit and the multiple of K, which catches every changed character and every swap of characters
 //! one or two apart, and checks that the marker is 01. It skips white space,
 //! the mark and four invisible characters copying inserts (skipped.txt), reads
 //! the handle's hex in either case, and refuses everything else.
@@ -59,8 +63,13 @@ const KS: [u64; 11] = [
 /// The mark before a handle, which keeps its digits in place beside
 /// right-to-left text; decoding skips it.
 const MARK: char = '\u{200e}';
-/// The handle's hex digits, 28 bits.
-const HANDLE: usize = 7;
+/// The handle's hex digits, 32 bits.
+const HANDLE: usize = 8;
+/// The plain form's letters for the handle: its 32 bits, then the plain
+/// form's version bit.
+const PREFIX: usize = 3;
+/// The plain form's version bit; a later version may write 1.
+const PLAIN_VERSION: u64 = 0;
 
 struct Tables {
     /// The alphabet as runs of consecutive code points: (first code point, its digit, length).
@@ -162,17 +171,17 @@ fn is_skipped(ch: char) -> bool {
         != 0
 }
 
-/// (n, K, bits) for data of `length` bytes (at least 8), handled or plain: the
-/// letters carry bits = 8 * length - 28 of the data handled, all 8 * length
-/// plain; n = ceil((bits + 14) / 11) letters, and K, the room
-/// 2^(11n - bits - 2)'s check prime.
-fn layout(length: usize, handled: bool) -> (usize, u64, usize) {
+/// (n, K, bits) for data of `length` bytes (at least 8): the letters after the
+/// handle, which both forms have, carry bits = 8 * length - 32 of the data;
+/// n = ceil((bits + 14) / 11) letters, and K, the room 2^(11n - bits - 2)'s
+/// check prime.
+fn layout(length: usize) -> (usize, u64, usize) {
     assert!(length >= 8, "Sigil encodes at least 8 bytes");
     assert!(
         length <= usize::MAX / 16,
         "a length Sigil can count the bits of"
     );
-    let bits = 8 * length - if handled { 4 * HANDLE } else { 0 };
+    let bits = 8 * length - 4 * HANDLE;
     let n = (bits + 14).div_ceil(11);
     (n, KS[11 * n - bits - 2 - 12], bits)
 }
@@ -335,8 +344,8 @@ impl Nat {
     }
 }
 
-/// `data`'s sigil in the handled form: the mark, the data's first 7 hex
-/// digits, and ceil((8 * len - 14) / 11) letters. Its protection against
+/// `data`'s sigil in the handled form: the mark, the data's first 8 hex
+/// digits, and ceil((8 * len - 18) / 11) letters. Its protection against
 /// look-alikes holds for data that looks random (a secure hash's output, a
 /// key, a random identifier): hash or jumble structured data before encoding
 /// it (README.md, "Data with structure"). At least 8 bytes.
@@ -344,18 +353,18 @@ pub fn encode(data: &[u8]) -> String {
     encode_form(data, true)
 }
 
-/// `data`'s sigil in the plain form: ceil((8 * len + 14) / 11) letters. At
-/// least 8 bytes.
+/// `data`'s sigil in the plain form: the handle's 32 bits and the version bit
+/// as 3 letters, then the handled form's letters. At least 8 bytes.
 pub fn encode_plain(data: &[u8]) -> String {
     encode_form(data, false)
 }
 
 fn encode_form(data: &[u8], handled: bool) -> String {
     let length = data.len();
-    let (n, k, bits) = layout(length, handled);
+    let (n, k, bits) = layout(length);
     let (width, half) = ((11 * n).max(8 * length), bits / 2);
     let d = Nat::from_be_bytes(data, width);
-    let top = d.bits(bits, 64); // the handle: the bits above the letters' (none, plain)
+    let top = d.bits(bits, 64); // the handle: the data's first 32 bits
     let rest = d.low(bits, width);
     let mut marked = rest
         .shr(half, width)
@@ -371,6 +380,11 @@ fn encode_form(data: &[u8], handled: bool) -> String {
         out.push(MARK);
         for i in (0..HANDLE).rev() {
             out.push(hex_digit((top >> (4 * i)) & 15));
+        }
+    } else {
+        let head = top << 1 | PLAIN_VERSION;
+        for i in (0..PREFIX).rev() {
+            out.push(letter((head >> (11 * i)) & 2047));
         }
     }
     for i in (0..n).rev() {
@@ -389,20 +403,28 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
         .peekable();
     // The form, by the first character: hex digits are no letters.
     let handled = chars.peek().is_some_and(|&(_, ch)| hex_of(ch).1);
-    let (n, k, bits) = layout(length, handled);
-    let h = if handled { HANDLE } else { 0 };
+    let (n, k, bits) = layout(length);
+    let h = if handled { HANDLE } else { PREFIX };
     let (width, half) = ((11 * n).max(8 * length), bits / 2);
-    let (mut top, mut t) = (0u64, Nat::zero(width));
+    let (mut head, mut t) = (0u64, Nat::zero(width));
     let (mut count, mut refused) = (0, None);
     for (i, ch) in chars {
-        let (value, hit) = if count < h { hex_of(ch) } else { digit_of(ch) };
+        let (value, hit) = if count < h && handled {
+            hex_of(ch)
+        } else {
+            digit_of(ch)
+        };
         if count < h {
-            top = top << 4 | value;
+            head = if handled {
+                head << 4 | value
+            } else {
+                head << 11 | value
+            };
         } else if count < h + n {
             t.or_at(11 * (h + n - 1 - count), value);
         }
         if !hit && refused.is_none() {
-            refused = Some((i + 1, ch, count < h));
+            refused = Some((i + 1, ch, count < h && handled));
         }
         count += 1;
     }
@@ -419,6 +441,11 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
             in_handle,
         });
     }
+    // Plain, the handle's letters end in the plain form's version bit.
+    if !handled && head & 1 != PLAIN_VERSION {
+        return Err(DecodeError::Marker);
+    }
+    let top = if handled { head } else { head >> 1 };
     // t - r, where r makes top * 2048^n + t a multiple of K: a multiple of K
     // itself exactly when the check passes, and then m * K.
     let r = mod_k(k - mod_k(top * place_of_handle(n, k), k), k);
@@ -602,19 +629,16 @@ mod test {
     /// The layout of every length to 4,096 bytes: n the fewest letters whose room holds a prime above N.
     #[test]
     fn layouts() {
-        assert_eq!(super::layout(32, true), (22, 4093, 228));
-        assert_eq!(super::layout(32, false), (25, 131063, 256));
-        for handled in [true, false] {
-            for length in 8..=4096 {
-                let (n, k, bits) = super::layout(length, handled);
-                let e = 11 * n - bits - 2;
-                assert!((12..=22).contains(&e) && k <= 1 << e, "{length}");
-            }
+        assert_eq!(super::layout(32), (22, 65519, 224));
+        for length in 8..=4096 {
+            let (n, k, bits) = super::layout(length);
+            let e = 11 * n - bits - 2;
+            assert!((12..=22).contains(&e) && k <= 1 << e, "{length}");
         }
     }
 
     /// x mod k by the reciprocal agrees with the remainder, over each check
-    /// prime's whole span of products (top below 2^28, times a place below k).
+    /// prime's whole span of products (top below 2^32, times a place below k).
     #[test]
     fn mod_k() {
         for &k in super::KS.iter() {
@@ -623,10 +647,10 @@ mod test {
                 x = x
                     .wrapping_mul(6364136223846793005)
                     .wrapping_add(1442695040888963407);
-                let v = x >> 13; // below 2^51
+                let v = x >> 9; // below 2^55
                 assert_eq!(super::mod_k(v, k), v % k, "{v} mod {k}");
             }
-            for v in [0, 1, k - 1, k, k + 1, 2 * k - 1, 2 * k, (1 << 51) - 1] {
+            for v in [0, 1, k - 1, k, k + 1, 2 * k - 1, 2 * k, (1 << 55) - 1] {
                 assert_eq!(super::mod_k(v, k), v % k, "{v} mod {k}");
             }
         }

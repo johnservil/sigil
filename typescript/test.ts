@@ -26,11 +26,10 @@ for (const b of v.bad) {
   }
   if (kind !== b.error) throw new Error(`${b.text}: ${kind}, not ${b.error}`);
 }
-if (layout(32).join() !== "22,4093" || layout(8).join() !== "5,131063") throw new Error("layout");
-if (layout(32, false).join() !== "25,131063" || layout(8, false).join() !== "8,4193633") throw new Error("layout, plain");
+if (layout(32).join() !== "22,65519" || layout(8).join() !== "5,2096881") throw new Error("layout");
 {
   const g = v.good.find((x: { data: string; form: string }) => x.data.length === 64 && x.form === "handled");
-  const chars = Array.from(g.text as string); // the mark, 7 hex digits, then the letters
+  const chars = Array.from(g.text as string); // the mark, 8 hex digits, then the letters
   // One character uncertain, a letter read three ways, a letter unread or a hex
   // digit unread: the one data comes back (a single change never passes the check).
   for (const [at, choices] of [[13, LETTERS[7] + chars[13] + LETTERS[1500]], [19, ALPHABET], [3, "0123456789abcdef"]] as const) {
@@ -38,7 +37,7 @@ if (layout(32, false).join() !== "25,131063" || layout(8, false).join() !== "8,4
     if (hex(decodeReadings(readings, 32)) !== g.data) throw new Error(`decodeReadings at ${at}`);
   }
   // The first two letters read two ways each, where the other two also decode (found by the reference).
-  const two = chars.map((ch, i) => (i === 8 ? ch + LETTERS[1] : i === 9 ? ch + LETTERS[2045] : ch));
+  const two = chars.map((ch, i) => (i === 9 ? ch + LETTERS[31] : i === 10 ? ch + LETTERS[2031] : ch));
   let kind = "";
   try { decodeReadings(two, 32); } catch (e) { kind = (e as DecodeError).kind; }
   if (kind !== "ambiguous") throw new Error(`decodeReadings, two readings: ${kind}`);
