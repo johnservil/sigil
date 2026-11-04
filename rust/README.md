@@ -10,8 +10,8 @@ alike; in the plain form, 3 letters and the same 22.
 
 ```
 BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
-            as a sigil ‎af1349b9ꛥዄपⷉꢦꔾഡꗕᘫꚬꢳꗙᚺᖨꗝᒱᔖৎስसባᗵ
-            plain      ᛉᗴᒊꛥዄपⷉꢦꔾഡꗕᘫꚬꢳꗙᚺᖨꗝᒱᔖৎስसባᗵ
+            as a sigil ‎af1349b9ꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
+            plain      ᛄᗯᒅꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
 ```
 
 ```rust

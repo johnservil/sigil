@@ -14,13 +14,13 @@ alike.
 ```
 BLAKE3("") in hex       af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64    rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            as a sigil   ‎af1349b9ꛥዄपⷉꢦꔾഡꗕᘫꚬꢳꗙᚺᖨꗝᒱᔖৎስसባᗵ
-            plain        ᛉᗴᒊꛥዄपⷉꢦꔾഡꗕᘫꚬꢳꗙᚺᖨꗝᒱᔖৎስसባᗵ
+            as a sigil   ‎af1349b9ꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
+            plain        ᛄᗯᒅꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
 ```
 
 Its 2,048 letters come from fifteen scripts: Canadian syllabics, Ethiopic,
-Vai, Devanagari, Runic, Bamum, Telugu, Sinhala, Malayalam, Gujarati, Oriya,
-Saurashtra, Bengali, Tifinagh and Gurmukhi. Every one runs left to right,
+Vai, Devanagari, Runic, Bamum, Malayalam, Telugu, Sinhala, Gujarati, Oriya,
+Saurashtra, Bengali, Tifinagh and Kannada. Every one runs left to right,
 has no case, and takes one terminal cell, and Unicode treats a run of them
 as one word that never breaks across lines, in every Unicode release since
 6.0. None is a hex digit or looks like one, so a sigil's handle ends where
@@ -182,7 +182,9 @@ string is not Sigil's. `decode_readings` adds
 shows them: browsers may guess that a page of sigils is in another language
 and offer to translate it, which replaces every sigil with question marks.
 Fonts give letters different widths, so a page that wants every sigil of a
-size equally wide draws each letter in a box of fixed width. Emacs on macOS
+size equally wide draws each letter in a box of fixed width. A page that shows a
+sigil in an element of its own (a result, a field) marks that element
+`user-select: all`, so one tap or click selects the sigil and nothing near it. Emacs on macOS
 draws Tifinagh, Vai, Bamum and Saurashtra letters as boxes: their fonts are
 among macOS's hidden supplemental fonts, which browsers use and Emacs does
 not search. Copying them from `/System/Library/Fonts/Supplemental` to

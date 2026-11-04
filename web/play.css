@@ -32,3 +32,7 @@ fieldset.form { border: 0; margin: .6rem 0 0; padding: 0; display: flex; flex-wr
 fieldset.form legend { font-size: .85em; font-weight: 650; padding: 0; margin-bottom: 6px; }
 fieldset.form label { font-weight: normal; display: inline-flex; gap: .35rem; align-items: center; margin: 0; }
 fieldset.form input { width: auto; margin: 0; padding: 0; }
+/* The sigil alone, selected whole by one tap, long-press or click: iOS once
+   joined the label's last word above it to the sigil (no space between them
+   in the page's text). */
+#sigil { -webkit-user-select: all; user-select: all; }
