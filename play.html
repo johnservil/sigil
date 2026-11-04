@@ -12,14 +12,15 @@
   <section class="card">
     <label for="hex">Your bytes, in hex</label>
     <textarea id="hex" rows="2" spellcheck="false" autocapitalize="off" autocomplete="off">af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</textarea>
-    <div class="actions"><button id="random" type="button">Try random bytes</button><span id="size"></span></div>
-    <fieldset class="form"><legend>Form</legend>
-      <label><input type="radio" name="form" value="handled" checked> Handled: the first 8 hex digits, then letters</label>
-      <label><input type="radio" name="form" value="plain"> Plain: letters only</label>
-    </fieldset>
-    <label>Your sigil</label>
-    <div class="result"><output id="sigil" translate="no" aria-live="polite"></output></div>
-    <div class="actions"><button id="copy" type="button">Copy sigil</button><span id="encode-status" role="status"></span></div>
+    <div class="actions"><button id="random" type="button">Try random bytes</button><span id="encode-status" role="status"></span></div>
+    <div class="forms" aria-live="polite">
+      <div class="form"><div class="form-head"><span><strong>Hex</strong> <span class="count" id="n-hex"></span><br><span class="what">two digits a byte</span></span><button type="button" data-copy="hex">Copy</button></div>
+        <output class="value hex" id="out-hex" translate="no"></output></div>
+      <div class="form"><div class="form-head"><span><strong>Sigil, handled</strong> <span class="count" id="n-handled"></span><br><span class="what">its first 8 hex digits, then letters</span></span><button type="button" data-copy="handled">Copy</button></div>
+        <output class="value" id="out-handled" translate="no"></output></div>
+      <div class="form"><div class="form-head"><span><strong>Sigil, plain</strong> <span class="count" id="n-plain"></span><br><span class="what">letters only</span></span><button type="button" data-copy="plain">Copy</button></div>
+        <output class="value" id="out-plain" translate="no"></output></div>
+    </div>
   </section>
   <details class="card">
     <summary>Read a sigil back — or change a character and try the check</summary>

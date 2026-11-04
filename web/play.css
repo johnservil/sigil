@@ -15,8 +15,15 @@ label { display: block; margin: 14px 0 6px; font-size: .85em; font-weight: 650; 
 textarea, input { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; color: inherit; background: var(--paper); font: inherit; }
 #hex { font: var(--value)/1.6 ui-monospace, monospace; overflow-wrap: anywhere; }
 input { width: 7em; }
-.result { overflow-x: auto; padding: 12px 0; }
-#sigil { white-space: nowrap; font: var(--value)/1.8 "Noto Sans Ethiopic", "Noto Sans Canadian Aboriginal", "Segoe UI", sans-serif; color: var(--accent); }
+.forms { margin-top: 18px; }
+.form { padding: 12px 0; border-top: 1px solid var(--line); }
+.form-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: .85em; }
+.count, .what { opacity: .75; }
+/* Each value alone on its line, selected whole by one tap, long-press or
+   click: iOS once joined a label's last word to a sigil beside it. */
+.value { display: block; overflow-x: auto; white-space: nowrap; padding: 6px 0; color: var(--accent); -webkit-user-select: all; user-select: all;
+  font: var(--value)/1.8 "Noto Sans Ethiopic", "Noto Sans Canadian Aboriginal", "Segoe UI", sans-serif; }
+.value.hex { font-family: ui-monospace, monospace; white-space: normal; overflow-wrap: anywhere; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; font-size: .85em; }
 button { padding: 8px 14px; border: 1px solid var(--accent); border-radius: 999px; background: transparent; color: var(--accent); font: inherit; cursor: pointer; }
 button:hover { background: var(--accent); color: var(--card); }
@@ -30,11 +37,3 @@ footer { font-size: .8em; opacity: .8; }
 .error { color: #b43131; }
 @media (prefers-color-scheme: dark) { :root { --paper: #191720; --ink: #eee9e1; --accent: #c1a4f5; --card: #24212d; --line: #46404f; } }
 @media (max-width: 500px) { main { padding: 20px 14px; } .card { padding: 18px; } header span { max-width: 10em; text-align: right; } :root { --value: 15px; } #hex { min-height: 7em; } }
-fieldset.form { border: 0; margin: .6rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; }
-fieldset.form legend { font-size: .85em; font-weight: 650; padding: 0; margin-bottom: 6px; }
-fieldset.form label { font-weight: normal; display: inline-flex; gap: .35rem; align-items: center; margin: 0; }
-fieldset.form input { width: auto; margin: 0; padding: 0; }
-/* The sigil alone, selected whole by one tap, long-press or click: iOS once
-   joined the label's last word above it to the sigil (no space between them
-   in the page's text). */
-#sigil { -webkit-user-select: all; user-select: all; }
