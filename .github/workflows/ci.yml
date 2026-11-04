@@ -15,7 +15,13 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
-    - run: python alphabet/alphabet.py --check   # downloads Unicode 14.0.0's data, checked by SHA-256 and BLAKE3
+    # Unicode's data, 6.0.0 to 18.0.0, kept between runs; every run checks
+    # each file by its SHA-256 and BLAKE3 before reading it.
+    - uses: actions/cache@v4
+      with:
+        path: ~/unicode
+        key: unicode-${{ hashFiles('alphabet/unicode-files.txt') }}
+    - run: python alphabet/alphabet.py --data ~/unicode --check
     - run: python python/vectors.py --check
     - run: python python/test.py
   rust:
