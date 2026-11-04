@@ -13,7 +13,7 @@ first release on crates.io, `sigilcode` 0.1, has the new one.
 What changed:
 
 - **A new alphabet of 2,048 letters** from fifteen scripts, chosen by
-  rules anyone can check ([alphabet/RULES.md](alphabet/RULES.md)) and drawn
+  rules anyone can check ([alphabet/RULES.md](https://github.com/johnservil/sigil/blob/v0.1.0+81af550bfd3eb2aff85c3ddf0a21446e78a1809d/alphabet/RULES.md)) and drawn
   by every device tested on macOS, iOS, Windows, Android and Linux.
 - **Shorter sigils:** a 256-bit hash takes 25 letters, where it took 26.
 - **No hex digits,** and no letters that look like them, so a sigil and hex

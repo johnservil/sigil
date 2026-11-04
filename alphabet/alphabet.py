@@ -1,20 +1,21 @@
-"""The Sigil alphabet, computed from Unicode 14.0.0's data files and the font
-tests in fonts.txt by the rules of RULES.md: the whole computation, in one
-script with no dependencies beyond Python 3.
+"""Sigil's alphabet, computed from Unicode's data files and the font tests in
+fonts.txt by the steps of REQUIREMENTS.md's "The alphabet": the whole
+computation, in one script with no dependencies beyond Python 3.
 
     python3 alphabet/alphabet.py [--data DIR] [--check]
 
-It downloads the data files from unicode.org (or reads them from DIR, and
-saves there what it downloads), checks each by SHA-256 and by BLAKE3 (below,
-in plain Python) before reading it, applies the rules, and writes
-alphabet.txt, skipped.txt, typescript/alphabet.ts and lean/Sigil/Alphabet.lean;
-with --check it confirms that those files are its output. Every property
-comes from the data files, none from Python's own tables, so the same files
-give the same alphabet with any Python on any machine.
+It downloads the data files of every Unicode release from 6.0.0 to 18.0.0
+from unicode.org (or reads them from DIR, and saves there what it
+downloads), checks each by SHA-256 and by BLAKE3 (below, in plain Python;
+unicode-files.txt lists both) before reading it, and writes alphabet.txt,
+skipped.txt, typescript/alphabet.ts and lean/Sigil/Alphabet.lean; with
+--check it confirms that those files are its output. Every property comes
+from the data files, none from Python's own tables, so the same files give
+the same alphabet with any Python on any machine. Each step names the
+constraint (R) or desideratum (D) of REQUIREMENTS.md it serves.
 """
 import collections
 import hashlib
-import math
 import sys
 import urllib.request
 from pathlib import Path
@@ -22,43 +23,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BASE = "https://www.unicode.org/Public/"
 
-# Each data file's path under BASE, SHA-256, and BLAKE3.
-FILES = {
-    "UnicodeData.txt": ("14.0.0/ucd/UnicodeData.txt",
-                        "36018e68657fdcb3485f636630ffe8c8532e01c977703d2803f5b89d6c5feafb",
-                        "769f79943efcbeeb922a0ea4b6e1e1240ef3815ed5b8e7b736008528ca12bbf3"),
-    "DerivedAge.txt": ("14.0.0/ucd/DerivedAge.txt",
-                       "7e058dec02147098bc9c28d86209f0f251bba0538f3b5a705ad02ea3bb709fe0",
-                       "f022a5b165f8a8a798847636987d34e9c9349a1453ea5cfc1e53699534cd8d51"),
-    "Scripts.txt": ("14.0.0/ucd/Scripts.txt",
-                    "52db475c4ec445e73b0b16915448c357614946ad7062843c563e00d7535c6510",
-                    "7d13a1c7e88acc3cd2efdde82de5cf64338bbdf9e48a5af450afb3c80175a83d"),
-    "PropList.txt": ("14.0.0/ucd/PropList.txt",
-                     "6bddfdb850417a5bee6deff19290fd1b138589909afb50f5a049f343bf2c6722",
-                     "3ebb57bf840489327983d011cfb1e4b39e52462142f1e406816789925fee3e78"),
-    "DerivedCoreProperties.txt": ("14.0.0/ucd/DerivedCoreProperties.txt",
-                                  "e3eddd7d469cd1b0feed7528defad1a1cc7c6a9ceb0ae4446a6d10921ed2e7bc",
-                                  "ca62e64c59e8a99dd923a7f7bd5022f4a2e8102ac0505303fd4eb99cc55a497f"),
-    "DerivedNormalizationProps.txt": ("14.0.0/ucd/DerivedNormalizationProps.txt",
-                                      "b2c444c20730b097787fdf50bd7d6dd3fc5256ab8084f5b35b11c8776eca674c",
-                                      "6d29c0bc8f173c916aacd435567be2e6d8319c24ec743d5b3ee6584f13fe96b6"),
-    "ArabicShaping.txt": ("14.0.0/ucd/ArabicShaping.txt",
-                          "c7698811e9adb6cc98fb996a7de4be2b6532f2ac67e76055cc8afdbf6ee18af3",
-                          "fa1d26d40ffff0649910ac500544b721a863fa7c3d35295c7d981c62a2bd4221"),
-    "LineBreak.txt": ("14.0.0/ucd/LineBreak.txt",
-                      "9e06e9f35c6959fb91dcc7993f90d58523c3079bc62c6b25f828b4cdebc5d70c",
-                      "9119eb1c4d405f6f6a9a805a28d70925007be6cfd3bcd18e16a051eef1daba82"),
-    "WordBreakProperty.txt": ("14.0.0/ucd/auxiliary/WordBreakProperty.txt",
-                              "7716752aad296d4ab23ff4ed0a2746fc5328750ff84e9e7d6f3828ee9eaef742",
-                              "54ad33216c49a8d47c4b323c546143d91810ff4cee04da7b8c0d97e882d0a1ae"),
-    "EastAsianWidth.txt": ("14.0.0/ucd/EastAsianWidth.txt",
-                           "f901ac011aa32a09224d6555da71e2532c59c1d3381322829de0e3b880507250",
-                           "d4244c1205359fee66cf578d2cd03b0364a6ea5602e9f6b670d6b06631b63133"),
-    "confusables.txt": ("security/14.0.0/confusables.txt",
-                        "f901938af166c3afa471bd10c224b0979cd024340f290649e16b29f779d48bfe",
-                        "8ea02bbe19f01d541a6387ab97b5f8ebf265fd794460c658679264ae5e7024ec"),
-}
-
+# R12: the releases whose data every letter's record covers, oldest first;
+# the newest also gives the letters' ages (D9) and the look-alikes (R8, D4).
+RELEASES = ["6.0.0", "6.1.0", "6.2.0", "6.3.0", "7.0.0", "8.0.0", "9.0.0", "10.0.0", "11.0.0", "12.0.0",
+            "12.1.0", "13.0.0", "14.0.0", "15.0.0", "15.1.0", "16.0.0", "17.0.0", "18.0.0"]
+NEWEST = RELEASES[-1]
+UCD = ["UnicodeData.txt", "Scripts.txt", "PropList.txt", "DerivedCoreProperties.txt",
+       "DerivedNormalizationProps.txt", "ArabicShaping.txt", "LineBreak.txt", "auxiliary/WordBreakProperty.txt",
+       "EastAsianWidth.txt"]
 
 
 # BLAKE3 (unkeyed), from the specification (github.com/BLAKE3-team/BLAKE3-specs),
@@ -139,20 +111,34 @@ def blake3(data):
 assert blake3(b"").hex() == "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262", "this BLAKE3 is wrong"
 
 
-def data_file(name, data_dir):
-    """A data file's text, read from DIR or downloaded, used and saved only
-    after its SHA-256 and its BLAKE3 both match."""
-    path, sha, b3 = FILES[name]
-    local = data_dir / name if data_dir else None
+def pinned():
+    """unicode-files.txt: {path under BASE: (SHA-256, BLAKE3)}."""
+    out = {}
+    for line in (ROOT / "alphabet" / "unicode-files.txt").read_text().splitlines():
+        if line and not line.startswith("#"):
+            path, sha, b3 = line.split()
+            out[path] = (sha, b3)
+    return out
+
+
+PINNED = pinned()
+
+
+def data_file(path, data_dir):
+    """The data file at `path` under BASE, read from DIR or downloaded, used
+    and saved only after its SHA-256 and its BLAKE3 both match the pins."""
+    sha, b3 = PINNED[path]
+    local = data_dir / path if data_dir else None
     downloaded = not (local and local.exists())
     if downloaded:
         with urllib.request.urlopen(BASE + path, timeout=120) as r:
             b = r.read()
     else:
         b = local.read_bytes()
-    assert hashlib.sha256(b).hexdigest() == sha, f"{name}: its SHA-256 is not Unicode 14.0.0's"
-    assert blake3(b).hex() == b3, f"{name}: its BLAKE3 is not Unicode 14.0.0's"
+    assert hashlib.sha256(b).hexdigest() == sha, f"{path}: its SHA-256 is not the pinned one"
+    assert blake3(b).hex() == b3, f"{path}: its BLAKE3 is not the pinned one"
     if downloaded and local:
+        local.parent.mkdir(parents=True, exist_ok=True)
         local.write_bytes(b)
     return b.decode("utf-8-sig")
 
@@ -170,64 +156,63 @@ def code_points(field):
     return range(int(a, 16), int(b or a, 16) + 1)
 
 
-def properties(data_dir):
-    """Every property the rules read, from the data files."""
-    p = {"category": {}, "bidi": {}, "decomposition": {}}
-    for f in lines(data_file("UnicodeData.txt", data_dir)):
+def properties(release, data_dir):
+    """Every property a letter's tests read, from one release's data files."""
+    read = lambda name: data_file(f"{release}/ucd/{name}", data_dir)
+    p = {"category": {}, "bidi": {}, "decomposition": set(), "cased": set()}
+    first = None
+    for f in lines(read("UnicodeData.txt")):
         c = int(f[0], 16)
-        p["category"][c], p["bidi"][c] = f[2], f[4]
+        # A range of code points is given by its first and last lines.
+        span = range(first, c + 1) if f[1].endswith(", Last>") else [c]
+        first = c if f[1].endswith(", First>") else None
+        for x in span:
+            p["category"][x], p["bidi"][x] = f[2], f[4]
         if f[5]:
-            p["decomposition"][c] = f[5]
-    p["age"] = {c: tuple(map(int, f[1].split("."))) for f in lines(data_file("DerivedAge.txt", data_dir))
-                for c in code_points(f[0])}
-    p["script"] = {c: f[1] for f in lines(data_file("Scripts.txt", data_dir)) for c in code_points(f[0])}
-    plist = collections.defaultdict(set)
-    for f in lines(data_file("PropList.txt", data_dir)):
-        plist[f[1]].update(code_points(f[0]))
-    p["white_space"] = plist["White_Space"]
-    p["ignorable"] = {c for f in lines(data_file("DerivedCoreProperties.txt", data_dir))
+            p["decomposition"].add(c)
+        if f[12] or f[13] or f[14]:
+            p["cased"].add(c)
+    p["script"] = {c: f[1] for f in lines(read("Scripts.txt")) for c in code_points(f[0])}
+    p["white_space"] = {c for f in lines(read("PropList.txt")) if f[1] == "White_Space" for c in code_points(f[0])}
+    p["ignorable"] = {c for f in lines(read("DerivedCoreProperties.txt"))
                       if f[1] == "Default_Ignorable_Code_Point" for c in code_points(f[0])}
-    p["maybe"] = {c for f in lines(data_file("DerivedNormalizationProps.txt", data_dir))
+    p["maybe"] = {c for f in lines(read("DerivedNormalizationProps.txt"))
                   if f[1] in ("NFC_QC", "NFKC_QC") and len(f) > 2 and f[2] == "M" for c in code_points(f[0])}
-    p["joining"] = {c: f[2] for f in lines(data_file("ArabicShaping.txt", data_dir)) for c in code_points(f[0])}
-    p["line_break"] = {c: f[1] for f in lines(data_file("LineBreak.txt", data_dir)) for c in code_points(f[0])}
-    p["word_break"] = {c: f[1] for f in lines(data_file("WordBreakProperty.txt", data_dir)) for c in code_points(f[0])}
-    p["width"] = {c: f[1] for f in lines(data_file("EastAsianWidth.txt", data_dir)) for c in code_points(f[0])}
-    # Unicode's look-alike table (UTS #39): characters with one skeleton look alike.
-    p["skeleton"] = {int(f[0], 16): tuple(int(x, 16) for x in f[1].split())
-                     for f in lines(data_file("confusables.txt", data_dir))}
+    p["joining"] = {c: f[2] for f in lines(read("ArabicShaping.txt")) for c in code_points(f[0])}
+    p["line_break"] = {c: f[1] for f in lines(read("LineBreak.txt")) for c in code_points(f[0])}
+    p["word_break"] = {c: f[1] for f in lines(read("auxiliary/WordBreakProperty.txt")) for c in code_points(f[0])}
+    p["width"] = {c: f[1] for f in lines(read("EastAsianWidth.txt")) for c in code_points(f[0])}
     return p
+
+
+def tests(p):
+    """The tests every letter passes in each release (R12), in order:
+    (what it tests, which requirement, test)."""
+    return [
+        ("in the Basic Multilingual Plane, assigned, not a surrogate", "R6",
+         lambda c: c <= 0xFFFF and c in p["category"] and p["category"][c] != "Cs"),
+        ("three bytes of UTF-8", "R2", lambda c: c >= 0x800),
+        ("unchanged by NFC, NFD, NFKC and NFKD, and never composed with a neighbour", "R3",
+         lambda c: c not in p["decomposition"] and not 0xAC00 <= c <= 0xD7A3 and c not in p["maybe"]),
+        ("a letter with no case (Lo, no case mappings)", "R3",
+         lambda c: p["category"][c] == "Lo" and c not in p["cased"]),
+        ("of a named script (fonts come by script)", "R7, D7",
+         lambda c: p["script"].get(c) not in (None, "Common", "Inherited", "Unknown")),
+        ("strongly left-to-right (bidi L)", "R4", lambda c: p["bidi"][c] == "L"),
+        ("visible and non-joining", "R4",
+         lambda c: c not in p["ignorable"] and c not in p["white_space"] and p["joining"].get(c, "U") == "U"),
+        ("a word letter (ALetter) that never breaks a line (AL)", "R4",
+         lambda c: p["word_break"].get(c) == "ALetter" and p["line_break"].get(c) == "AL"),
+        ("one terminal cell (East Asian Width N)", "R2", lambda c: p["width"].get(c, "N") == "N"),
+    ]
 
 
 HEX = "0123456789abcdef"
 SYSTEMS = ("macOS", "iOS", "Windows", "Android", "Linux")
-SIZE = 2048
-
-
-def constraints(p):
-    """RULES.md's constraints on single letters, in order: (name, test)."""
-    hex_classes = {p["skeleton"].get(ord(h), (ord(h),)) for h in HEX}
-    return [
-        ("C1 in the Basic Multilingual Plane, assigned, not a surrogate",
-         lambda c: c <= 0xFFFF and c in p["category"] and p["category"][c] != "Cs"),
-        ("C2 unchanged by NFC, NFD, NFKC and NFKD",
-         lambda c: c not in p["decomposition"] and not 0xAC00 <= c <= 0xD7A3),
-        ("C3 a caseless letter (Lo) of a named script",
-         lambda c: p["category"][c] == "Lo" and p["script"].get(c) not in (None, "Common", "Inherited")),
-        ("C4 strongly left-to-right (bidi L)", lambda c: p["bidi"][c] == "L"),
-        ("C5 visible, never the second half of a composition, non-joining",
-         lambda c: c not in p["ignorable"] and c not in p["white_space"] and c not in p["maybe"]
-         and p["joining"].get(c, "U") == "U"),
-        ("C6 a word letter (ALetter) that never breaks a line (AL)",
-         lambda c: p["word_break"].get(c) == "ALetter" and p["line_break"].get(c) == "AL"),
-        ("C7 one terminal cell (East Asian Width N)", lambda c: p["width"].get(c, "N") == "N"),
-        ("C8 three bytes of UTF-8", lambda c: 0x800 <= c <= 0xFFFF),
-        ("C10 no hex digit or look-alike of one", lambda c: p["skeleton"].get(c, (c,)) not in hex_classes),
-    ]
 
 
 def fonts(path):
-    """fonts.txt's results: [(name, system, tested, missing)]."""
+    """fonts.txt's results: [{name, system, tested, missing}]."""
     def ranges(field):
         out = set()
         for r in field.split():
@@ -249,10 +234,10 @@ def fonts(path):
 
 
 def without_look_alikes(letters, skeletons):
-    """G3: of each class of look-alikes the lowest code point stays; then, while
-    a letter looks like a sequence of others, the one letter that ends the most
-    such spellings goes (the look-alike itself, or a piece of its spelling;
-    ties to the lowest code point)."""
+    """D4: of each class of look-alikes the lowest code point stays; then,
+    while a letter looks like a sequence of others, the one letter that ends
+    the most such spellings goes (the look-alike itself, or a piece of its
+    spelling; ties to the lowest code point)."""
     classes = collections.defaultdict(list)
     for c in letters:
         classes[skeletons.get(c, (c,))].append(c)
@@ -304,44 +289,65 @@ def main():
     args = sys.argv[1:]
     check = "--check" in args
     data_dir = Path(args[args.index("--data") + 1]) if "--data" in args else None
-    if data_dir:
-        data_dir.mkdir(parents=True, exist_ok=True)
-    p = properties(data_dir)
+    newest = properties(NEWEST, data_dir)
+    print(f"{'removes':>9} {'left':>9}  step (requirement)")
     left = list(range(0x110000))
-    print(f"{'removes':>9} {'left':>9}  rule")
-    for name, test in constraints(p):
+    for what, ref, test in tests(newest):
         kept = [c for c in left if test(c)]
-        print(f"{len(left) - len(kept):9,} {len(kept):9,}  {name}")
+        print(f"{len(left) - len(kept):9,} {len(kept):9,}  {what} ({ref})")
         left = kept
-    # G1: letters every tested device drew, tested on each of the five systems.
+    # R12: the same tests, passed in every release since the first.
+    for release in RELEASES[:-1]:
+        older = tests(properties(release, data_dir))
+        left = [c for c in left if all(test(c) for _, _, test in older)]
+    print(f"{'':9} {len(left):9,}  all of these in every release from {RELEASES[0]} to {NEWEST} (R12)")
+    # R8: no hex digit, and nothing that looks like one (Unicode's look-alike table, UTS #39).
+    skeleton = {int(f[0], 16): tuple(int(x, 16) for x in f[1].split())
+                for f in lines(data_file(f"{NEWEST}/security/confusables.txt", data_dir))}
+    hex_classes = {skeleton.get(ord(h), (ord(h),)) for h in HEX}
+    kept = [c for c in left if skeleton.get(c, (c,)) not in hex_classes]
+    print(f"{len(left) - len(kept):9,} {len(kept):9,}  no hex digit or look-alike of one (R8)")
+    left = kept
+    # R7: drawn by every device tested, and tested on each of the five systems.
     results = fonts(ROOT / "alphabet" / "fonts.txt")
     drawn = [c for c in left if {r["system"] for r in results if c in r["tested"]} == set(SYSTEMS)
              and not any(c in r["missing"] for r in results)]
-    print(f"{len(left) - len(drawn):9,} {len(drawn):9,}  G1 drawn on every tested device ({len(results)} results)")
-    # G2 and G3: whole scripts, the largest first, until the letters taken, without look-alikes, reach SIZE.
+    print(f"{len(left) - len(drawn):9,} {len(drawn):9,}  drawn on every tested device, {len(results)} results (R7)")
+    # D1 within R10 and R11: as many letters as possible, a power of two, so
+    # that each letter is a whole number of bits.
+    size = 1 << (len(without_look_alikes(drawn, skeleton)).bit_length() - 1)
+    # D7 and D4: whole scripts, the largest first (ties to the script whose
+    # first letter is oldest, then by name), until the letters taken, without
+    # look-alikes, reach the size.
+    script, age = newest["script"], {c: tuple(map(int, f[1].split("."))) for f in
+                                     lines(data_file(f"{NEWEST}/ucd/DerivedAge.txt", data_dir)) for c in code_points(f[0])}
     by_script = collections.defaultdict(list)
     for c in drawn:
-        by_script[p["script"][c]].append(c)
-    order = sorted(by_script, key=lambda s: (-len(by_script[s]), min(p["age"][c] for c in by_script[s]), s))
+        by_script[script[c]].append(c)
+    order = sorted(by_script, key=lambda s: (-len(by_script[s]), min(age[c] for c in by_script[s]), s))
     taken = []
-    for script in order:
-        taken.append(script)
-        kept = without_look_alikes([c for s in taken for c in by_script[s]], p["skeleton"])
-        if len(kept) >= SIZE:
+    for s in order:
+        taken.append(s)
+        kept = without_look_alikes([c for s in taken for c in by_script[s]], skeleton)
+        if len(kept) >= size:
             break
-    assert len(kept) >= SIZE, "the scripts drawn everywhere hold too few letters"
-    print(f"{len(drawn) - len(kept):9,} {len(kept):9,}  G2 the {len(taken)} largest scripts; G3 no look-alikes among them")
-    # G4: the SIZE oldest, ties to the lowest code point.
-    letters = sorted(sorted(kept, key=lambda c: (p["age"][c], c))[:SIZE])
-    print(f"{len(kept) - len(letters):9,} {len(letters):9,}  G4 the oldest {SIZE:,}")
+    print(f"{len(drawn) - len(kept):9,} {len(kept):9,}  the {len(taken)} largest scripts (D7), no look-alikes (D4)")
+    # D9: the oldest, ties to the lowest code point.
+    letters = sorted(sorted(kept, key=lambda c: (age[c], c))[:size])
+    print(f"{len(kept) - len(letters):9,} {len(letters):9,}  the oldest {size:,} (D9), "
+          f"{size:,} the largest power of two R10, R11 and D1 allow")
     alphabet = "".join(map(chr, letters))
-    skipped = ranges_of(p["white_space"] | {0x00AD, 0x200B, 0x2060, 0xFEFF})
+    # R5: what copying inserts, which decoding skips: white space, soft
+    # hyphen, zero-width space, word joiner, byte order mark; and R4's
+    # left-to-right mark, which the encoder writes before a handle (D3).
+    skipped = ranges_of(newest["white_space"] | {0x00AD, 0x200B, 0x200E, 0x2060, 0xFEFF})
     assert not set(letters) & {c for a, b in skipped for c in range(a, b + 1)}, "no letter is skipped"
+    source = f"Unicode {NEWEST}'s data (and every release's since {RELEASES[0]}) and alphabet/fonts.txt"
     outputs = {
         ROOT / "alphabet.txt": alphabet,
         ROOT / "skipped.txt": "".join(f"{a:04X}..{b:04X}\n" for a, b in skipped),
         ROOT / "lean" / "Sigil" / "Alphabet.lean": (
-            "/-! Generated by alphabet/alphabet.py from Unicode 14.0.0's data and alphabet/fonts.txt; do not edit.\n\n"
+            f"/-! Generated by alphabet/alphabet.py from {source}; do not edit.\n\n"
             "The alphabet (`alphabet.txt`), as code points in the alphabet's order, and the code points\n"
             "decoding skips (`skipped.txt`), as [first, last] ranges. -/\n\n"
             "namespace Sigil\n\n"
@@ -350,7 +356,7 @@ def main():
             f"def skippedRanges : Array (Nat × Nat) := #[{', '.join(f'({a}, {b})' for a, b in skipped)}]\n\n"
             "end Sigil\n"),
         ROOT / "typescript" / "alphabet.ts": (
-            "// Generated by alphabet/alphabet.py from Unicode 14.0.0's data and alphabet/fonts.txt; do not edit.\n"
+            f"// Generated by alphabet/alphabet.py from {source}; do not edit.\n"
             f"export const ALPHABET: string = \"{alphabet}\";\n"
             "// The code points decoding skips, as [first, last] ranges (skipped.txt).\n"
             f"export const SKIPPED: [number, number][] = {skipped};\n"),
@@ -360,11 +366,11 @@ def main():
             assert path.read_text(encoding="utf-8") == content, f"{path.name} is not this script's output"
         else:
             path.write_text(content, encoding="utf-8")
-    scripts = collections.Counter(p["script"][c] for c in letters)
-    print("\n" + ", ".join(f"{s.replace('_', ' ')} {n}" for s, n in scripts.most_common()))
+    counts = collections.Counter(script[c] for c in letters)
+    print("\n" + ", ".join(f"{s.replace('_', ' ')} {n}" for s, n in counts.most_common()))
     b = alphabet.encode("utf-8")
     print(f"{len(letters):,} letters, U+{letters[0]:04X}..U+{letters[-1]:04X}, newest from Unicode "
-          f"{'.'.join(map(str, max(p['age'][c] for c in letters)))}; alphabet.txt SHA-256 "
+          f"{'.'.join(map(str, max(age[c] for c in letters)))}; alphabet.txt SHA-256 "
           f"{hashlib.sha256(b).hexdigest()}, BLAKE3 {blake3(b).hex()}" + (" (checked)" if check else ""))
 
 

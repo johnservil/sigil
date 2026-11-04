@@ -11,8 +11,8 @@ BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41
 ```
 
 Its 2,048 letters come from fifteen scripts: Canadian syllabics, Ethiopic,
-Vai, Runic, Bamum, Devanagari, Sinhala, Telugu, Cham, Gujarati, Oriya,
-Malayalam, Saurashtra, Bengali and Tifinagh. Every one runs left to right,
+Vai, Devanagari, Runic, Bamum, Telugu, Sinhala, Malayalam, Gujarati, Oriya,
+Saurashtra, Bengali, Tifinagh and Gurmukhi. Every one runs left to right,
 has no case, and takes one terminal cell, and Unicode treats a run of them
 as one word that never breaks across lines. None is a hex digit or looks like
 one, so a sigil and hex are told apart at a glance. A sigil looks like
@@ -166,7 +166,11 @@ misread or changed, or the string is not Sigil's. `decode_readings` adds
 shows them: browsers may guess that a page of sigils is in another language
 and offer to translate it, which replaces every sigil with question marks.
 Fonts give letters different widths, so a page that wants every sigil of a
-size equally wide draws each letter in a box of fixed width.
+size equally wide draws each letter in a box of fixed width. Emacs on macOS
+draws Tifinagh, Vai, Bamum and Saurashtra letters as boxes: their fonts are
+among macOS's hidden supplemental fonts, which browsers use and Emacs does
+not search. Copying them from `/System/Library/Fonts/Supplemental` to
+`~/Library/Fonts` fixes it.
 
 ## Telling sigils apart
 
@@ -259,9 +263,9 @@ letter carries 11 bits.
 | a random string decodes once in | 2^24 | 2^19 | 2^15 | 2^16 | 2^17 | 2^19 | 2^16 |
 
 A decoder told L first drops every character in `skipped.txt`: white space
-(Unicode 14.0's White_Space, which includes every kind of line break) and
+(Unicode's White_Space, which includes every kind of line break) and
 the soft hyphen, zero-width space, word joiner and byte order mark, which
-copying text can insert. It requires exactly n characters left (else the
+copying text can insert, and the left-to-right mark. It requires exactly n characters left (else the
 error is `length`), each a letter of the alphabet (else `character`), and a
 value w that is a multiple of K (else `check`) with w / K below 2^(8L + 2)
 (else `range`) and its marker bits `01` (else `marker`). The data is w / K
@@ -307,11 +311,11 @@ a sigil missing a letter has the wrong length.
 ## The alphabet
 
 [REQUIREMENTS.md](REQUIREMENTS.md) lists every constraint and desideratum
-on a sigil, the encoding's and the alphabet's together.
-[alphabet/RULES.md](alphabet/RULES.md) gives every rule that chooses the
-2,048 letters and the reason for each, so you can check whether you agree.
-`alphabet/alphabet.py` applies them to Unicode 14.0.0's data files and the
-font tests in `alphabet/fonts.txt`: it downloads each file (or reads a saved
+on a sigil, the encoding's and the alphabet's together, and its section
+"The alphabet" gives every step that chooses the 2,048 letters with the
+requirement it serves, so you can check whether you agree.
+`alphabet/alphabet.py` applies them to the data files of every Unicode
+release from 6.0.0 to 18.0.0 and the font tests in `alphabet/fonts.txt`: it downloads each file (or reads a saved
 copy), checks its SHA-256 and its BLAKE3 before using it, and reads every
 property from the files. So the same inputs give the same alphabet with any
 Python 3 on any machine.
@@ -381,7 +385,7 @@ the other's.
 ## Reproduce and test
 
 ```sh
-python3 alphabet/alphabet.py --check          # downloads Unicode 14.0.0's data; alphabet.txt, skipped.txt and the generated Lean and TypeScript are its output
+pypy3 alphabet/alphabet.py --check            # or python3; downloads Unicode's data, 6.0.0 to 18.0.0; alphabet.txt, skipped.txt and the generated Lean and TypeScript are its output
 python3 python/vectors.py --check             # vectors.json and vectors.tsv are the reference's output
 python3 python/test.py                        # the reference implementation
 (cd typescript && tsc -p .) && node typescript/dist/test.js

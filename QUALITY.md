@@ -11,7 +11,7 @@ pull request:
 
 | what | check | shows |
 |---|---|---|
-| The alphabet | `alphabet/alphabet.py --check` | `alphabet.txt` and `skipped.txt` follow [alphabet/RULES.md](alphabet/RULES.md) from Unicode 14.0.0's data (each file checked by SHA-256 and BLAKE3) and the font tests in `alphabet/fonts.txt` |
+| The alphabet | `alphabet/alphabet.py --check` | `alphabet.txt` and `skipped.txt` follow [REQUIREMENTS.md](REQUIREMENTS.md)'s "The alphabet" from the data of every Unicode release from 6.0.0 to 18.0.0 (each file checked by SHA-256 and BLAKE3) and the font tests in `alphabet/fonts.txt` |
 | The shared vectors | `python/vectors.py --check` | `vectors.json` and `vectors.tsv` are the reference implementation's output: 220 encodings, 484 variants with skipped characters inserted, and 748 errors of every kind |
 | The reference (Python) | `python/test.py` | it passes the vectors; every one of 1,023,500 changed letters and 939 swaps of letters one or two apart, in 20 random 256-bit sigils, fails the check; one unread letter comes back; the first and last letters each take all 2,048 values; the layout is right at every length to 1,024 bytes |
 | Rust | `cargo test` in `rust/` | it passes the vectors; K's table follows the rule in README.md and no larger prime passes it; every letter reads back as its digit; data of every length to 300 bytes round-trips; 20,000 random sigils round-trip, and their corrupted copies never make decoding panic and decode only to data that re-encodes to their letters |

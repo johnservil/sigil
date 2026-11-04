@@ -18,7 +18,7 @@ correctness proofs remain open.
 | Property | Current evidence and scope |
 |---|---|
 | The specification describes Bob's intended format | Readable definitions and known answers; Bob's review remains essential |
-| The alphabet follows the documented rules (`alphabet/RULES.md`) | Deterministic generator and checks, from Unicode 14.0.0 and the recorded font tests; the rules-to-alphabet connection has no formal proof |
+| The alphabet follows the documented steps (REQUIREMENTS.md, "The alphabet") | Deterministic generator and checks, from Unicode 6.0.0 to 18.0.0 and the recorded font tests; the rules-to-alphabet connection has no formal proof |
 | Alphabet entries are distinct and never skipped | Kernel-checked facts: strict ascending order and absence from the skipped ranges |
 | Every alphabet entry reads as its prescribed digit | Proved for canonical alphabet entries |
 | Layout chooses a prime K above N, with sufficient capacity | Proved for every byte length (`layout_contract`) |

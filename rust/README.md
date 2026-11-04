@@ -31,7 +31,7 @@ assert_eq!(back, digest);
 To compare two sigils for security, let a program do it: decode both.
 
 More: [the README](https://github.com/johnservil/sigil#readme), with the
-format's specification; [how the alphabet is chosen](https://github.com/johnservil/sigil/blob/main/alphabet/RULES.md);
+format's specification; [how the alphabet is chosen](https://github.com/johnservil/sigil/blob/main/REQUIREMENTS.md#the-alphabet);
 [quality](https://github.com/johnservil/sigil/blob/main/QUALITY.md); and
 [the changes](https://github.com/johnservil/sigil/blob/main/CHANGELOG.md).
 

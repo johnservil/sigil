@@ -1,7 +1,7 @@
 # Which candidate letters each tested device drew: the results of
 # https://johnservil.github.io/sigil-candidates/check.html, each from the issue named,
 # https://github.com/johnservil/sigil-candidates/issues/N, appended by tools/import-fonts.py N.
-# alphabet.py reads it (goal G1).
+# alphabet.py reads it (R7).
 
 result 1 2026-11-02 iOS Brave
 ua Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1 Brave

@@ -12,7 +12,7 @@ a **character** is one thing a person sees in it. Encoder and decoder both
 know L, as a program that stores 32-byte hashes does. The **handle** is a
 word's first characters, hex digits a person can say and type (D3).
 
-## Adversarial confusion: the user's to guard against
+## Harms the user guards against: confusion and disclosure
 
 A sigil helps a person tell apart values that chance made; it cannot help
 with values an attacker made. Attackers steal from cryptocurrency users this
@@ -49,6 +49,11 @@ So a handle, or any part of a word, finds a value and never proves one:
   not among those the program searched. Where a value matters (a payment,
   a signature, a release), the program compares the whole value with one
   from a source the user trusts.
+- **Speaking or searching discloses.** A handle said aloud, or typed into
+  a search box, tells its 28 bits to whoever hears or logs it, and a whole
+  word copied into a chat, a ticket or a log goes wherever they go. What
+  that costs depends on what the value unlocks and who learns it; whether
+  someone called the value public or secret decides nothing.
 - **A program comparing two words is safer than an eye.** Characters hard
   to confuse (D4) make comparing by eye safer, but nobody has measured how
   many characters a person reliably compares.
@@ -81,7 +86,8 @@ So a handle, or any part of a word, finds a value and never proves one:
   written misses a copy whose case someone changed.
 - **R4. One gesture selects and copies it.** A double-click selects the
   whole word, no line breaks inside it, and it displays in the order it is
-  stored, in any paragraph. Its characters are visible, and none joins its
+  stored, in any paragraph. Its characters are visible, but for invisible
+  marks that keep it in order (D3's handle needs one), and none joins its
   neighbours or changes their shape.
 - **R5. What copying adds, decoding skips.** The decoder drops white space
   and the invisible characters that copying text inserts (soft hyphen,
@@ -101,12 +107,21 @@ So a handle, or any part of a word, finds a value and never proves one:
   marks itself as one, never decodes, and this format's words never decode
   as the other's.
 
-**Secrets and cost**
+**Timing and cost**
 
 - **R10. Constant time.** Encoding and decoding take the same time and touch
-  the same memory for every value of a length, so a word of a secret leaks
-  nothing through timing.
+  the same memory for every value of a length, so their timing tells an
+  observer nothing about the value.
 - **R11. Linear.** Time and memory grow in proportion to the data's length.
+
+**Unicode's releases**
+
+- **R12. Stable.** Each character meets R2 to R7 by its properties in every
+  Unicode release from 6.0.0 (2010) to the newest, so the next release is
+  unlikely to change how a word behaves. Unicode promises that
+  normalization never changes; for the other properties, a character's
+  record is the evidence. Decoding depends on no release at all: the
+  alphabet is a fixed table.
 
 ## Desiderata, most important first
 
@@ -121,7 +136,10 @@ So a handle, or any part of a word, finds a value and never proves one:
   compete with each other, and with D1, for the same characters.
 - **D3. A handle to speak and type** (Kris and Zooko): the word begins
   with the same 7 hex digits that a hex encoding of the data begins with,
-  lowercase, then letters that carry the rest of the data. The hex runs
+  lowercase, then letters that carry the rest of the data. Before the hex
+  comes U+200E LEFT-TO-RIGHT MARK, invisible, as the word's first code
+  point (R4): a run of digits after right-to-left text otherwise joins it,
+  and shows on its far side. The hex runs
   over the data's bytes in order, high digit first, as git, `sha256sum`
   and `b3sum` print; a caller whose tools print a value byte-reversed (as
   Bitcoin prints transaction IDs) passes the bytes in the order shown. So one person
@@ -153,13 +171,66 @@ So a handle, or any part of a word, finds a value and never proves one:
 - **D10. Recognized at a glance.** A word looks like nothing else, so a
   reader who meets one knows what it is and what decodes it; and it looks
   worth showing.
-- **D11. Sorts as its value sorts.** Ordering words by code point, UTF-8
+- **D11. Heard.** A screen reader speaks each character so that a listener
+  could write the word down. Today's voices read the handle and little
+  else (macOS's `say` read a sigil's letters as a run of F, E and G).
+- **D12. Sorts as its value sorts.** Ordering words by code point, UTF-8
   bytes or UTF-16 units orders them as their values, byte by byte, so a
   database index or a sorted file lists sigils in their values' order.
   The order a person's language sorts by (a file manager's, a
   spreadsheet's) is its own.
-- **D12. Few UTF-8 bytes**, for storage and links that count bytes.
+- **D13. Few UTF-8 bytes**, for storage and links that count bytes.
 
-How version 0.1 meets these: its alphabet's choice is
-[alphabet/RULES.md](alphabet/RULES.md), and its encoding is the README's
-"The encoding".
+## The alphabet
+
+Sigil's letters are computed, so anyone can check each step's reason and
+get the same letters: `alphabet/alphabet.py` runs the steps below on two
+inputs. Each step tests every letter that the steps before it left, and
+names the constraint or desideratum it serves.
+
+- **Unicode's data files** of every release from 6.0.0 to 18.0.0, each
+  pinned by its SHA-256 and its BLAKE3 in `alphabet/unicode-files.txt`
+  (164 files, about 84 MB).
+- **`alphabet/fonts.txt`**, which letters each tested device drew, with
+  the date, system and browser of each test and the GitHub issue that
+  reported it. It comes from the test page
+  https://johnservil.github.io/sigil-candidates/check.html, which anyone
+  can open to test their own device, and `tools/import-fonts.py` appends
+  each new result. This is the one input that is a measurement.
+
+| step | every letter is | serves |
+|---|---|---|
+| 1 | in the Basic Multilingual Plane, assigned, not a surrogate | R6 |
+| 2 | three bytes of UTF-8 (U+0800 to U+FFFF) | R2 |
+| 3 | unchanged by NFC, NFD, NFKC and NFKD (no decomposition, not a Hangul syllable), and never composed with a neighbour | R3 |
+| 4 | a letter with no case (general category Lo, no case mappings) | R3 |
+| 5 | of a named script (not Common or Inherited): fonts come by script | R7, D7 |
+| 6 | strongly left-to-right (bidi class L) | R4 |
+| 7 | visible (neither white space nor default-ignorable) and non-joining (joining type U) | R4 |
+| 8 | a word letter (word break ALetter) that never allows a line break beside its neighbours (line break AL) | R4 |
+| 9 | one terminal cell wide (East Asian Width N) | R2 |
+| 10 | all of steps 1 to 9, in every release from 6.0.0 to 18.0.0 | R12 |
+| 11 | not a hex digit or a look-alike of one, by Unicode's look-alike table (UTS #39, release 18.0.0) | R8 |
+| 12 | drawn by every device in `fonts.txt`, and tested on each of macOS, iOS, Windows, Android and Linux | R7 |
+
+Three more steps choose among the letters left:
+
+- **The size (R10, R11, D1):** the largest power of two that the letters
+  left fill once look-alikes go, so each letter is a whole number of bits.
+  A size between powers of two needs an encoding in fixed blocks to stay
+  linear; at the sizes R7 leaves, that gains 2-4% in length.
+- **Fewest scripts, no look-alikes (D7, D4):** whole scripts, the largest
+  first (ties to the script whose first letter is oldest, then by name),
+  until the letters taken fill the size without look-alikes. Of each class
+  of look-alikes the letter with the lowest code point stays; then, while
+  a letter looks like a sequence of others, the letter that ends the most
+  such spellings goes.
+- **Oldest first (D9):** of the letters left, those added to Unicode
+  earliest, ties to the lowest code point.
+
+Together these make each letter one code point, one UTF-16 unit, three
+bytes of UTF-8, one user-perceived character and one terminal cell. The
+script runs under CPython and PyPy alike (`pypy3 alphabet/alphabet.py
+--data DIR` takes about 7 seconds, CPython about 50), and `--check`
+confirms that the checked-in files are its output. The encoding is the
+README's "The encoding".
