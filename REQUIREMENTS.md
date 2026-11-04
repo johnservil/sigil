@@ -119,7 +119,7 @@ So a handle, or any part of a word, finds a value and never proves one:
   rarely decodes. The more mistakes caught, and the rarer a random string
   decodes, the better. Detection comes before correction (D5): the two
   compete with each other, and with D1, for the same characters.
-- **D3. A handle to speak and type** (Kris and Zooko): the word begins
+- **D3. A handle to speak and type** (Kris Nuttycombe's idea): the word begins
   with the same 7 hex digits that a hex encoding of the data begins with,
   lowercase, then letters that carry the rest of the data. The hex runs
   over the data's bytes in order, high digit first, as git, `sha256sum`
