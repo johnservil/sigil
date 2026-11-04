@@ -43,7 +43,7 @@
     check($('full').querySelectorAll('[data-sigil-hex]').length === 2, 'two complete hashes');
     check($('full').firstElementChild.textContent === SigilCode.encode(bytes(full)), 'replacement matches codec');
     check($('link').href === href, 'link destination preserved');
-    check($('link').firstElementChild.textContent.slice(1, 8) === full.slice(0, 7), 'the sigil begins with the hash\'s first 7 hex digits');
+    check($('link').firstElementChild.textContent.slice(1, 9) === full.slice(0, 8), 'the sigil begins with the hash\'s first 8 hex digits');
     // A short commit ID is a sigil's handle already, and too short to be a sigil (8 bytes at least): it stays.
     for (const id of ['short', 'even', 'invalid', 'ordinary', 'boundary', 'edit', 'button', 'hidden', 'csshidden']) check(!$(id).querySelector('[data-sigil-hex]'), `skip ${id}`);
     check($('input').value === full, 'form value unchanged');
@@ -132,7 +132,7 @@
     field('hex').dispatchEvent(new Event('input'));
     check(field('copy').disabled && field('sigil').textContent === '', 'invalid input clears stale output');
     field('random').click();
-    check(field('hex').value.length === 64 && Array.from(field('sigil').textContent).length === 30, 'random example, handled: the mark, 7 hex digits, 22 letters');
+    check(field('hex').value.length === 64 && Array.from(field('sigil').textContent).length === 31, 'random example, handled: the mark, 8 hex digits, 22 letters');
     doc.querySelector('input[name=form][value=plain]').click();
     check(Array.from(field('sigil').textContent).length === 25 && field('decoded').textContent === field('hex').value, 'random example, plain: 25 letters, decoded');
     doc.querySelector('input[name=form][value=handled]').click();

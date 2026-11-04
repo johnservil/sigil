@@ -9,11 +9,12 @@ first.
 
 Terms: the **data** is the value, L bytes long, at least 8. A **word** is its sigil, and
 a **character** is one thing a person sees in it. Encoder and decoder both
-know L, as a program that stores 32-byte hashes does. The **handle** is a
-word's first characters, hex digits a person can say and type (D1). A word
-has one of two **forms**: handled, which begins with the handle, and plain,
-all letters. (On this branch both are on trial; Zooko decides whether 0.2
-keeps the plain form.)
+know L, as a program that stores 32-byte hashes does. The **handle** is the
+data's first 32 bits, at a word's start. A word has one of two **forms**:
+handled, whose handle is 8 hex digits a person can say and type (D1), and
+plain, whose handle is 3 letters; after the handle both forms have the same
+letters. (On this branch both are on trial; Zooko decides whether 0.2 keeps
+the plain form.)
 
 ## Harms the user guards against: confusion and disclosure
 
@@ -29,13 +30,13 @@ hash function:
 - **Matching a value the user has**, like a second preimage. The user makes
   V1; the attacker then makes V2, whose word shares V1's handle, or its
   first and last characters. This is the common attack. Each character the
-  attacker matches multiplies the work: the handle's 7 hex digits take
-  about 2^28 tries, under a second on one GPU for a hash, and each letter
+  attacker matches multiplies the work: the handle's 8 hex digits take
+  about 2^32 tries, under a second on one GPU for a hash, and each letter
   2^11 more.
 - **Making values that match one another**, like a collision. The attacker
   makes two or more values together, whose words look alike, shows the user
   one, and later puts another in its place. Matching a handle this way
-  takes about 2^14 tries. It is rare in practice, and that makes it
+  takes about 2^16 tries. It is rare in practice, and that makes it
   dangerous. Users, defenders and security engineers tend to assume it
   away, and a check of a value against the user's own does nothing against
   a pair the attacker made.
@@ -53,7 +54,7 @@ So a handle, or any part of a word, finds a value and never proves one:
   a signature, a release), the program compares the whole value with one
   from a source the user trusts.
 - **Speaking or searching discloses.** A handle said aloud, or typed into
-  a search box, tells its 28 bits to whoever hears or logs it, and a whole
+  a search box, tells its 32 bits to whoever hears or logs it, and a whole
   word copied into a chat, a ticket or a log goes wherever they go. What
   that costs depends on what the value unlocks and who learns it; whether
   someone called the value public or secret decides nothing.
@@ -75,8 +76,8 @@ So a handle, or any part of a word, finds a value and never proves one:
   form, the one the encoder writes, and decoding that word gives the value back.
   Decoding also accepts exactly the other spellings that R3 and R5 allow,
   and nothing else. A value shorter than 8 bytes has no sigil.
-- **R2. The same size however it is counted.** Every word of L bytes has the
-  same number of characters, code points, UTF-16 units, terminal cells and
+- **R2. The same size however it is counted.** Every word of L bytes in a
+  form has the same number of characters, code points, UTF-16 units, terminal cells and
   UTF-8 bytes, so no count reveals anything about the data.
 
 **Handling by software**
@@ -108,9 +109,10 @@ So a handle, or any part of a word, finds a value and never proves one:
   sees where the hex ends.
 - **R9. Its own.** A word of another format, or of a later version that
   marks itself as one, never decodes, and this format's words never decode
-  as the other's. A plain word has 0.1's layout and marker, so only the
-  alphabet tells it from a 0.1 word: a 0.1 word read as 0.2 decodes about
-  once in 2^19 at 32 bytes, where the check happens to pass.
+  as the other's. A plain word of 32 bytes has as many letters as a 0.1
+  word, so a 0.1 word read as plain 0.2 decodes about once in 2^19, where
+  its check, its version bit and its marker happen to pass; a handled word
+  never does.
 
 **Timing and cost**
 
@@ -131,22 +133,24 @@ So a handle, or any part of a word, finds a value and never proves one:
 ## Desiderata, most important first
 
 - **D1. A handle to speak and type** (Kris Nuttycombe's idea): the word begins
-  with the same 7 hex digits that a hex encoding of the data begins with,
+  with the same 8 hex digits that a hex encoding of the data begins with,
   lowercase, then letters that carry the rest of the data. Before the hex
   comes U+200E LEFT-TO-RIGHT MARK, invisible, as the word's first code
   point (R4): a run of digits after right-to-left text otherwise joins it,
-  and shows on its far side. The hex runs
-  over the data's bytes in order, high digit first, as git, `sha256sum`
-  and `b3sum` print; a caller whose tools print a value byte-reversed (as
-  Bitcoin prints transaction IDs) passes the bytes in the order shown. So one person
-  can read a commit's short hash off unmodified git, which prints those 7
-  digits, and say it on the phone; another types it into a git that shows
-  sigils, and both name the same commit. A handle that differed from the
-  hex would be a second short form of one value, worse than none. It costs
-  a second character set in one word, and about four characters for a
-  32-byte value. It also makes the front of a word cheaper to forge: 7
-  hex digits hold 28 bits, where 7 letters would hold 77, and people check
-  fronts.
+  and shows on its far side. The hex runs over the data's bytes in order,
+  high digit first, as git, `sha256sum` and `b3sum` print; a caller whose
+  tools print a value byte-reversed (as Bitcoin prints transaction IDs)
+  passes the bytes in the order shown. So one person can read a commit's
+  short hash off unmodified git, which prints 7 digits (some tools 8), and
+  say it on the phone; another types it into a git that shows sigils, and
+  both name the same commit, since the handle begins with those digits. A
+  handle that differed from the hex would be a second short form of one
+  value, worse than none. It costs a second character set in one word, and
+  five characters for a 32-byte value. It also makes the front of a word
+  cheaper to forge: 8 hex digits hold 32 bits, where 8 letters would hold
+  88, and people check fronts. The plain form writes the same 32 bits as 3
+  letters, and after them both forms have the same letters, so a reader of
+  either form recognizes the other's.
 - **D2. Shorter words**, in characters and as they look: more bits in each
   character a person sees, by a larger alphabet, or by marks on letters
   that R3 leaves in place.

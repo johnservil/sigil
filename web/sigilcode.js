@@ -9,8 +9,9 @@ const SKIPPED = [[9, 13], [32, 32], [133, 133], [160, 160], [173, 173], [5760, 5
 // Sigil: bytes of a known length written as a sigil, one word that a
 // double-click selects whole, of letters with no two alike, and a check that
 // confirms a reading or picks the right one of several. A sigil has one of two
-// forms: handled, which begins with the value's first 7 hex digits, and plain,
-// all letters.
+// forms: handled, which begins with the value's first 8 hex digits, and plain,
+// which writes those 32 bits as 3 letters; after them both forms have the same
+// letters.
 //
 // The specification is README.md ("The encoding"); python/sigilcode.py is the
 // reference implementation and vectors.json the tests every implementation
@@ -23,7 +24,9 @@ if (N !== 2048)
 const DIGIT = new Map(LETTERS.map((c, i) => [c, i]));
 const MARKER = 1n;
 const MARK = "\u200e";
-const HANDLE = 7; // hex digits, 28 bits
+const HANDLE = 8; // hex digits, 32 bits
+const PREFIX = 3; // the plain form's letters for the handle: its 32 bits, then the version bit
+const PLAIN_VERSION = 0n; // the plain form's version bit; a later version may write 1
 const isHex = (ch) => /^[0-9a-fA-F]$/.test(ch);
 class DecodeError extends Error {
     constructor(kind, message) {
@@ -73,14 +76,13 @@ function checkPrime(room) {
         }
     }
 }
-// [n, K] for data of `length` bytes (at least 8), handled or plain: the letters
-// carry bits = 8 * length - 28 of the data handled, all 8 * length plain;
-// n = ceil((bits + 14) / 11) letters, and K, the check prime of the room
-// 2^(11n - bits - 2).
-function layout(length, handle = true) {
+// [n, K] for data of `length` bytes (at least 8): the letters after the handle,
+// which carry bits = 8 * length - 32 of the data, n = ceil((bits + 14) / 11),
+// and K, the check prime of the room 2^(11n - bits - 2). Both forms have them.
+function layout(length) {
     if (!(length >= 8))
         throw new Error("Sigil encodes at least 8 bytes");
-    const bits = 8 * length - (handle ? 4 * HANDLE : 0);
+    const bits = 8 * length - 4 * HANDLE;
     const n = Math.ceil((bits + 14) / 11);
     return [n, checkPrime(2 ** (11 * n - bits - 2))];
 }
@@ -97,19 +99,24 @@ function placeOfHandle(n, k) {
         m = (m * BigInt(N)) % BigInt(k);
     return m;
 }
+// The `count` letters that write `v`.
+function lettersOf(v, count) {
+    const out = [];
+    for (let i = count - 1; i >= 0; i--)
+        out.push(LETTERS[Number((v >> BigInt(11 * i)) & 2047n)]);
+    return out;
+}
 function encode(data, handle = true) {
-    const [n, k] = layout(data.length, handle);
+    const [n, k] = layout(data.length);
     const K = BigInt(k);
     const d = toBig(data);
-    const bits = 8 * data.length - (handle ? 4 * HANDLE : 0);
+    const bits = 8 * data.length - 4 * HANDLE;
     const top = d >> BigInt(bits);
-    // r < K makes top * N^n + t a multiple of K (0 for the plain form).
+    // r < K makes top * N^n + t a multiple of K.
     const r = (((-top * placeOfHandle(n, k)) % K) + K) % K;
     const t = marked(d & ((1n << BigInt(bits)) - 1n), bits) * K + r;
-    const out = handle ? [MARK, top.toString(16).padStart(HANDLE, "0")] : [];
-    for (let i = n - 1; i >= 0; i--)
-        out.push(LETTERS[Number((t >> BigInt(11 * i)) & 2047n)]);
-    return out.join("");
+    const head = handle ? [MARK, top.toString(16).padStart(HANDLE, "0")] : lettersOf((top << 1n) | PLAIN_VERSION, PREFIX);
+    return [...head, ...lettersOf(t, n)].join("");
 }
 // White space, the mark, and four invisible characters copying inserts, which decoding skips.
 function skipped(ch) {
@@ -122,28 +129,35 @@ function decode(sigil, length) {
         .map((ch, i) => [ch, i])
         .filter(([ch]) => !skipped(ch));
     const handled = chars.length > 0 && isHex(chars[0][0]);
-    const [n, k] = layout(length, handled);
-    const h = handled ? HANDLE : 0;
+    const [n, k] = layout(length);
+    const h = handled ? HANDLE : PREFIX;
     if (chars.length !== h + n)
-        throw new DecodeError("length", `${chars.length} characters; ${length} bytes take ${h + n}${handled ? " with the handle" : ""}`);
+        throw new DecodeError("length", `${chars.length} characters; ${length} bytes take ${h + n}${handled ? " with the hex handle" : ""}`);
     const code = (ch) => ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
-    let top = 0n, t = 0n;
+    let head = 0n, t = 0n;
     chars.forEach(([ch, i], j) => {
-        if (j < h) {
+        if (j < h && handled) {
             if (!isHex(ch))
                 throw new DecodeError("character", `character ${i + 1} (U+${code(ch)}) is not a hex digit of the handle`);
-            top = (top << 4n) | BigInt(parseInt(ch, 16));
+            head = (head << 4n) | BigInt(parseInt(ch, 16));
             return;
         }
         const d = DIGIT.get(ch);
         if (d === undefined)
             throw new DecodeError("character", `character ${i + 1} (U+${code(ch)}) is not a letter of the alphabet`);
-        t = (t << 11n) | BigInt(d);
+        if (j < h)
+            head = (head << 11n) | BigInt(d);
+        else
+            t = (t << 11n) | BigInt(d);
     });
+    // Plain, the handle's letters end in the plain form's version bit.
+    if (!handled && (head & 1n) !== PLAIN_VERSION)
+        throw new DecodeError("marker", "its version bit is not Sigil 0.2's: a string of another version, or a changed letter");
+    const top = handled ? head : head >> 1n;
     const K = BigInt(k);
     if ((top * placeOfHandle(n, k) + t) % K !== 0n)
         throw new DecodeError("check", "the check fails: a character was misread or changed");
-    const m = t / K, bits = 8 * length - 4 * h, half = BigInt(bits / 2);
+    const m = t / K, bits = 8 * length - 4 * HANDLE, half = BigInt(bits / 2);
     if (m >> BigInt(bits + 2))
         throw new DecodeError("range", `its value is too large for ${length} bytes: a letter was misread or changed`);
     if (((m >> half) & 3n) !== MARKER)

@@ -2,19 +2,20 @@
 
 Sigil writes bytes as a sigil: one word that a person can copy with a
 double-click, recognize at a glance, and read back from a picture. A 256-bit
-hash becomes its first 7 hex digits and 22 letters, no two of which look
+hash becomes its first 8 hex digits and 22 letters, no two of which look
 alike.
 
 > **This branch is Sigil 0.2, unreleased.** Its sigils and 0.1's never
 > decode as each other's. Two forms are on trial: handled, which begins with
-> the value's first 7 hex digits as git shows a short hash, and plain, all
-> letters.
+> the value's first 8 hex digits, which start with git's short hash, and
+> plain, which writes those digits as 3 letters. After them both forms have
+> the same letters.
 
 ```
 BLAKE3("") in hex       af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64    rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
-            as a sigil   ‎af1349bᘡসঠখखਇꗦꗘꬔꚪꛆᒴᙛꖶꗳళᖦꕽඍᙇజኤ
-            plain        ᛉᔨᓠጛዜᐛతዱⷍⶈᢾꔧꔾቋᣖଭᐗᙛᕋⵆዞᐜඞᚶጃ
+            as a sigil   ‎af1349b9ꛥዄपⷉꢦꔾഡꗕᘫꚬꢳꗙᚺᖨꗝᒱᔖৎስसባᗵ
+            plain        ᛉᗴᒊꛥዄपⷉꢦꔾഡꗕᘫꚬꢳꗙᚺᖨꗝᒱᔖৎስसባᗵ
 ```
 
 Its 2,048 letters come from fifteen scripts: Canadian syllabics, Ethiopic,
@@ -47,15 +48,16 @@ and identifiers in a status line, a chat, an email, a web page or a printout.
 | hex | 64 | 4 | the whole value | goes unnoticed |
 | base32 | 52 | 5 | the whole value | goes unnoticed |
 | base64 | 43 | 6 (`I` `l` `1` and `O` `0` look alike) | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
-| **sigil** | **29: 7 hex digits, 22 letters** (plain: 25 letters) | **4 in the handle, 11 in each letter** | **the whole value** | **is caught, and repaired from a few readings** |
+| **sigil** | **30: 8 hex digits, 22 letters** (plain: 25 letters) | **4 in the handle, 11 in each letter** | **the whole value** | **is caught, and repaired from a few readings** |
 
 Its properties work together:
 
 - **Spoken and searched by its handle** (Kris Nuttycombe's idea). A sigil
-  begins with the first 7 hex digits of its value, the short hash git prints: one person reads them
+  begins with the first 8 hex digits of its value, which start with the 7 of
+  the short hash git prints: one person reads them
   off git and says them on the phone, another types them into a tool that
   shows sigils, and both name the same value.
-- **Short.** A sigil takes 29 characters where hex takes 64, so two of
+- **Short.** A sigil takes 30 characters where hex takes 64, so two of
   them, labelled, fit GitHub's 140-character status description.
 - **The same size, however you count.** A sigil of a given number of bytes
   always has the same number of characters, code points, UTF-16 units,
@@ -84,7 +86,7 @@ Other encodings serve other channels:
 - **Typed by hand or read aloud:** hex, or z-base-32, whose letters are
   chosen for people to type.
 - **Bytes at a premium** (URLs, database columns): base64, at 43 bytes. A
-  sigil's letters take 3 bytes each in UTF-8: 76 for 256 bits, 75 plain.
+  sigil's letters take 3 bytes each in UTF-8: 77 for 256 bits, 75 plain.
 - **ASCII only:** hex or base64.
 
 ## Ways to use it
@@ -126,8 +128,8 @@ Python (`python/sigilcode.py`, the reference implementation):
 
 ```python
 import sigilcode
-sigil = sigilcode.encode(digest)            # 7 hex digits and 22 letters for 32 bytes
-plain = sigilcode.encode(digest, handle=False)   # 25 letters
+sigil = sigilcode.encode(digest)            # 8 hex digits and 22 letters for 32 bytes
+plain = sigilcode.encode(digest, handle=False)   # 3 letters, then the same 22
 digest = sigilcode.decode(sigil, 32)        # either form; raises sigilcode.DecodeError
 digest = sigilcode.decode_readings(readings, 32)   # readings: each letter's possible readings
 ```
@@ -153,7 +155,7 @@ values; for data whose timing must reveal nothing, use the Rust crate.
 **What to encode.** Encode a secure hash's output, a key or a random
 identifier as it is. For anything else (a file, a document, a message,
 structured data), encode its hash: a secure 256-bit hash keeps the sigil at
-29 characters for input of any length. Sigil encodes 8 bytes or more.
+30 characters for input of any length. Sigil encodes 8 bytes or more.
 
 <details>
 <summary>For experts: structured data that decoding must give back</summary>
@@ -195,8 +197,8 @@ when values are made to look alike.
 
 - **Every letter counts.** Each is one of 2,048, none of which looks like
   another by Unicode's table, and the first letter after the handle and the
-  last carry 11 bits of the data each, like every other. The handle's 7 hex
-  digits carry 28 bits: a forger matches a given handle in about 2^28 tries.
+  last carry 11 bits of the data each, like every other. The handle's 8 hex
+  digits carry 32 bits: a forger matches a given handle in about 2^32 tries.
 - **Hashes and keys look random in every letter.** Someone who wants a sigil
   that looks like yours must produce data whose sigil looks like it: for a
   hash they can only try inputs until one hashes to a look-alike, and for a
@@ -246,7 +248,7 @@ recognition (OCR). Three properties serve it:
   look-alikes (UTS #39).
 - **The check confirms a reading.** Every misread letter, and every swap of
   neighbours or of characters two apart, fails the check; a random string
-  decodes once in 2^14 tries for a 256-bit value (2^19 plain). A reader
+  decodes once in 2^18 tries for a 256-bit value (2^19 plain). A reader
   unsure of a character passes its possible readings to `decode_readings`,
   which returns the data the one valid reading encodes. Exactly one reading
   of a character decodes, so `decode_readings` recovers any one character,
@@ -258,10 +260,8 @@ recognition (OCR). Three properties serve it:
 
 Sigil encodes data of L bytes, L ≥ 8, with its alphabet of N = 2,048 letters
 (`alphabet.txt`, in ascending code point order: letter k is digit k), so each
-letter carries 11 bits. A sigil has one of two forms. **Handled:** U+200E
-LEFT-TO-RIGHT MARK, the handle h, the data's first 28 bits as 7 lowercase
-hex digits, and then letters carrying the other b = 8L − 28 bits. **Plain:**
-letters carrying all b = 8L bits, and h = 0.
+letter carries 11 bits. The **handle** h is the data's first 32 bits; letters
+after it carry the other b = 8L − 32 bits, the same letters in both forms.
 
 1. **Mark.** Read the letters' b bits as a number d, and put the two marker
    bits `01` between its high and low halves: m = (4 · d_high + 1) · 2^(b/2)
@@ -274,18 +274,20 @@ letters carrying all b = 8L bits, and h = 0.
    most twice the changes to two letters that a random prime would
    (`check_prime` in `python/sigilcode.py`; "Why the check catches what it
    does" says why the largest prime alone is not enough).
-3. **Write.** t = m · K + r, where r < K makes the whole word, read as the
-   number h · 2048^n + t, a multiple of K: r = (−h · 2048^n) mod K, which is
-   0 in the plain form. The letters write t in base 2,048 with exactly n
-   digits, most significant first.
+3. **Write.** t = m · K + r, where r < K makes the number h · 2048^n + t a
+   multiple of K: r = (−h · 2048^n) mod K. The letters write t in base 2,048
+   with exactly n digits, most significant first.
+4. **The handle, in either form.** Handled: U+200E LEFT-TO-RIGHT MARK, then
+   h as 8 lowercase hex digits. Plain: 2h + v as 3 letters (33 bits), where
+   v is the plain form's version bit, 0 in this version.
 
 | data | 64-bit | 80-bit | 128-bit | 160-bit | 192-bit | 256-bit | 512-bit |
 |---|---|---|---|---|---|---|---|
-| handled: n (letters) | 5 | 6 | 11 | 14 | 17 | 22 | 46 |
-| K | 131,063 | 4,093 | 524,269 | 1,048,433 | 2,096,881 | 4,093 | 1,048,433 |
-| a random string decodes once in | 2^19 | 2^14 | 2^21 | 2^22 | 2^23 | 2^14 | 2^22 |
-| plain: n (letters) | 8 | 9 | 13 | 16 | 19 | 25 | 48 |
-| K | 4,193,633 | 131,063 | 8,179 | 16,381 | 32,749 | 131,063 | 16,381 |
+| n (letters after the handle) | 5 | 6 | 10 | 13 | 16 | 22 | 45 |
+| K | 2,096,881 | 65,519 | 4,093 | 8,179 | 16,381 | 65,519 | 8,179 |
+| handled: characters (with 8 hex digits) | 13 | 14 | 18 | 21 | 24 | 30 | 53 |
+| a random string decodes once in | 2^23 | 2^18 | 2^14 | 2^15 | 2^16 | 2^18 | 2^15 |
+| plain: letters (with 3 for the handle) | 8 | 9 | 13 | 16 | 19 | 25 | 48 |
 | a random string decodes once in | 2^24 | 2^19 | 2^15 | 2^16 | 2^17 | 2^19 | 2^16 |
 
 A decoder told L first drops every character in `skipped.txt`: white space
@@ -293,18 +295,22 @@ A decoder told L first drops every character in `skipped.txt`: white space
 hyphen, zero-width space, word joiner and byte order mark, which copying
 text can insert, and the left-to-right mark. The first character left tells
 the form: a hex digit begins a handle, and hex digits are no letters. The
-decoder requires exactly 7 + n characters left (handled) or n (plain), else
-the error is `length`; each a hex digit of either case in the handle and a
-letter of the alphabet after it, else `character`; the number h · 2048^n +
-t a multiple of K, else `check`; m = ⌊t / K⌋ below 2^(b + 2), else `range`;
-and m's marker bits `01`, else `marker`. The data is h's 28 bits, then m
-with the marker taken out.
+decoder requires exactly 8 + n characters left (handled) or 3 + n (plain),
+else the error is `length`; each a hex digit of either case in the handle
+and a letter of the alphabet elsewhere, else `character`; plain, the version
+bit v of this version, else `marker`; the number h · 2048^n + t a multiple
+of K, else `check`; m = ⌊t / K⌋ below 2^(b + 2), else `range`; and m's
+marker bits `01`, else `marker`. The data is h's 32 bits, then m with the
+marker taken out.
 
-**The marker.** Sigil 0.1 and 0.2 both use `01`: a handled sigil never
-reads as 0.1's, and a plain one has 0.1's layout, so only the alphabet tells
-it from 0.1's (a 0.1 sigil read as plain 0.2 decodes about once in 2^19, at
-32 bytes). A format that succeeds Sigil's puts another value there, `10` or
-`11`, and then its strings never decode as Sigil's, nor Sigil's as its. The
+**The markers.** Sigil 0.1 and 0.2 both use `01`. A handled sigil never
+reads as 0.1's, since 0.1 has no hex digits; a 0.1 sigil of 32 bytes has as
+many letters as a plain 0.2 one, and decodes as one about once in 2^19. A
+format that succeeds Sigil's puts another value there, `10` or `11`, and
+then its strings never decode as Sigil's, nor Sigil's as its. The plain
+form carries one marker more, its version bit v, beside the handle: a later
+version that writes 1 there has plain sigils that never decode as this
+one's, whatever their letters. The
 value `00` stays unused, so that no format's zero data is a string of the
 first letter. In the middle, the marker leaves the first and last letters 11
 bits each, where people compare by eye. It also catches, about three times
