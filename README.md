@@ -51,8 +51,8 @@ and identifiers in a status line, a chat, an email, a web page or a printout.
 
 Its properties work together:
 
-- **Spoken and searched by its handle.** A sigil begins with the first 7
-  hex digits of its value, the short hash git prints: one person reads them
+- **Spoken and searched by its handle** (Kris Nuttycombe's idea). A sigil
+  begins with the first 7 hex digits of its value, the short hash git prints: one person reads them
   off git and says them on the phone, another types them into a tool that
   shows sigils, and both name the same value.
 - **Short.** A sigil takes 29 characters where hex takes 64, so two of
