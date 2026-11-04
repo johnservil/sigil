@@ -1,20 +1,31 @@
-"""Sigil: bytes of a known length written as a sigil, one word of letters that
-a double-click selects whole, with no two letters alike, and a check that
-confirms a reading or picks the right one of several.
+"""Sigil: bytes of a known length written as a sigil, one word that a
+double-click selects whole, of letters with no two alike, and a check that
+confirms a reading or picks the right one of several. A sigil has one of two
+forms: handled, which begins with the value's first 7 hex digits, and plain,
+all letters.
 
-    encode(data) -> str                           # the sigil
-    decode(sigil, length) -> bytes                # or raises DecodeError
+    encode(data, handle=True) -> str              # the sigil, handled or plain
+    decode(sigil, length) -> bytes                # either form; or raises DecodeError
     decode_readings(readings, length) -> bytes    # the one reading that decodes
 
 This is the reference implementation; the specification is README.md ("The
-encoding"). The data, with the marker bits 01 between its high and low
-halves, is multiplied by a prime K larger than N and written in base
-N = 2,048, 11 bits a letter, in n = ceil((8 * length + 14) / 11) letters. A
-decoder checks that the value is a multiple of K, which catches every
-changed letter and every swap of neighbours, and that the marker is 01.
-Decoding skips the characters of skipped.txt (white space, and four
-invisible characters copying inserts), and nothing else outside the
-alphabet.
+encoding"). Base N = 2,048, 11 bits a letter; K is a prime larger than N.
+
+- Handled: U+200E LEFT-TO-RIGHT MARK, the handle (the data's first 28 bits
+  as 7 lowercase hex digits), and n = ceil((8 * length - 14) / 11) letters.
+  The letters write t = m * K + r: m is the rest of the data with the marker
+  bits 01 between its high and low halves, and r < K the number that makes
+  the whole word, read as handle * N^n + t, a multiple of K.
+- Plain: n = ceil((8 * length + 14) / 11) letters writing m * K, m the whole
+  data with the marker bits 01 between its halves.
+
+A decoder tells the forms apart by the first character (hex digits are no
+letters), checks the multiple of K, which catches every changed character
+and every swap of characters one or two apart, and checks that the marker
+is 01. Decoding skips the characters of skipped.txt (white space, the mark,
+and four invisible characters copying inserts), reads the handle's hex in
+either case, and refuses everything else outside the handle's digits and
+the alphabet.
 
 For maintainers: Sigil writes the data in order, without jumbling it.
 README.md ("Telling sigils apart", "Why Sigil writes the data in order")
@@ -31,6 +42,9 @@ assert N == 2048
 DIGIT = {c: d for d, c in enumerate(ALPHABET)}
 SKIPPED = [tuple(int(x, 16) for x in line.split("..")) for line in (ROOT / "skipped.txt").read_text().split()]
 MARKER = 0b01
+MARK = "\u200e"
+HANDLE = 7  # hex digits, 28 bits
+HEX = {c: int(c, 16) for c in "0123456789abcdefABCDEF"}
 
 
 class DecodeError(ValueError):
@@ -77,28 +91,56 @@ def check_prime(room):
 CHECK_PRIMES = {}
 
 
-def layout(length):
-    """(n, K) for data of `length` bytes (at least 1): the sigil's letters,
-    the fewest whose room 2^(11n - 8 * length - 2) holds a prime larger than
-    N (2,053 or more), and K, check_prime(room)."""
-    assert length >= 1, "Sigil encodes at least one byte"
-    n = -(-(8 * length + 14) // 11)
-    room = 1 << (11 * n - 8 * length - 2)
+def layout(length, handle=True):
+    """(n, K) for data of `length` bytes (at least 8) in the handled or the
+    plain form: the sigil's letters, the fewest whose room 2^(11n - bits - 2)
+    holds a prime larger than N (2,053 or more), and K, check_prime(room).
+    The letters carry bits = 8 * length - 28 of the data handled, all
+    8 * length plain."""
+    assert length >= 8, "Sigil encodes at least 8 bytes"
+    rest = 8 * length - (4 * HANDLE if handle else 0)
+    n = -(-(rest + 14) // 11)
+    room = 1 << (11 * n - rest - 2)
     if room not in CHECK_PRIMES:
         CHECK_PRIMES[room] = check_prime(room)
     return n, CHECK_PRIMES[room]
 
 
-def encode(data: bytes) -> str:
-    """`data`'s sigil, layout(len(data))[0] letters of the alphabet. Its
-    protection against look-alikes holds for data that looks random (a
-    secure hash's output, a key, a random identifier): hash or jumble
-    structured data before encoding it (README.md, "Data with structure")."""
-    n, k = layout(len(data))
-    half = 4 * len(data)
+def marked(rest, bits, marker):
+    """`rest`, of `bits` bits, with `marker` between its high and low halves."""
+    half = bits // 2
+    return (((rest >> half) << 2 | marker) << half) | (rest & ((1 << half) - 1))
+
+
+def offset(handle, n, k):
+    """r: the number below K that makes handle * N^n + m * K + r a multiple of K."""
+    return -handle * pow(N, n, k) % k
+
+
+def letters(t, n):
+    """The n letters that write t."""
+    return "".join(ALPHABET[(t >> 11 * i) & 2047] for i in reversed(range(n)))
+
+
+def word(handle, t, n):
+    """The handled sigil of a handle and the letters' value t."""
+    return MARK + f"{handle:07x}" + letters(t, n)
+
+
+def encode(data: bytes, handle=True) -> str:
+    """`data`'s sigil: handled, the mark, the handle, and
+    layout(len(data))[0] letters of the alphabet; or plain,
+    layout(len(data), False)[0] letters. Its protection against look-alikes
+    holds for data that looks random (a secure hash's output, a key, a random
+    identifier): hash or jumble structured data before encoding it
+    (README.md, "Data with structure")."""
+    n, k = layout(len(data), handle)
     d = int.from_bytes(data, "big")
-    w = ((((d >> half) << 2 | MARKER) << half) | (d & ((1 << half) - 1))) * k
-    return "".join(ALPHABET[(w >> 11 * i) & 2047] for i in reversed(range(n)))
+    if not handle:
+        return letters(marked(d, 8 * len(data), MARKER) * k, n)
+    bits = 8 * len(data) - 4 * HANDLE
+    top = d >> bits
+    return word(top, marked(d & ((1 << bits) - 1), bits, MARKER) * k + offset(top, n, k), n)
 
 
 def skipped(ch):
@@ -108,24 +150,34 @@ def skipped(ch):
 def decode(sigil: str, length: int) -> bytes:
     """The `length` bytes `sigil` encodes; the characters of skipped.txt in
     it are skipped."""
-    n, k = layout(length)
-    letters = [(i, ch) for i, ch in enumerate(sigil) if not skipped(ch)]
-    if len(letters) != n:
-        raise DecodeError("length", f"{len(letters)} letters; {length} bytes take {n}")
-    w = 0
-    for i, ch in letters:
-        if ch not in DIGIT:
+    chars = [(i, ch) for i, ch in enumerate(sigil) if not skipped(ch)]
+    # The form, by the first character: hex digits are no letters.
+    handled = bool(chars) and chars[0][1] in HEX
+    n, k = layout(length, handled)
+    h = HANDLE if handled else 0
+    if len(chars) != h + n:
+        raise DecodeError("length", f"{len(chars)} characters; {length} bytes take {h + n}"
+                          f"{' with the handle' if handled else ''}")
+    handle = t = 0
+    for j, (i, ch) in enumerate(chars):
+        if j < h and ch not in HEX:
+            raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a hex digit of the handle")
+        if j >= h and ch not in DIGIT:
             raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a letter of the alphabet")
-        w = w << 11 | DIGIT[ch]
-    if w % k:
-        raise DecodeError("check", "the check fails: a letter was misread or changed")
-    marked, half = w // k, 4 * length
-    if marked >> (8 * length + 2):
+        if j < h:
+            handle = handle << 4 | HEX[ch]
+        else:
+            t = t << 11 | DIGIT[ch]
+    if (handle * pow(N, n, k) + t) % k:
+        raise DecodeError("check", "the check fails: a character was misread or changed")
+    m, bits = t // k, 8 * length - 4 * h
+    half = bits // 2
+    if m >> (bits + 2):
         raise DecodeError("range", f"its value is too large for {length} bytes: a letter was misread or changed")
-    if (marked >> half) & 3 != MARKER:
+    if (m >> half) & 3 != MARKER:
         raise DecodeError("marker", "its marker is not Sigil's: a string of another format, or a changed letter")
-    d = (marked >> (half + 2)) << half | (marked & ((1 << half) - 1))
-    return d.to_bytes(length, "big")
+    rest = (m >> (half + 2)) << half | (m & ((1 << half) - 1))
+    return (handle << bits | rest).to_bytes(length, "big")
 
 
 def decode_readings(readings, length):
