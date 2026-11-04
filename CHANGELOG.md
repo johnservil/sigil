@@ -1,5 +1,13 @@
 # Changes
 
+## Sigil 0.1.2, November 2026: a warning
+
+The README, here and on crates.io, warns of 0.1's known flaw: Unicode 15.1
+changed the rules for 52 of its letters, from the Cham script, so current
+software may draw a sigil across two lines. A double-click still selects
+the whole sigil, and a copy still decodes. Sigil 0.2, a new format that
+reads no 0.1 sigil, is coming. The code is 0.1's.
+
 ## Sigil 0.1.1+a04b2b9b525bd58126b62bb66938f58b2adeb53f, November 2026: a README on crates.io
 
 The crate's page on crates.io shows a README. The code is 0.1's.
