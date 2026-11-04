@@ -12,7 +12,12 @@ fn main() {
         let values: [(&str, Vec<u8>); 3] = [
             ("zeros", vec![0; length]),
             ("ones", vec![0xff; length]),
-            ("random", (0..length as u32).map(|i| (i.wrapping_mul(2654435761) >> 13) as u8).collect()),
+            (
+                "random",
+                (0..length as u32)
+                    .map(|i| (i.wrapping_mul(2654435761) >> 13) as u8)
+                    .collect(),
+            ),
         ];
         for (name, data) in &values {
             let sigil = sigilcode::encode(data);
@@ -20,7 +25,9 @@ fn main() {
                 std::hint::black_box(sigilcode::encode(std::hint::black_box(data)));
             });
             report(&format!("decode {length} bytes, {name}"), &mut || {
-                std::hint::black_box(sigilcode::decode(std::hint::black_box(&sigil), length).unwrap());
+                std::hint::black_box(
+                    sigilcode::decode(std::hint::black_box(&sigil), length).unwrap(),
+                );
             });
         }
         // Three readings for one letter, the right one among them.
@@ -29,18 +36,32 @@ fn main() {
         let mut readings: Vec<String> = letters.iter().map(char::to_string).collect();
         readings[3] = format!("{}{}{}", alphabet[7], letters[3], alphabet[1500]);
         let readings: Vec<&str> = readings.iter().map(String::as_str).collect();
-        report(&format!("decode_readings {length} bytes, 3 readings of one letter"), &mut || {
-            std::hint::black_box(sigilcode::decode_readings(std::hint::black_box(&readings), length).unwrap());
-        });
+        report(
+            &format!("decode_readings {length} bytes, 3 readings of one letter"),
+            &mut || {
+                std::hint::black_box(
+                    sigilcode::decode_readings(std::hint::black_box(&readings), length).unwrap(),
+                );
+            },
+        );
     }
 }
 
 fn report(name: &str, f: &mut dyn FnMut()) {
     let batches = clocks::measure(10, 100_000_000, f);
     let mean = clocks::summary::mean(batches.iter().map(|b| (b.wall_ns, b.calls)));
-    let counts = batches.iter().filter_map(|b| b.counts).reduce(|a, b| a.plus(b));
-    let rate = counts.filter(|c| c.p.time_ns + c.e.time_ns > 0).map_or("no cycle counts".to_owned(), |c| format!("{} MHz", c.mhz()));
+    let counts = batches
+        .iter()
+        .filter_map(|b| b.counts)
+        .reduce(|a, b| a.plus(b));
+    let rate = counts
+        .filter(|c| c.p.time_ns + c.e.time_ns > 0)
+        .map_or("no cycle counts".to_owned(), |c| format!("{} MHz", c.mhz()));
     // The mean is fixed point with 64 fractional bits: tenths of a ns, rounded once.
     let tenths = (mean * 10 + (1 << 63)) >> 64;
-    println!("{name:60} {:>8}.{} ns per call, {rate}", tenths / 10, tenths % 10);
+    println!(
+        "{name:60} {:>8}.{} ns per call, {rate}",
+        tenths / 10,
+        tenths % 10
+    );
 }

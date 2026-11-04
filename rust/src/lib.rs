@@ -1,20 +1,34 @@
-//! Sigil: bytes of a known length written as a sigil, one word of letters that
-//! a double-click selects whole, with no two letters alike, and a check that
-//! confirms a reading or picks the right one of several.
+//! Sigil: bytes of a known length written as a sigil, one word that a
+//! double-click selects whole, of letters with no two alike, and a check that
+//! confirms a reading or picks the right one of several. A sigil has one of two
+//! forms: handled, which begins with the value's first 7 hex digits, and plain,
+//! all letters.
 //!
 //! ```
-//! let sigil = sigilcode::encode(&[0xff; 32]);
-//! assert_eq!(sigil.chars().count(), 25);
-//! assert_eq!(sigilcode::decode(&sigil, 32).unwrap(), [0xff; 32]);
+//! let sigil = sigilcode::encode(&[0xab; 32]);
+//! assert!(sigil.starts_with("\u{200e}abababa"));
+//! assert_eq!(sigil.chars().count(), 1 + 7 + 22);
+//! assert_eq!(sigilcode::decode(&sigil, 32).unwrap(), [0xab; 32]);
+//! let plain = sigilcode::encode_plain(&[0xab; 32]);
+//! assert_eq!(plain.chars().count(), 25);
+//! assert_eq!(sigilcode::decode(&plain, 32).unwrap(), [0xab; 32]);
 //! ```
 //!
-//! The specification is the repository's README.md ("The encoding"): the data,
-//! with the marker bits 01 between its high and low halves, is multiplied by a
-//! prime K larger than the alphabet's 2,048 letters and written in base 2,048,
-//! 11 bits a letter. Decoding checks that the value is a multiple of K, which
-//! catches every changed letter and every swap of neighbours, and that the
-//! marker is 01. It skips white space and four invisible characters copying
-//! inserts (skipped.txt), and nothing else outside the alphabet.
+//! The specification is the repository's README.md ("The encoding"). Letters
+//! are base 2,048, 11 bits each; K is a prime larger than 2,048.
+//!
+//! - Handled: U+200E LEFT-TO-RIGHT MARK, the data's first 28 bits as 7
+//!   lowercase hex digits, then letters writing t = m * K + r: m the rest of
+//!   the data with the marker bits 01 between its high and low halves, r < K
+//!   the number that makes handle * 2048^n + t a multiple of K.
+//! - Plain: letters writing m * K, m the whole data with the marker between
+//!   its halves.
+//!
+//! Decoding tells the forms apart by the first character, checks the multiple
+//! of K, which catches every changed character and every swap of characters
+//! one or two apart, and checks that the marker is 01. It skips white space,
+//! the mark and four invisible characters copying inserts (skipped.txt), reads
+//! the handle's hex in either case, and refuses everything else.
 //! python/sigilcode.py is the reference implementation and vectors.tsv the
 //! tests every implementation passes.
 //!
@@ -38,8 +52,15 @@ const N: usize = 2048;
 /// K for each room 2^12 to 2^22, by README.md's rule (`check_prime` in
 /// python/sigilcode.py, and the test `ks` below): the largest prime at most the
 /// room whose worst letter distance lets few two-letter changes through. The
-/// room is 2^(11n - 8L - 2), and n = ceil((8L + 14) / 11) keeps it in that span.
-const KS: [u64; 11] = [4093, 8179, 16381, 32749, 65519, 131063, 262133, 524269, 1048433, 2096881, 4193633];
+/// room is 2^(11n - bits - 2), and n = ceil((bits + 14) / 11) keeps it in that span.
+const KS: [u64; 11] = [
+    4093, 8179, 16381, 32749, 65519, 131063, 262133, 524269, 1048433, 2096881, 4193633,
+];
+/// The mark before a handle, which keeps its digits in place beside
+/// right-to-left text; decoding skips it.
+const MARK: char = '\u{200e}';
+/// The handle's hex digits, 28 bits.
+const HANDLE: usize = 7;
 
 struct Tables {
     /// The alphabet as runs of consecutive code points: (first code point, its digit, length).
@@ -59,12 +80,19 @@ fn tables() -> &'static Tables {
                 _ => runs.push((c, digit as i64, 1)),
             }
         }
-        assert_eq!(runs.iter().map(|r| r.2).sum::<i64>(), N as i64, "the alphabet has 2,048 letters");
+        assert_eq!(
+            runs.iter().map(|r| r.2).sum::<i64>(),
+            N as i64,
+            "the alphabet has 2,048 letters"
+        );
         let skipped = SKIPPED_TEXT
             .split_whitespace()
             .map(|r| {
                 let (a, b) = r.split_once("..").expect("a range of skipped.txt");
-                (i64::from_str_radix(a, 16).unwrap(), i64::from_str_radix(b, 16).unwrap())
+                (
+                    i64::from_str_radix(a, 16).unwrap(),
+                    i64::from_str_radix(b, 16).unwrap(),
+                )
             })
             .collect();
         Tables { runs, skipped }
@@ -79,32 +107,79 @@ fn within(off: i64, len: i64) -> i64 {
 /// The letter for `digit` (below 2,048), looked up in every run.
 fn letter(digit: u64) -> char {
     let d = digit as i64;
-    let cp = tables().runs.iter().fold(0, |cp, &(start, first, len)| cp | (within(d - first, len) & (start + d - first)));
+    let cp = tables().runs.iter().fold(0, |cp, &(start, first, len)| {
+        cp | (within(d - first, len) & (start + d - first))
+    });
     char::from_u32(cp as u32).expect("a letter of the alphabet")
 }
 
 /// `ch`'s digit, and whether it is a letter of the alphabet, looked up in every run.
 fn digit_of(ch: char) -> (u64, bool) {
     let c = ch as i64;
-    let (digit, hit) = tables().runs.iter().fold((0, 0), |(digit, hit), &(start, first, len)| {
-        let m = within(c - start, len);
-        (digit | (m & (first + c - start)), hit | m)
-    });
+    let (digit, hit) = tables()
+        .runs
+        .iter()
+        .fold((0, 0), |(digit, hit), &(start, first, len)| {
+            let m = within(c - start, len);
+            (digit | (m & (first + c - start)), hit | m)
+        });
     (digit as u64, hit != 0)
+}
+
+/// `ch`'s value as a hex digit (either case), and whether it is one: no branch.
+fn hex_of(ch: char) -> (u64, bool) {
+    let c = ch as i64;
+    let (d, l, u) = (within(c - 48, 10), within(c - 97, 6), within(c - 65, 6));
+    (
+        ((d & (c - 48)) | (l & (c - 87)) | (u & (c - 55))) as u64,
+        (d | l | u) != 0,
+    )
+}
+
+/// The lowercase hex digit of `v` (below 16): no branch.
+fn hex_digit(v: u64) -> char {
+    let v = v as i64;
+    char::from_u32((v + 48 + (((9 - v) >> 63) & 39)) as u32).expect("a hex digit")
+}
+
+/// x mod k, for k a check prime and x below 2^63: by k's reciprocal and one
+/// masked subtraction, so that no division depends on x.
+fn mod_k(x: u64, k: u64) -> u64 {
+    let mu = ((1u128 << 64) / k as u128) as u64; // public: k alone
+    let q = ((x as u128 * mu as u128) >> 64) as u64;
+    let r = x - q * k; // below 2k
+    let t = r.wrapping_sub(k);
+    let keep = 0u64.wrapping_sub(t >> 63); // all ones when r < k
+    (r & keep) | (t & !keep)
 }
 
 fn is_skipped(ch: char) -> bool {
     let c = ch as i64;
-    tables().skipped.iter().fold(0, |hit, &(a, b)| hit | within(c - a, b - a + 1)) != 0
+    tables()
+        .skipped
+        .iter()
+        .fold(0, |hit, &(a, b)| hit | within(c - a, b - a + 1))
+        != 0
 }
 
-/// (n, K) for data of `length` bytes: n = ceil((8 * length + 14) / 11) letters,
-/// and K, the room 2^(11n - 8 * length - 2)'s check prime.
-fn layout(length: usize) -> (usize, u64) {
-    assert!(length >= 1, "Sigil encodes at least one byte");
-    assert!(length <= usize::MAX / 16, "a length Sigil can count the bits of");
-    let n = (8 * length + 14).div_ceil(11);
-    (n, KS[11 * n - 8 * length - 2 - 12])
+/// (n, K, bits) for data of `length` bytes (at least 8), handled or plain: the
+/// letters carry bits = 8 * length - 28 of the data handled, all 8 * length
+/// plain; n = ceil((bits + 14) / 11) letters, and K, the room
+/// 2^(11n - bits - 2)'s check prime.
+fn layout(length: usize, handled: bool) -> (usize, u64, usize) {
+    assert!(length >= 8, "Sigil encodes at least 8 bytes");
+    assert!(
+        length <= usize::MAX / 16,
+        "a length Sigil can count the bits of"
+    );
+    let bits = 8 * length - if handled { 4 * HANDLE } else { 0 };
+    let n = (bits + 14).div_ceil(11);
+    (n, KS[11 * n - bits - 2 - 12], bits)
+}
+
+/// 2048^n mod k: the handle's place in the check (public: n and k alone).
+fn place_of_handle(n: usize, k: u64) -> u64 {
+    (0..n).fold(1, |m, _| m * N as u64 % k)
 }
 
 /// A number of `bits` bits as little-endian 64-bit limbs; every operation
@@ -126,7 +201,10 @@ impl Nat {
     }
 
     fn to_be_bytes(&self, length: usize) -> Vec<u8> {
-        (0..length).rev().map(|i| (self.0[i / 8] >> (8 * (i % 8))) as u8).collect()
+        (0..length)
+            .rev()
+            .map(|i| (self.0[i / 8] >> (8 * (i % 8))) as u8)
+            .collect()
     }
 
     /// Bits `at..at + count` (count at most 64 - at % 64 + 64), as a number.
@@ -136,7 +214,11 @@ impl Nat {
         if off + count > 64 && off > 0 {
             v |= self.0.get(i + 1).copied().unwrap_or(0) << (64 - off);
         }
-        if count < 64 { v & ((1 << count) - 1) } else { v }
+        if count < 64 {
+            v & ((1 << count) - 1)
+        } else {
+            v
+        }
     }
 
     /// `v` (below 2^(64 - at % 64), or spanning into the next limb) put into bits from `at`.
@@ -173,7 +255,13 @@ impl Nat {
         let mut out = Nat::zero(bits);
         for i in 0..out.0.len() {
             let limb = self.0.get(i).copied().unwrap_or(0);
-            out.0[i] = if 64 * (i + 1) <= s { limb } else if 64 * i >= s { 0 } else { limb & ((1 << (s % 64)) - 1) };
+            out.0[i] = if 64 * (i + 1) <= s {
+                limb
+            } else if 64 * i >= s {
+                0
+            } else {
+                limb & ((1 << (s % 64)) - 1)
+            };
         }
         out
     }
@@ -218,67 +306,139 @@ impl Nat {
         (q, carry)
     }
 
+    /// (self + v, the final carry), over every limb.
+    fn plus(&self, v: u64) -> (Nat, u64) {
+        let mut carry = v;
+        let out = self.0.iter().map(|&limb| {
+            let (s, c) = limb.overflowing_add(carry);
+            carry = c as u64;
+            s
+        });
+        let out = Nat(out.collect());
+        (out, carry)
+    }
+
+    /// (self - v, the final borrow), over every limb.
+    fn minus(&self, v: u64) -> (Nat, u64) {
+        let mut borrow = v;
+        let out = self.0.iter().map(|&limb| {
+            let (s, b) = limb.overflowing_sub(borrow);
+            borrow = b as u64;
+            s
+        });
+        let out = Nat(out.collect());
+        (out, borrow)
+    }
+
     fn is_zero(&self) -> bool {
         self.0.iter().fold(0, |a, &b| a | b) == 0
     }
 }
 
-/// `data`'s sigil, of ceil((8 * len + 14) / 11) letters. Its protection
-/// against look-alikes holds for data that looks random (a secure hash's
-/// output, a key, a random identifier): hash or jumble structured data before
-/// encoding it (README.md, "Data with structure").
+/// `data`'s sigil in the handled form: the mark, the data's first 7 hex
+/// digits, and ceil((8 * len - 14) / 11) letters. Its protection against
+/// look-alikes holds for data that looks random (a secure hash's output, a
+/// key, a random identifier): hash or jumble structured data before encoding
+/// it (README.md, "Data with structure"). At least 8 bytes.
 pub fn encode(data: &[u8]) -> String {
+    encode_form(data, true)
+}
+
+/// `data`'s sigil in the plain form: ceil((8 * len + 14) / 11) letters. At
+/// least 8 bytes.
+pub fn encode_plain(data: &[u8]) -> String {
+    encode_form(data, false)
+}
+
+fn encode_form(data: &[u8], handled: bool) -> String {
     let length = data.len();
-    let (n, k) = layout(length);
-    let (bits, half) = (11 * n, 4 * length);
-    let d = Nat::from_be_bytes(data, bits);
-    let mut marked = d.shr(half, bits).shl(half + 2, bits).or(&d.low(half, bits));
+    let (n, k, bits) = layout(length, handled);
+    let (width, half) = ((11 * n).max(8 * length), bits / 2);
+    let d = Nat::from_be_bytes(data, width);
+    let top = d.bits(bits, 64); // the handle: the bits above the letters' (none, plain)
+    let rest = d.low(bits, width);
+    let mut marked = rest
+        .shr(half, width)
+        .shl(half + 2, width)
+        .or(&rest.low(half, width));
     marked.or_at(half, 0b01);
-    let w = marked.times(k);
-    let mut out = String::with_capacity(3 * n);
+    // r < K makes top * 2048^n + t a multiple of K.
+    let r = mod_k(k - mod_k(top * place_of_handle(n, k), k), k);
+    let (t, carry) = marked.times(k).plus(r);
+    debug_assert_eq!(carry, 0, "t fits");
+    let mut out = String::with_capacity(4 + HANDLE + 3 * n);
+    if handled {
+        out.push(MARK);
+        for i in (0..HANDLE).rev() {
+            out.push(hex_digit((top >> (4 * i)) & 15));
+        }
+    }
     for i in (0..n).rev() {
-        out.push(letter(w.bits(11 * i, 11)));
+        out.push(letter(t.bits(11 * i, 11)));
     }
     out
 }
 
-/// The `length` bytes that `sigil` encodes, or why it encodes none. The
-/// characters of skipped.txt in it are skipped.
+/// The `length` bytes that `sigil` encodes, in either form, or why it encodes
+/// none. The characters of skipped.txt in it are skipped.
 pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
-    let (n, k) = layout(length);
-    let (bits, half) = (11 * n, 4 * length);
-    let mut w = Nat::zero(bits);
+    let mut chars = sigil
+        .chars()
+        .enumerate()
+        .filter(|&(_, ch)| !is_skipped(ch))
+        .peekable();
+    // The form, by the first character: hex digits are no letters.
+    let handled = chars.peek().is_some_and(|&(_, ch)| hex_of(ch).1);
+    let (n, k, bits) = layout(length, handled);
+    let h = if handled { HANDLE } else { 0 };
+    let (width, half) = ((11 * n).max(8 * length), bits / 2);
+    let (mut top, mut t) = (0u64, Nat::zero(width));
     let (mut count, mut refused) = (0, None);
-    for (i, ch) in sigil.chars().enumerate() {
-        if is_skipped(ch) {
-            continue;
+    for (i, ch) in chars {
+        let (value, hit) = if count < h { hex_of(ch) } else { digit_of(ch) };
+        if count < h {
+            top = top << 4 | value;
+        } else if count < h + n {
+            t.or_at(11 * (h + n - 1 - count), value);
         }
-        let (digit, letter) = digit_of(ch);
-        if count < n {
-            w.or_at(11 * (n - 1 - count), digit);
-        }
-        if !letter && refused.is_none() {
-            refused = Some((i + 1, ch));
+        if !hit && refused.is_none() {
+            refused = Some((i + 1, ch, count < h));
         }
         count += 1;
     }
-    if count != n {
-        return Err(DecodeError::Length { found: count, expected: n });
+    if count != h + n {
+        return Err(DecodeError::Length {
+            found: count,
+            expected: h + n,
+        });
     }
-    if let Some((position, character)) = refused {
-        return Err(DecodeError::Character { position, character });
+    if let Some((position, character, in_handle)) = refused {
+        return Err(DecodeError::Character {
+            position,
+            character,
+            in_handle,
+        });
     }
-    let (marked, carry) = w.exact_div(k);
-    if carry != 0 {
+    // t - r, where r makes top * 2048^n + t a multiple of K: a multiple of K
+    // itself exactly when the check passes, and then m * K.
+    let r = mod_k(k - mod_k(top * place_of_handle(n, k), k), k);
+    let (u, borrow) = t.minus(r);
+    let (marked, carry) = u.exact_div(k);
+    if carry != 0 || borrow != 0 {
         return Err(DecodeError::Check);
     }
-    if !marked.shr(8 * length + 2, bits).is_zero() {
+    if !marked.shr(bits + 2, width).is_zero() {
         return Err(DecodeError::Range);
     }
     if marked.bits(half, 2) != 0b01 {
         return Err(DecodeError::Marker);
     }
-    Ok(marked.shr(half + 2, bits).shl(half, bits).or(&marked.low(half, bits)).to_be_bytes(length))
+    let mut d = marked
+        .shr(half + 2, width)
+        .shl(half, width)
+        .or(&marked.low(half, width));
+    d.or_at(bits, top);
+    Ok(d.to_be_bytes(length))
 }
 
 /// The data of `length` bytes that one reading decodes to, for a reader unsure
@@ -289,7 +449,10 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
 pub fn decode_readings(readings: &[&str], length: usize) -> Result<Vec<u8>, DecodeError> {
     let options: Vec<Vec<char>> = readings.iter().map(|r| r.chars().collect()).collect();
     if options.iter().any(|o| o.is_empty()) {
-        return decode(&options.iter().filter_map(|o| o.first()).collect::<String>(), length);
+        return decode(
+            &options.iter().filter_map(|o| o.first()).collect::<String>(),
+            length,
+        );
     }
     let mut choice = vec![0usize; options.len()];
     let (mut found, mut first_error): (Vec<Vec<u8>>, Option<DecodeError>) = (Vec::new(), None);
@@ -322,11 +485,16 @@ pub fn decode_readings(readings: &[&str], length: usize) -> Result<Vec<u8>, Deco
 /// Why a text encodes no data of the length asked for.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DecodeError {
-    /// The wrong number of letters.
+    /// The wrong number of characters.
     Length { found: usize, expected: usize },
-    /// A character outside the alphabet, at `position` (counting from 1) in the text.
-    Character { position: usize, character: char },
-    /// The check fails: a letter was misread or changed.
+    /// A character that is not a hex digit of the handle (`in_handle`) or not
+    /// a letter of the alphabet, at `position` (counting from 1) in the text.
+    Character {
+        position: usize,
+        character: char,
+        in_handle: bool,
+    },
+    /// The check fails: a character was misread or changed.
     Check,
     /// A value too large for the length: a letter was misread or changed.
     Range,
@@ -354,14 +522,36 @@ impl DecodeError {
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            DecodeError::Length { found, expected } => write!(f, "{found} letters; the length asked for takes {expected}"),
-            DecodeError::Character { position, character } => {
-                write!(f, "character {position} (U+{:04X}) is not a letter of the alphabet", *character as u32)
+            DecodeError::Length { found, expected } => write!(
+                f,
+                "{found} characters; the length asked for takes {expected}"
+            ),
+            DecodeError::Character {
+                position,
+                character,
+                in_handle,
+            } => write!(
+                f,
+                "character {position} (U+{:04X}) is not {}",
+                *character as u32,
+                if *in_handle {
+                    "a hex digit of the handle"
+                } else {
+                    "a letter of the alphabet"
+                }
+            ),
+            DecodeError::Check => write!(f, "the check fails: a character was misread or changed"),
+            DecodeError::Range => write!(
+                f,
+                "its value is too large for the length: a letter was misread or changed"
+            ),
+            DecodeError::Marker => write!(
+                f,
+                "its marker is not Sigil's: a string of another format, or a changed letter"
+            ),
+            DecodeError::Ambiguous { count } => {
+                write!(f, "{count} readings decode, to different data")
             }
-            DecodeError::Check => write!(f, "the check fails: a letter was misread or changed"),
-            DecodeError::Range => write!(f, "its value is too large for the length: a letter was misread or changed"),
-            DecodeError::Marker => write!(f, "its marker is not Sigil's: a string of another format, or a changed letter"),
-            DecodeError::Ambiguous { count } => write!(f, "{count} readings decode, to different data"),
         }
     }
 }
@@ -378,7 +568,12 @@ mod test {
     /// one letter's place is m times the other's: d1 * m + d2 = 0 (mod k).
     fn escapes(k: u64, m: u64) -> u64 {
         let n = super::N as u64;
-        2 * (1..n).filter(|&d1| { let r = (k - d1 * m % k) % k; (r > 0 && r < n) || r > k - n }).count() as u64
+        2 * (1..n)
+            .filter(|&d1| {
+                let r = (k - d1 * m % k) % k;
+                (r > 0 && r < n) || r > k - n
+            })
+            .count() as u64
     }
 
     /// KS[i] is the check prime of the room 2^(12 + i): the largest prime at most
@@ -388,24 +583,66 @@ mod test {
     fn ks() {
         let n = super::N as u64;
         let passes = |k: u64| {
-            let worst = (1..64u32).map(|dist| escapes(k, (0..11 * dist).fold(1, |m, _| 2 * m % k))).max().unwrap();
+            let worst = (1..64u32)
+                .map(|dist| escapes(k, (0..11 * dist).fold(1, |m, _| 2 * m % k)))
+                .max()
+                .unwrap();
             worst * k <= 2 * (2 * n - 2) * (2 * n - 2)
         };
         for (i, &k) in super::KS.iter().enumerate() {
             let room = 1u64 << (12 + i);
             assert!(is_prime(k) && k > n && k <= room && passes(k), "{k}");
-            assert!((k + 1..=room).all(|c| !is_prime(c) || !passes(c)), "{k}: a larger prime passes");
+            assert!(
+                (k + 1..=room).all(|c| !is_prime(c) || !passes(c)),
+                "{k}: a larger prime passes"
+            );
         }
     }
 
     /// The layout of every length to 4,096 bytes: n the fewest letters whose room holds a prime above N.
     #[test]
     fn layouts() {
-        assert_eq!(super::layout(32), (25, 131063));
-        for length in 1..=4096 {
-            let (n, k) = super::layout(length);
-            let e = 11 * n - 8 * length - 2;
-            assert!((12..=22).contains(&e) && k <= 1 << e, "{length}");
+        assert_eq!(super::layout(32, true), (22, 4093, 228));
+        assert_eq!(super::layout(32, false), (25, 131063, 256));
+        for handled in [true, false] {
+            for length in 8..=4096 {
+                let (n, k, bits) = super::layout(length, handled);
+                let e = 11 * n - bits - 2;
+                assert!((12..=22).contains(&e) && k <= 1 << e, "{length}");
+            }
+        }
+    }
+
+    /// x mod k by the reciprocal agrees with the remainder, over each check
+    /// prime's whole span of products (top below 2^28, times a place below k).
+    #[test]
+    fn mod_k() {
+        for &k in super::KS.iter() {
+            let mut x = 1u64;
+            for _ in 0..20000 {
+                x = x
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                let v = x >> 13; // below 2^51
+                assert_eq!(super::mod_k(v, k), v % k, "{v} mod {k}");
+            }
+            for v in [0, 1, k - 1, k, k + 1, 2 * k - 1, 2 * k, (1 << 51) - 1] {
+                assert_eq!(super::mod_k(v, k), v % k, "{v} mod {k}");
+            }
+        }
+    }
+
+    /// Each hex digit reads back, in either case.
+    #[test]
+    fn hex() {
+        for v in 0..16 {
+            let c = super::hex_digit(v);
+            assert_eq!(c, "0123456789abcdef".chars().nth(v as usize).unwrap());
+            assert_eq!(super::hex_of(c), (v, true));
+            assert_eq!(super::hex_of(c.to_ascii_uppercase()), (v, true));
+        }
+        for c in ['g', 'G', '/', ':', '@', '`', '\u{ff10}'] {
+            assert!(!super::hex_of(c).1, "{c}");
         }
     }
 
@@ -417,15 +654,29 @@ mod test {
             assert_eq!(super::digit_of(c), (d, true));
             assert!(!super::is_skipped(c));
         }
-        assert!(super::is_skipped(' ') && super::is_skipped('\u{2060}') && !super::is_skipped('\u{202e}'));
+        assert!(
+            super::is_skipped(' ')
+                && super::is_skipped('\u{2060}')
+                && super::is_skipped(super::MARK)
+                && !super::is_skipped('\u{202e}')
+        );
     }
 
-    /// Encoding and decoding agree at every length to 300 bytes.
+    /// Encoding and decoding agree at every length from 8 to 300 bytes, in both forms.
     #[test]
     fn round_trips() {
-        for length in 1..=300usize {
+        for length in 8..=300usize {
             let data: Vec<u8> = (0..length).map(|i| (i * 131 + length * 7) as u8).collect();
-            assert_eq!(super::decode(&super::encode(&data), length).unwrap(), data, "{length}");
+            assert_eq!(
+                super::decode(&super::encode(&data), length).unwrap(),
+                data,
+                "{length}"
+            );
+            assert_eq!(
+                super::decode(&super::encode_plain(&data), length).unwrap(),
+                data,
+                "{length}"
+            );
         }
     }
 }
