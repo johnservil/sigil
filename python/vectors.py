@@ -82,7 +82,7 @@ def vectors():
                 bad.append({"text": text[:L - 1] + text[L:], "length": length, "error": "length"})
                 bad += [{"text": text[:2] + c + text[3:], "length": length, "error": "character"} for c in REFUSED_IN_HANDLE]
             # A value of the check too large for the length, and the other
-            # markers (00, 10 and 11, free for later versions and other formats).
+            # markers (00, which stays unused, and 10 and 11, a successor's).
             top = ((1 << 11 * n) - 1 - r) // k * k + r
             assert top // k >> (bits + 2), "the largest checked value is out of range"
             bad.append({"text": write(top), "length": length, "error": "range"})
