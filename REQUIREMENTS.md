@@ -7,7 +7,7 @@ the encoding: first the constraints, which every design meets, then the
 desiderata, which decide between designs that meet them all, most important
 first.
 
-Terms: the **data** is the value, L bytes long. A **word** is its sigil, and
+Terms: the **data** is the value, L bytes long, at least 8. A **word** is its sigil, and
 a **character** is one thing a person sees in it. Encoder and decoder both
 know L, as a program that stores 32-byte hashes does. The **handle** is a
 word's first characters, hex digits a person can say and type (D3).
@@ -52,13 +52,21 @@ So a handle, or any part of a word, finds a value and never proves one:
 - **A program comparing two words is safer than an eye.** Characters hard
   to confuse (D4) make comparing by eye safer, but nobody has measured how
   many characters a person reliably compares.
+- **Jumbling is the caller's choice.** The data goes into the word in
+  order. A caller whose data is built of parts a forger can copy may
+  jumble it first (as F4Jumble does); for hashes, keys and random
+  identifiers, jumbling buys nothing. A jumbled value's handle is the hex
+  of the jumbled bytes, so it no longer matches what other tools print
+  (D3).
 
 ## Constraints
 
 **The data**
 
-- **R1. Lossless.** Every value of every length L ≥ 1 has one word, and
-  decoding that word gives the value back.
+- **R1. Lossless.** Every value of every length L ≥ 8 has one word, the
+  one the encoder writes, and decoding that word gives the value back.
+  Decoding also accepts exactly the other spellings that R3 and R5 allow,
+  and nothing else. A value shorter than 8 bytes has no sigil.
 - **R2. The same size however it is counted.** Every word of L bytes has the
   same number of characters, code points, UTF-16 units, terminal cells and
   UTF-8 bytes, so no count reveals anything about the data.
@@ -69,7 +77,8 @@ So a handle, or any part of a word, finds a value and never proves one:
   NFC, NFD, NFKC and NFKD change no character, so every copy of a word is
   the same bytes, and search boxes, `grep`, databases and git find it. A
   change of case changes only the handle's hex digits, and the word decodes
-  to the same value; the letters have no case.
+  to the same value; the letters have no case. A search for the word as
+  written misses a copy whose case someone changed.
 - **R4. One gesture selects and copies it.** A double-click selects the
   whole word, no line breaks inside it, and it displays in the order it is
   stored, in any paragraph. Its characters are visible, and none joins its
@@ -108,16 +117,22 @@ So a handle, or any part of a word, finds a value and never proves one:
   character changed, neighbours swapped, characters two apart swapped, a
   character missing or extra. And a random string of the right length
   rarely decodes. The more mistakes caught, and the rarer a random string
-  decodes, the better.
+  decodes, the better. Detection comes before correction (D5): the two
+  compete with each other, and with D1, for the same characters.
 - **D3. A handle to speak and type** (Kris and Zooko): the word begins
   with the same 7 hex digits that a hex encoding of the data begins with,
-  lowercase, then letters that carry the rest of the data. So one person
+  lowercase, then letters that carry the rest of the data. The hex runs
+  over the data's bytes in order, high digit first, as git, `sha256sum`
+  and `b3sum` print; a caller whose tools print a value byte-reversed (as
+  Bitcoin prints transaction IDs) passes the bytes in the order shown. So one person
   can read a commit's short hash off unmodified git, which prints those 7
   digits, and say it on the phone; another types it into a git that shows
   sigils, and both name the same commit. A handle that differed from the
   hex would be a second short form of one value, worse than none. It costs
   a second character set in one word, and about four characters for a
-  32-byte value.
+  32-byte value. It also makes the front of a word cheaper to forge: 7
+  hex digits hold 28 bits, where 7 letters would hold 77, and people check
+  fronts.
 - **D4. Characters hard to confuse.** The fewer characters that look like
   one another, or like several in a row, and the less alike they look, the
   better; Unicode's table of look-alikes (UTS #39) is one measure.
@@ -138,13 +153,12 @@ So a handle, or any part of a word, finds a value and never proves one:
 - **D10. Recognized at a glance.** A word looks like nothing else, so a
   reader who meets one knows what it is and what decodes it; and it looks
   worth showing.
-- **D11. Few UTF-8 bytes**, for storage and links that count bytes.
-
-## Left to callers
-
-- **Jumbling.** The data goes into the word in order. A caller whose data is
-  built of parts a forger can copy may jumble it first (as F4Jumble does);
-  for hashes, keys and random identifiers, jumbling buys nothing.
+- **D11. Sorts as its value sorts.** Ordering words by code point, UTF-8
+  bytes or UTF-16 units orders them as their values, byte by byte, so a
+  database index or a sorted file lists sigils in their values' order.
+  The order a person's language sorts by (a file manager's, a
+  spreadsheet's) is its own.
+- **D12. Few UTF-8 bytes**, for storage and links that count bytes.
 
 How version 0.1 meets these: its alphabet's choice is
 [alphabet/RULES.md](alphabet/RULES.md), and its encoding is the README's
