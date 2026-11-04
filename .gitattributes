@@ -1,3 +1,5 @@
 # Preserve the hashed upstream font-license texts byte for byte.
 web/fonts/*-OFL.txt -whitespace
 web/extension/fonts/*-OFL.txt -whitespace
+# Font tests as sent and pages as published, byte for byte.
+alphabet/font-tests/** -text -whitespace

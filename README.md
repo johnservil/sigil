@@ -358,7 +358,7 @@ on a sigil, the encoding's and the alphabet's together, and its section
 "The alphabet" gives every step that chooses the 2,048 letters with the
 requirement it serves, so you can check whether you agree.
 `alphabet/alphabet.py` applies them to the data files of every Unicode
-release from 6.0.0 to 18.0.0 and the font tests in `alphabet/fonts.txt`: it downloads each file (or reads a saved
+release from 6.0.0 to 18.0.0 and the font tests in `alphabet/font-tests`: it downloads each file (or reads a saved
 copy), checks its SHA-256 and its BLAKE3 before using it, and reads every
 property from the files. So the same inputs give the same alphabet with any
 Python 3 on any machine.
@@ -396,9 +396,12 @@ the other's.
   M4 Max, and takes the same time for all zeros, all ones and random data,
   within 2%.
 - **Selection** (`copytest.html`): a double-click selects whole sigils in
-  Chromium. Open the page in any browser to see its answer.
-- **Fonts** (`alphabet/fonts.txt`): twelve tests, on macOS, iOS, Windows,
-  Android and Linux, in Safari, Chrome, Brave and Firefox, drew every letter.
+  Chromium, and a long press does in Brave on iOS. Open the page in any
+  browser to see its answer.
+- **Fonts** (`alphabet/font-tests`): every device tested, on macOS, iOS,
+  Windows, Android and Linux, in Safari, Chrome, Brave and Firefox, drew
+  every letter. Each result is kept as it was sent, beside the page that
+  measured it.
   [The font test](https://johnservil.github.io/sigil-candidates/check.html)
   measures any device it is opened on.
 - **GitHub** counts a status description's 140 characters in code points and

@@ -200,12 +200,13 @@ names the constraint or desideratum it serves.
 - **Unicode's data files** of every release from 6.0.0 to 18.0.0, each
   pinned by its SHA-256 and its BLAKE3 in `alphabet/unicode-files.txt`
   (164 files, about 84 MB).
-- **`alphabet/fonts.txt`**, which letters each tested device drew, with
-  the date, system and browser of each test and the GitHub issue that
-  reported it. It comes from the test page
-  https://johnservil.github.io/sigil-candidates/check.html, which anyone
-  can open to test their own device, and `tools/import-fonts.py` appends
-  each new result. This is the one input that is a measurement.
+- **The font tests** in `alphabet/font-tests`, the one input that is a
+  measurement. Anyone can open the test page,
+  https://johnservil.github.io/sigil-candidates/check.html, on their own
+  device and send its result as a GitHub issue. `tools/import-fonts.py`
+  keeps each issue verbatim in `results/`, and keeps the page it ran on in
+  `pages/`, named by its commit. The script checks every result against its
+  page, and names the pages whose results it sets aside, with the reason.
 
 | step | every letter is | serves |
 |---|---|---|
@@ -220,7 +221,7 @@ names the constraint or desideratum it serves.
 | 9 | one terminal cell wide (East Asian Width N) | R2 |
 | 10 | all of steps 1 to 9, in every release from 6.0.0 to 18.0.0 | R12 |
 | 11 | not a hex digit or a look-alike of one, by Unicode's look-alike table (UTS #39, release 18.0.0) | R8 |
-| 12 | drawn by every device in `fonts.txt`, and tested on each of macOS, iOS, Windows, Android and Linux | R7 |
+| 12 | drawn by every device tested, and tested on each of macOS, iOS, Windows, Android and Linux | R7 |
 
 Three more steps choose among the letters left:
 

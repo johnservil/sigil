@@ -90,10 +90,12 @@ copy = ('<!doctype html><html lang="en" translate="no"><meta charset="utf-8"><ti
         "</script>\n")
 outputs[ROOT / "copytest.html"] = copy.encode("utf-8")
 sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "alphabet"))
+import alphabet
 import check_page
 outputs[ROOT / "web" / "check.html"] = check_page.page(
     (ROOT / "alphabet" / "candidates.txt").read_text(encoding="utf-8"),
-    (ROOT / "alphabet" / "fonts.txt").read_text(encoding="utf-8"), sigilcode, letters).encode("utf-8")
+    alphabet.font_results(), sigilcode, letters).encode("utf-8")
 for name in ("LICENSE-MIT", "LICENSE-APACHE", "LICENSE-TGPPL", "LICENSE-BOSL.txt"):
     outputs[ROOT / "web" / "extension" / name] = (ROOT / name).read_bytes()
 for path, data in outputs.items():

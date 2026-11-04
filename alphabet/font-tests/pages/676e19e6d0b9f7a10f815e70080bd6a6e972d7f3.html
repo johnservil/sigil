@@ -1,0 +1,83 @@
+<!doctype html><html lang="en" translate="no"><meta charset="utf-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sigil: which scripts does this device draw?</title>
+<body class="notranslate" style="font-family:sans-serif;font-size:18px;max-width:40em;margin:1em auto;padding:0 0.6em">
+<h3>Help choose Sigil's alphabet: does your device draw these letters?</h3>
+<p><a href="https://github.com/johnservil/sigil">Sigil</a> writes hashes and keys as short words of letters from several scripts. This page tests whether your device's fonts draw each of the 2,932 candidate letters (41 scripts). It takes a few seconds and runs entirely in your browser.</p>
+<p>When it finishes, press <b>Send the result</b>: it opens a prefilled public issue on GitHub, and you press Submit. Or press <b>Copy</b> and paste the result into <a href="https://github.com/johnservil/sigil-candidates/issues/new">a new issue</a> or a reply to whoever sent you here. The result holds your browser's identification string (system, browser and their versions) and the code points it could not draw; nothing else. Results from Windows and Android help most.</p>
+<h4>Already tested</h4>
+<p id="mine" style="font-size:20px">Checking whether your system and browser are already tested...</p>
+<ul id="tested" style="font-size:16px"></ul>
+<h4>This device's result</h4>
+<pre id="out" style="white-space:pre-wrap;border:1px solid #ccc;padding:0.6em;font-size:16px">measuring...</pre>
+<p><a id="send" style="display:none;font-size:20px;padding:0.4em 0.8em;background:#2a6;color:#fff;border-radius:6px;text-decoration:none" href="#">Send the result</a>
+<button id="copy" style="display:none;font-size:20px;padding:0.35em 0.8em;margin-left:0.6em">Copy</button></p>
+<script>
+const SCRIPTS = {"Canadian": "ᐁᐂᐃᐄᐅᐆᐇᐈᐉᐊᐋᐌᐍᐎᐏᐐᐑᐒᐓᐔᐕᐖᐗᐘᐙᐚᐛᐜᐝᐞᐟᐠᐡᐢᐣᐤᐥᐦᐧᐨᐩᐪᐫᐬᐭᐮᐯᐰᐱᐲᐳᐴᐵᐶᐷᐸᐹᐺᐻᐼᐽᐾᐿᑀᑁᑂᑃᑄᑅᑆᑇᑈᑉᑊᑋᑌᑍᑎᑏᑐᑑᑒᑓᑔᑕᑖᑗᑘᑙᑚᑛᑜᑝᑞᑟᑠᑡᑢᑣᑤᑥᑦᑧᑨᑩᑪᑫᑬᑭᑮᑯᑰᑱᑲᑳᑴᑵᑶᑷᑸᑹᑺᑻᑼᑽᑾᑿᒀᒁᒂᒃᒄᒅᒆᒇᒈᒉᒊᒋᒌᒍᒎᒏᒐᒑᒒᒓᒔᒕᒖᒗᒘᒙᒚᒛᒜᒝᒞᒟᒠᒡᒢᒣᒤᒥᒦᒧᒨᒩᒪᒫᒬᒭᒮᒯᒰᒱᒲᒳᒴᒵᒶᒷᒸᒹᒺᒻᒼᒽᒾᒿᓀᓁᓂᓃᓄᓅᓆᓇᓈᓉᓊᓋᓌᓍᓎᓏᓐᓑᓒᓓᓔᓕᓖᓗᓘᓙᓚᓛᓜᓝᓞᓟᓠᓡᓢᓣᓤᓥᓦᓧᓨᓩᓪᓫᓬᓭᓮᓯᓰᓱᓲᓳᓴᓵᓶᓷᓸᓹᓺᓻᓼᓽᓾᓿᔀᔁᔂᔃᔄᔅᔆᔇᔈᔉᔊᔋᔌᔍᔎᔏᔐᔑᔒᔓᔔᔕᔖᔗᔘᔙᔚᔛᔜᔝᔞᔟᔠᔡᔢᔣᔤᔥᔦᔧᔨᔩᔪᔫᔬᔭᔮᔯᔰᔱᔲᔳᔴᔵᔶᔷᔸᔹᔺᔻᔼᔽᔾᔿᕀᕁᕂᕃᕄᕅᕆᕇᕈᕉᕊᕋᕌᕍᕎᕏᕐᕑᕒᕓᕔᕕᕖᕗᕘᕙᕚᕛᕜᕝᕞᕟᕠᕡᕢᕣᕤᕥᕦᕧᕨᕩᕪᕫᕬᕭᕮᕯᕰᕱᕲᕳᕴᕵᕶᕷᕸᕹᕺᕻᕼᕽᕾᕿᖀᖁᖂᖃᖄᖅᖆᖇᖈᖉᖊᖋᖌᖍᖎᖏᖐᖑᖒᖓᖔᖕᖖᖗᖘᖙᖚᖛᖜᖝᖞᖟᖠᖡᖢᖣᖤᖥᖦᖧᖨᖩᖪᖫᖬᖭᖮᖯᖰᖱᖲᖳᖴᖵᖶᖷᖸᖹᖺᖻᖼᖽᖾᖿᗀᗁᗂᗃᗄᗅᗆᗇᗈᗉᗊᗋᗌᗍᗎᗏᗐᗑᗒᗓᗔᗕᗖᗗᗘᗙᗚᗛᗜᗝᗞᗟᗠᗡᗢᗣᗤᗥᗦᗧᗨᗩᗪᗫᗬᗭᗮᗯᗰᗱᗲᗳᗴᗵᗶᗷᗸᗹᗺᗻᗼᗽᗾᗿᘀᘁᘂᘃᘄᘅᘆᘇᘈᘉᘊᘋᘌᘍᘎᘏᘐᘑᘒᘓᘔᘕᘖᘗᘘᘙᘚᘛᘜᘝᘞᘟᘠᘡᘢᘣᘤᘥᘦᘧᘨᘩᘪᘫᘬᘭᘮᘯᘰᘱᘲᘳᘴᘵᘶᘷᘸᘹᘺᘻᘼᘽᘾᘿᙀᙁᙂᙃᙄᙅᙆᙇᙈᙉᙊᙋᙌᙍᙎᙏᙐᙑᙒᙓᙔᙕᙖᙗᙘᙙᙚᙛᙜᙝᙞᙟᙠᙡᙢᙣᙤᙥᙦᙧᙨᙩᙪᙫᙬᙯᙰᙱᙲᙳᙴᙵᙶᙷᙸᙹᙺᙻᙼᙽᙾᙿᢰᢱᢲᢳᢴᢵᢶᢷᢸᢹᢺᢻᢼᢽᢾᢿᣀᣁᣂᣃᣄᣅᣆᣇᣈᣉᣊᣋᣌᣍᣎᣏᣐᣑᣒᣓᣔᣕᣖᣗᣘᣙᣚᣛᣜᣝᣞᣟᣠᣡᣢᣣᣤᣥᣦᣧᣨᣩᣪᣫᣬᣭᣮᣯᣰᣱᣲᣳᣴᣵ", "Ethiopic": "ሀሁሂሃሄህሆሇለሉሊላሌልሎሏሐሑሒሓሔሕሖሗመሙሚማሜምሞሟሠሡሢሣሤሥሦሧረሩሪራሬርሮሯሰሱሲሳሴስሶሷሸሹሺሻሼሽሾሿቀቁቂቃቄቅቆቇቈቊቋቌቍቐቑቒቓቔቕቖቘቚቛቜቝበቡቢባቤብቦቧቨቩቪቫቬቭቮቯተቱቲታቴትቶቷቸቹቺቻቼችቾቿኀኁኂኃኄኅኆኇኈኊኋኌኍነኑኒናኔንኖኗኘኙኚኛኜኝኞኟአኡኢኣኤእኦኧከኩኪካኬክኮኯኰኲኳኴኵኸኹኺኻኼኽኾዀዂዃዄዅወዉዊዋዌውዎዏዐዑዒዓዔዕዖዘዙዚዛዜዝዞዟዠዡዢዣዤዥዦዧየዩዪያዬይዮዯደዱዲዳዴድዶዷዸዹዺዻዼዽዾዿጀጁጂጃጄጅጆጇገጉጊጋጌግጎጏጐጒጓጔጕጘጙጚጛጜጝጞጟጠጡጢጣጤጥጦጧጨጩጪጫጬጭጮጯጰጱጲጳጴጵጶጷጸጹጺጻጼጽጾጿፀፁፂፃፄፅፆፇፈፉፊፋፌፍፎፏፐፑፒፓፔፕፖፗፘፙፚᎀᎁᎂᎃᎄᎅᎆᎇᎈᎉᎊᎋᎌᎍᎎᎏⶀⶁⶂⶃⶄⶅⶆⶇⶈⶉⶊⶋⶌⶍⶎⶏⶐⶑⶒⶓⶔⶕⶖⶠⶡⶢⶣⶤⶥⶦⶨⶩⶪⶫⶬⶭⶮⶰⶱⶲⶳⶴⶵⶶⶸⶹⶺⶻⶼⶽⶾⷀⷁⷂⷃⷄⷅⷆⷈⷉⷊⷋⷌⷍⷎⷐⷑⷒⷓⷔⷕⷖⷘⷙⷚⷛⷜⷝⷞꬁꬂꬃꬄꬅꬆꬉꬊꬋꬌꬍꬎꬑꬒꬓꬔꬕꬖꬠꬡꬢꬣꬤꬥꬦꬨꬩꬪꬫꬬꬭꬮ", "Vai": "ꔀꔁꔂꔃꔄꔅꔆꔇꔈꔉꔊꔋꔌꔍꔎꔏꔐꔑꔒꔓꔔꔕꔖꔗꔘꔙꔚꔛꔜꔝꔞꔟꔠꔡꔢꔣꔤꔥꔦꔧꔨꔩꔪꔫꔬꔭꔮꔯꔰꔱꔲꔳꔴꔵꔶꔷꔸꔹꔺꔻꔼꔽꔾꔿꕀꕁꕂꕃꕄꕅꕆꕇꕈꕉꕊꕋꕌꕍꕎꕏꕐꕑꕒꕓꕔꕕꕖꕗꕘꕙꕚꕛꕜꕝꕞꕟꕠꕡꕢꕣꕤꕥꕦꕧꕨꕩꕪꕫꕬꕭꕮꕯꕰꕱꕲꕳꕴꕵꕶꕷꕸꕹꕺꕻꕼꕽꕾꕿꖀꖁꖂꖃꖄꖅꖆꖇꖈꖉꖊꖋꖌꖍꖎꖏꖐꖑꖒꖓꖔꖕꖖꖗꖘꖙꖚꖛꖜꖝꖞꖟꖠꖡꖢꖣꖤꖥꖦꖧꖨꖩꖪꖫꖬꖭꖮꖯꖰꖱꖲꖳꖴꖵꖶꖷꖸꖹꖺꖻꖼꖽꖾꖿꗀꗁꗂꗃꗄꗅꗆꗇꗈꗉꗊꗋꗌꗍꗎꗏꗐꗑꗒꗓꗔꗕꗖꗗꗘꗙꗚꗛꗜꗝꗞꗟꗠꗡꗢꗣꗤꗥꗦꗧꗨꗩꗪꗫꗬꗭꗮꗯꗰꗱꗲꗳꗴꗵꗶꗷꗸꗹꗺꗻꗼꗽꗾꗿꘀꘁꘂꘃꘄꘅꘆꘇꘈꘉꘊꘋꘐꘑꘒꘓꘔꘕꘖꘗꘘꘙꘚꘛꘜꘝꘞꘟꘪꘫ", "Runic": "ᚠᚡᚢᚣᚤᚥᚦᚧᚨᚩᚪᚫᚬᚭᚮᚯᚰᚱᚲᚳᚴᚵᚶᚷᚸᚹᚺᚻᚼᚽᚾᚿᛀᛁᛂᛃᛄᛅᛆᛇᛈᛉᛊᛋᛌᛍᛎᛏᛐᛑᛒᛓᛔᛕᛖᛗᛘᛙᛚᛛᛜᛝᛞᛟᛠᛡᛢᛣᛤᛥᛦᛧᛨᛩᛪᛱᛲᛳᛴᛵᛶᛷᛸ", "Devanagari": "ऄअआइईउऊऋऌऍऎएऐऑऒओऔकखगघङचछजझञटठडढणतथदधनपफबभमयरलळवशषसहऽॐॠॡॲॳॴॵॶॷॸॹॺॻॼॽॾॿꣲꣳꣴꣵꣶꣷꣻꣽꣾ", "Bamum": "ꚠꚡꚢꚣꚤꚥꚦꚧꚨꚩꚪꚫꚬꚭꚮꚯꚰꚱꚲꚳꚴꚵꚶꚷꚸꚹꚺꚻꚼꚽꚾꚿꛀꛁꛂꛃꛄꛅꛆꛇꛈꛉꛊꛋꛌꛍꛎꛏꛐꛑꛒꛓꛔꛕꛖꛗꛘꛙꛚꛛꛜꛝꛞꛟꛠꛡꛢꛣꛤꛥ", "Malayalam": "ഄഅആഇഈഉഊഋഌഎഏഐഒഓഔകഖഗഘങചഛജഝഞടഠഡഢണതഥദധനഩപഫബഭമയരറലളഴവശഷസഹഺഽൎൔൕൖൟൠൡൺൻർൽൾൿ", "Sinhala": "අආඇඈඉඊඋඌඍඎඏඐඑඒඓඔඕඖකඛගඝඞඟචඡජඣඤඥඦටඨඩඪණඬතථදධනඳපඵබභමඹයරලවශෂසහළෆ", "Telugu": "అఆఇఈఉఊఋఌఎఏఐఒఓఔకఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరఱలళఴవశషసహఽౘౙౚౝౠౡ", "Kannada": "ಀಅಆಇಈಉಊಋಌಎಏಐಒಓಔಕಖಗಘಙಚಛಜಝಞಟಠಡಢಣತಥದಧನಪಫಬಭಮಯರಱಲಳವಶಷಸಹಽೝೞೠೡೱೲ", "Tifinagh": "ⴰⴱⴲⴳⴴⴵⴶⴷⴸⴹⴺⴻⴼⴽⴾⴿⵀⵁⵂⵃⵄⵅⵆⵇⵈⵉⵊⵋⵌⵍⵎⵏⵐⵑⵒⵓⵔⵕⵖⵗⵘⵙⵚⵛⵜⵝⵞⵟⵠⵡⵢⵣⵤⵥⵦⵧ", "Gujarati": "અઆઇઈઉઊઋઌઍએઐઑઓઔકખગઘઙચછજઝઞટઠડઢણતથદધનપફબભમયરલળવશષસહઽૐૠૡૹ", "Bengali": "ঀঅআইঈউঊঋঌএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহঽৎৠৡৰৱৼ", "Cham": "ꨀꨁꨂꨃꨄꨅꨆꨇꨈꨉꨊꨋꨌꨍꨎꨏꨐꨑꨒꨓꨔꨕꨖꨗꨘꨙꨚꨛꨜꨝꨞꨟꨠꨡꨢꨣꨤꨥꨦꨧꨨꩀꩁꩂꩄꩅꩆꩇꩈꩉꩊꩋ", "Oriya": "ଅଆଇଈଉଊଋଌଏଐଓଔକଖଗଘଙଚଛଜଝଞଟଠଡଢଣତଥଦଧନପଫବଭମଯରଲଳଵଶଷସହଽୟୠୡୱ", "Saurashtra": "ꢂꢃꢄꢅꢆꢇꢈꢉꢊꢋꢌꢍꢎꢏꢐꢑꢒꢓꢔꢕꢖꢗꢘꢙꢚꢛꢜꢝꢞꢟꢠꢡꢢꢣꢤꢥꢦꢧꢨꢩꢪꢫꢬꢭꢮꢯꢰꢱꢲꢳ", "Balinese": "ᬅᬇᬉᬋᬍᬏᬐᬑᬓᬔᬕᬖᬗᬘᬙᬚᬛᬜᬝᬞᬟᬠᬡᬢᬣᬤᬥᬦᬧᬨᬩᬪᬫᬬᬭᬮᬯᬰᬱᬲᬳᭅᭆᭇᭈᭉᭊᭋᭌ", "Javanese": "ꦄꦅꦆꦇꦈꦉꦊꦋꦌꦍꦎꦏꦐꦑꦒꦓꦔꦕꦖꦗꦘꦙꦚꦛꦜꦝꦞꦟꦠꦡꦢꦣꦤꦥꦦꦧꦨꦩꦪꦫꦬꦭꦮꦯꦰꦱꦲ", "Meetei_Mayek": "ꫠꫡꫢꫣꫤꫥꫦꫧꫨꫩꫪꫲꯀꯁꯂꯃꯄꯅꯆꯇꯈꯉꯊꯋꯌꯍꯎꯏꯐꯑꯒꯓꯔꯕꯖꯗꯘꯙꯚꯛꯜꯝꯞꯟꯠꯡꯢ", "Gurmukhi": "ਅਆਇਈਉਊਏਐਓਔਕਖਗਘਙਚਛਜਝਞਟਠਡਢਣਤਥਦਧਨਪਫਬਭਮਯਰਲਵਸਹੜੲੳੴ", "Tibetan": "ༀཀཁགངཅཆཇཉཊཋཌཎཏཐདནཔཕབམཙཚཛཝཞཟའཡརལཤཥསཧཨཪཫཬྈྉྊྋྌ", "Lisu": "ꓐꓑꓒꓓꓔꓕꓖꓗꓘꓙꓚꓛꓜꓝꓞꓟꓠꓡꓢꓣꓤꓥꓦꓧꓨꓩꓪꓫꓬꓭꓮꓯꓰꓱꓲꓳꓴꓵꓶꓷ", "Lepcha": "ᰀᰁᰂᰃᰄᰅᰆᰇᰈᰉᰊᰋᰌᰍᰎᰏᰐᰑᰒᰓᰔᰕᰖᰗᰘᰙᰚᰛᰜᰝᰞᰟᰠᰡᰢᰣᱍᱎᱏ", "Sundanese": "ᮃᮄᮅᮆᮇᮈᮉᮊᮋᮌᮍᮎᮏᮐᮑᮒᮓᮔᮕᮖᮗᮘᮙᮚᮛᮜᮝᮞᮟᮠᮮᮯᮺᮻᮼᮽᮾᮿ", "Batak": "ᯀᯁᯂᯃᯄᯅᯆᯇᯈᯉᯊᯋᯌᯍᯎᯏᯐᯑᯒᯓᯔᯕᯖᯗᯘᯙᯚᯛᯜᯝᯞᯟᯠᯡᯢᯣᯤᯥ", "Tamil": "ஃஅஆஇஈஉஊஎஏஐஒஓகஙசஜஞடணதநனபமயரறலளழவஶஷஸஹௐ", "Syloti_Nagri": "ꠀꠁꠃꠄꠅꠇꠈꠉꠊꠌꠍꠎꠏꠐꠑꠒꠓꠔꠕꠖꠗꠘꠙꠚꠛꠜꠝꠞꠟꠠꠡꠢ", "Limbu": "ᤀᤁᤂᤃᤄᤅᤆᤇᤈᤉᤊᤋᤌᤍᤎᤏᤐᤑᤒᤓᤔᤕᤖᤗᤘᤙᤚᤛᤜᤝᤞ", "Ol_Chiki": "ᱚᱛᱜᱝᱞᱟᱠᱡᱢᱣᱤᱥᱦᱧᱨᱩᱪᱫᱬᱭᱮᱯᱰᱱᱲᱳᱴᱵᱶᱷ", "Kayah_Li": "ꤊꤋꤌꤍꤎꤏꤐꤑꤒꤓꤔꤕꤖꤗꤘꤙꤚꤛꤜꤝꤞꤟꤠꤡꤢꤣꤤꤥ", "Ogham": "ᚁᚂᚃᚄᚅᚆᚇᚈᚉᚊᚋᚌᚍᚎᚏᚐᚑᚒᚓᚔᚕᚖᚗᚘᚙᚚ", "Buginese": "ᨀᨁᨂᨃᨄᨅᨆᨇᨈᨉᨊᨋᨌᨍᨎᨏᨐᨑᨒᨓᨔᨕᨖ", "Rejang": "ꤰꤱꤲꤳꤴꤵꤶꤷꤸꤹꤺꤻꤼꤽꤾꤿꥀꥁꥂꥃꥄꥅꥆ", "Tagalog": "ᜀᜁᜂᜃᜄᜅᜆᜇᜈᜉᜊᜋᜌᜍᜎᜏᜐᜑᜟ", "Hanunoo": "ᜠᜡᜢᜣᜤᜥᜦᜧᜨᜩᜪᜫᜬᜭᜮᜯᜰᜱ", "Buhid": "ᝀᝁᝂᝃᝄᝅᝆᝇᝈᝉᝊᝋᝌᝍᝎᝏᝐᝑ", "Tagbanwa": "ᝠᝡᝢᝣᝤᝥᝦᝧᝨᝩᝪᝫᝬᝮᝯᝰ", "Latin": "ꞏꟷꟻꟼꟽꟾꟿ", "Mongolian": "ᢀᢁᢂᢃᢄ", "Cyrillic": "ꙮ", "Phags_Pa": "ꡳ"};
+const EXTRAS = [];
+const c = document.createElement('canvas'); c.width = c.height = 40;
+const g = c.getContext('2d', {willReadFrequently: true});
+function pixels(ch) {
+  g.clearRect(0, 0, 40, 40); g.font = '32px sans-serif'; g.fillStyle = '#000'; g.textBaseline = 'top';
+  g.fillText(ch, 2, 2); return g.getImageData(0, 0, 40, 40).data.join(',');
+}
+const tofu = new Set(['\uFFFE', '\u0378', '\u0D04', '\uE000', '\u2FFF'].map(pixels));
+const lines = []; const missingBy = {};
+for (const [s, chars] of Object.entries(SCRIPTS)) {
+  const all = [...chars]; const miss = all.filter(ch => tofu.has(pixels(ch)));
+  missingBy[s] = miss.length;
+  const cps = miss.map(x => x.codePointAt(0)); const rs = [];
+  for (const cp of cps) { const r = rs[rs.length - 1]; if (r && cp === r[1] + 1) r[1] = cp; else rs.push([cp, cp]); }
+  lines.push(`${s}: ${all.length - miss.length}/${all.length}` + (miss.length ? ` missing ${rs.map(([a, b]) => a === b ? a.toString(16) : a.toString(16) + '-' + b.toString(16)).join(' ')}` : ''));
+}
+const full = Object.keys(SCRIPTS).filter(s => missingBy[s] === 0);
+const ua = navigator.userAgent + (navigator.brave && !/Brave/.test(navigator.userAgent) ? ' Brave' : '');
+const summary = `${ua}\nScripts drawn in full: ${full.length} of ${Object.keys(SCRIPTS).length}\n\n` + lines.join('\n');
+document.getElementById('out').textContent = summary;
+const a = document.getElementById('send');
+a.href = 'https://github.com/johnservil/sigil-candidates/issues/new?title=' + encodeURIComponent('Fonts: ' + (ua.match(/\(([^)]*)\)/) || ['', ua])[1].slice(0, 60)) + '&body=' + encodeURIComponent('```\n' + summary + '\n```');
+a.style.display = 'inline-block';
+const b = document.getElementById('copy'); b.style.display = 'inline-block';
+b.onclick = () => navigator.clipboard.writeText(summary).then(() => { b.textContent = 'Copied'; }, () => { b.textContent = 'Select the box above and copy it'; });
+
+// What has been tested: the submitted issues, read live (with the list at publication as a fallback).
+const STATIC = [{"n": 6, "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15", "brave": false}, {"n": 5, "ua": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:158.0) Gecko/20100101 Firefox/158.0", "brave": false}, {"n": 4, "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36", "brave": false}, {"n": 3, "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36", "brave": false}, {"n": 2, "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1", "brave": false}, {"n": 1, "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1 Brave", "brave": true}];
+function describe(ua) {
+  let os = 'another system', m;
+  if ((m = ua.match(/Windows NT (\d+\.\d+)/))) os = 'Windows ' + ({'10.0': '10 or 11', '6.3': '8.1', '6.1': '7'}[m[1]] || m[1]);
+  else if ((m = ua.match(/Android (\d+)/))) os = 'Android ' + m[1];
+  else if ((m = ua.match(/(?:iPhone|iPad|CPU) OS (\d+)/))) os = (/iPad/.test(ua) ? 'iPadOS ' : 'iOS ') + m[1];
+  else if (/Macintosh/.test(ua)) os = 'macOS';
+  else if (/CrOS/.test(ua)) os = 'ChromeOS';
+  else if (/Linux/.test(ua)) os = 'Linux';
+  let br = 'a browser';
+  // The browser's family alone: fonts come from the system.
+  if (/Edg\w*\//.test(ua)) br = 'Edge';
+  else if (/Firefox\//.test(ua)) br = 'Firefox';
+  else if (/Brave/.test(ua)) br = 'Brave';
+  else if (/SamsungBrowser\//.test(ua)) br = 'Samsung Internet';
+  else if (/Chrome\//.test(ua)) br = 'Chrome';
+  else if (/Version\/[^ ]* (?:Mobile\/\S+ )?Safari/.test(ua)) br = 'Safari';
+  return os + ', ' + br;
+}
+const BRAVE = new Set([3, 4]);  // sent from desktop Brave before the page named it (the sender's word)
+function show(list) {
+  const seen = new Map();
+  for (const t of list) { const d = describe(t.ua + ((t.brave || BRAVE.has(t.n)) && !/Brave/.test(t.ua) ? ' Brave' : '')); if (!seen.has(d)) seen.set(d, t.n); }
+  const ul = document.getElementById('tested'); ul.innerHTML = '';
+  for (const [d, n] of [...seen].sort()) {
+    const li = document.createElement('li'); const a = document.createElement('a');
+    a.href = 'https://github.com/johnservil/sigil-candidates/issues/' + n; a.textContent = d; li.appendChild(a); ul.appendChild(li);
+  }
+  const me = describe(navigator.userAgent + (navigator.brave && !/Brave/.test(navigator.userAgent) ? ' Brave' : ''));
+  // Already tested: a result would add nothing, so the buttons go.
+  for (const id of ['send', 'copy']) document.getElementById(id).style.display = seen.has(me) ? 'none' : 'inline-block';
+  document.getElementById('mine').innerHTML = seen.has(me)
+    ? `Your system and browser (<b>${me}</b>) are already tested, so there's nothing to send. Thank you! A different system or browser helps.`
+    : `Your system and browser (<b>${me}</b>) aren't tested yet. Please send your result!`;
+}
+show(STATIC);
+fetch('https://api.github.com/repos/johnservil/sigil-candidates/issues?state=all&per_page=100')
+  .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  .then(items => show(items.filter(i => /^Fonts/.test(i.title)).map(i => ({n: i.number, ua: (i.body || '').split('\n')[1] || '', brave: false}))))
+  .catch(() => {});
+</script>

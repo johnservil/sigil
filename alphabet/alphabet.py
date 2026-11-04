@@ -1,5 +1,5 @@
 """Sigil's alphabet, computed from Unicode's data files and the font tests in
-fonts.txt by the steps of REQUIREMENTS.md's "The alphabet": the whole
+font-tests/ by the steps of REQUIREMENTS.md's "The alphabet": the whole
 computation, in one script with no dependencies beyond Python 3.
 
     python3 alphabet/alphabet.py [--data DIR] [--check]
@@ -7,7 +7,8 @@ computation, in one script with no dependencies beyond Python 3.
 It downloads the data files of every Unicode release from 6.0.0 to 18.0.0
 from unicode.org (or reads them from DIR, and saves there what it
 downloads), checks each by SHA-256 and by BLAKE3 (below, in plain Python;
-unicode-files.txt lists both) before reading it, and writes alphabet.txt,
+unicode-files.txt lists both) before reading it, checks each font result
+against the page that measured it, and writes alphabet.txt,
 skipped.txt, typescript/alphabet.ts and lean/Sigil/Alphabet.lean; with
 --check it confirms that those files are its output. Every property comes
 from the data files, none from Python's own tables, so the same files give
@@ -16,6 +17,8 @@ constraint (R) or desideratum (D) of REQUIREMENTS.md it serves.
 """
 import collections
 import hashlib
+import json
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -208,29 +211,90 @@ def tests(p):
 
 
 HEX = "0123456789abcdef"
+
+# R7's measurements. font-tests/results/N.md is issue N of
+# johnservil/sigil-candidates, a result the font test page sent, verbatim
+# below a header; its `page` is the sigil-candidates commit whose check.html
+# it ran on (the latest before the issue opened), kept as
+# font-tests/pages/COMMIT.html. tools/import-fonts.py records both.
+TESTS = ROOT / "alphabet" / "font-tests"
 SYSTEMS = ("macOS", "iOS", "Windows", "Android", "Linux")
+# The pages whose results stay out of R7: they drew each letter from its em
+# box's top in a 40-pixel canvas and counted letters whose pictures matched
+# as missing, so glyphs that reached past the canvas, cut alike, read as
+# missing (#18, macOS: 209 of 702 Canadian letters, all drawn on macOS by
+# round 0.1's pages, which counted only tofu). Their successor centres each
+# letter in 96 pixels.
+MISMEASURED = {"b40694415f16f8ccc8e7bdaa2c58c036940bd0d2", "cff09a58e51367e707da4f3e9a1ab67977f7bc3d"}
 
 
-def fonts(path):
-    """fonts.txt's results: [{name, system, tested, missing}]."""
-    def ranges(field):
-        out = set()
-        for r in field.split():
-            a, _, b = r.partition("-")
-            out.update(range(int(a, 16), int(b or a, 16) + 1))
-        return out
-    results, cur = [], None
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.startswith("result "):
-            _, n, date, system, browser = line.split(" ")
-            assert system in SYSTEMS, line
-            cur = {"name": f"#{n} {system} {browser} {date}", "system": system}
-            results.append(cur)
-        elif line.startswith("tested "):
-            cur["tested"] = ranges(line[7:])
-        elif line.startswith("missing"):
-            cur["missing"] = ranges(line[8:])
-    return results
+def system(ua):
+    """The system of a browser's user agent, one of SYSTEMS (R7)."""
+    return next(s for pattern, s in [(r"iPhone|iPad", "iOS"), (r"Android", "Android"), (r"Macintosh", "macOS"),
+                                     (r"Windows", "Windows"), (r"Linux", "Linux")] if re.search(pattern, ua))
+
+
+def page_data(commit):
+    """The font test page at sigil-candidates' `commit`: {"scripts": {script:
+    its letters}} and, from round 0.2, the header fields its result names
+    (round, page, count, set)."""
+    text = (TESTS / "pages" / f"{commit}.html").read_text(encoding="utf-8")
+    for key in ("const DATA = ", "const SCRIPTS = "):
+        i = text.find(key)
+        if i >= 0:
+            v, _ = json.JSONDecoder().raw_decode(text, i + len(key))
+            if key == "const SCRIPTS = ":
+                # Round 0.1: the scripts alone, and no other letters tested.
+                assert "const EXTRAS = [];" in text, commit
+                v = {"scripts": v}
+            return v
+    raise AssertionError(f"page {commit}: no letters")
+
+
+def hex_ranges(field):
+    out = set()
+    for r in field.split():
+        a, _, b = r.partition("-")
+        out.update(range(int(a, 16), int(b or a, 16) + 1))
+    return out
+
+
+def font_result(n, text):
+    """Result N (font-tests/results/N.md's text), checked line by line
+    against its page: {n, ua, system, page, round, tested, missing}."""
+    head, _, body = text.partition("\n\n")
+    fields = dict(line.split(": ", 1) for line in head.splitlines())
+    assert fields["issue"] == f"https://github.com/johnservil/sigil-candidates/issues/{n}", n
+    data = page_data(fields["page"])
+    # The page's result is the issue's fenced block; a note around it stays in the issue.
+    block = re.search(r"```\n(.*?)\n```", body, re.S)
+    assert block, f"result {n}: no result block"
+    lines = [l for l in block[1].splitlines() if l.strip()]
+    ua, scripts = lines[0], data["scripts"]
+    if "round" in data:
+        page = f", page {data['page']}" if "page" in data else ""
+        assert lines[1] == f"Sigil font test {data['round']}{page}: {data['count']} candidates, set {data['set']}", n
+        full = re.fullmatch(r"Drawn in full: (\d+) of (\d+) scripts", lines[2])
+    else:
+        full = re.fullmatch(r"Scripts drawn in full: (\d+) of (\d+)", lines[1])
+    assert full and int(full[2]) == len(scripts), f"result {n}: {lines[1:3]}"
+    tested, missing, seen, whole = set(), set(), set(), 0
+    for line in lines[3 if "round" in data else 2:]:
+        m = re.fullmatch(r"([A-Za-z_]+): (\d+)/(\d+)(?: missing ([0-9a-f -]+))?", line)
+        assert m and m[1] in scripts and m[1] not in seen, f"result {n}: a line its page never writes: {line!r}"
+        letters, gone = {ord(c) for c in scripts[m[1]]}, hex_ranges(m[4] or "")
+        assert int(m[3]) == len(letters) and int(m[2]) + len(gone) == len(letters) and gone <= letters, f"result {n}: {line!r}"
+        seen.add(m[1]); tested |= letters; missing |= gone; whole += not gone
+    assert seen == set(scripts) and whole == int(full[1]), f"result {n}: its scripts are not its page's"
+    return {"n": n, "ua": ua, "system": system(ua), "page": fields["page"], "round": data.get("round", "0.1"),
+            "tested": tested, "missing": missing}
+
+
+def font_results():
+    """Every result in font-tests/results, by issue number, but those of
+    MISMEASURED pages."""
+    out = [font_result(int(f.stem), f.read_text(encoding="utf-8")) for f in (TESTS / "results").glob("*.md")]
+    return sorted((r for r in out if r["page"] not in MISMEASURED), key=lambda r: r["n"])
 
 
 def without_look_alikes(letters, skeletons):
@@ -310,7 +374,7 @@ def main():
     left = kept
     candidates = left  # what the font test page tests (candidates.txt)
     # R7: drawn by every device tested, and tested on each of the five systems.
-    results = fonts(ROOT / "alphabet" / "fonts.txt")
+    results = font_results()
     drawn = [c for c in left if {r["system"] for r in results if c in r["tested"]} == set(SYSTEMS)
              and not any(c in r["missing"] for r in results)]
     print(f"{len(left) - len(drawn):9,} {len(drawn):9,}  drawn on every tested device, {len(results)} results (R7)")
@@ -343,7 +407,7 @@ def main():
     # left-to-right mark, which the encoder writes before a handle (D1).
     skipped = ranges_of(newest["white_space"] | {0x00AD, 0x200B, 0x200E, 0x2060, 0xFEFF})
     assert not set(letters) & {c for a, b in skipped for c in range(a, b + 1)}, "no letter is skipped"
-    source = f"Unicode {NEWEST}'s data (and every release's since {RELEASES[0]}) and alphabet/fonts.txt"
+    source = f"Unicode {NEWEST}'s data (and every release's since {RELEASES[0]}) and alphabet/font-tests"
     # The candidates, by script: runs of consecutive code points of one script.
     runs = []
     for c in candidates:
@@ -354,7 +418,7 @@ def main():
     outputs = {
         ROOT / "alphabet.txt": alphabet,
         ROOT / "alphabet" / "candidates.txt": (
-            f"# Generated by alphabet/alphabet.py from {source}; do not edit.\n"
+            f"# Generated by alphabet/alphabet.py from Unicode {NEWEST}'s data (and every release's since {RELEASES[0]}); do not edit.\n"
             "# The letters that meet every constraint but R7 (drawn), which the font test page\n"
             "# tests: a script and a run of code points a line.\n"
             + "".join(f"{sc} {a:04X}..{b:04X}\n" for sc, a, b in runs)),
