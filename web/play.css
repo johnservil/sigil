@@ -20,7 +20,8 @@ input { width: 7em; }
 .form-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: .85em; }
 .count, .what { opacity: .75; }
 /* Each value alone on its line, selected whole by one tap, long-press or
-   click: iOS once joined a label's last word to a sigil beside it. */
+   click. In a div: iOS's long press on an <output> selected from the text
+   before it and stopped two letters short (Zooko's iPhone, layouts.html). */
 .value { display: block; overflow-x: auto; white-space: nowrap; padding: 6px 0; color: var(--accent); -webkit-user-select: all; user-select: all;
   font: var(--value)/1.8 "Noto Sans Ethiopic", "Noto Sans Canadian Aboriginal", "Segoe UI", sans-serif; }
 .value.hex { font-family: ui-monospace, monospace; white-space: normal; overflow-wrap: anywhere; }
