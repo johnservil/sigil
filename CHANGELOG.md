@@ -1,6 +1,6 @@
 # Changes
 
-## Sigil 0.2, November 2026: a handle of hex digits, on trial
+## Sigil 0.2.0+3d45e305e2204f7d52a9728edc3d9f3e9ee809c1, November 2026: a handle of hex digits, on trial
 
 Sigil 0.2 is a release on trial before 1.0, made to be used and judged
 (Zooko, November 22, 2026). Its format may still change before 1.0, and a
