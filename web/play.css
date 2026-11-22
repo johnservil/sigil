@@ -19,10 +19,14 @@ input { width: 7em; }
 .form { padding: 12px 0; border-top: 1px solid var(--line); }
 .form-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: .85em; }
 .count, .what { opacity: .75; }
-/* Each value alone on its line, selected whole by one tap, long-press or
-   click. In a div: iOS's long press on an <output> selected from the text
-   before it and stopped two letters short (Zooko's iPhone, layouts.html). */
-.value { display: block; overflow-x: auto; white-space: nowrap; padding: 6px 0; color: var(--accent); -webkit-user-select: all; user-select: all;
+/* Each value alone on its line, selected by the browser's own rules: a
+   double-click or a long press takes the whole word, and a drag takes what
+   it passes over. No user-select: all here: it made a drag flicker between
+   the whole value and the part under the pointer (Zooko, November 22), and
+   it hid whether a double-click selects a sigil by itself. In a div: iOS's
+   long press on an <output> selected from the text before it and stopped
+   two letters short (Zooko's iPhone, layouts.html). */
+.value { display: block; overflow-x: auto; white-space: nowrap; padding: 6px 0; color: var(--accent);
   font: var(--value)/1.8 "Noto Sans Ethiopic", "Noto Sans Canadian Aboriginal", "Segoe UI", sans-serif; }
 .value.hex { font-family: ui-monospace, monospace; white-space: normal; overflow-wrap: anywhere; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; font-size: .85em; }

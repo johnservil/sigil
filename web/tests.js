@@ -112,6 +112,9 @@
     const doc = frame.contentDocument;
     const field = (id) => doc.getElementById(id);
     check(field('out-sigil').textContent === SigilCode.encode(bytes(full)) && field('out-hex').textContent === full, 'playground initial answer: the hex and its sigil');
+    // A value is selected by the browser's own rules: with user-select: all, a drag
+    // flickered between the whole value and the part under the pointer.
+    check(['out-sigil', 'out-hex'].every((id) => doc.defaultView.getComputedStyle(field(id)).userSelect !== 'all'), 'playground values leave selection to the browser');
     const ethiopic = await doc.fonts.load('32px "Noto Sans Ethiopic"', 'ሀ');
     const canadian = await doc.fonts.load('32px "Noto Sans Canadian Aboriginal"', 'ᕖ');
     check(ethiopic.length > 0 && canadian.length > 0, 'bundled script fonts load');
