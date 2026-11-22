@@ -1,20 +1,16 @@
 //! Sigil: bytes of a known length written as a sigil, one word that a
 //! double-click selects whole, of letters with no two alike, and a check that
-//! confirms a reading or picks the right one of several. A sigil has one of two
-//! forms: hex-prefixed, which begins with the value's first 8 hex digits, and plain,
-//! which writes those 32 bits as 3 letters; after them both forms have the
-//! same letters.
+//! confirms a reading or picks the right one of several. A sigil begins with
+//! the value's first 8 hex digits, the handle; letters carry the rest.
 //!
 //! ```
 //! let sigil = sigilcode::encode(&[0xab; 32]);
 //! assert!(sigil.starts_with("\u{200e}abababab"));
 //! assert_eq!(sigil.chars().count(), 1 + 8 + 22);
 //! assert_eq!(sigilcode::decode(&sigil, 32).unwrap(), [0xab; 32]);
-//! let plain = sigilcode::encode_plain(&[0xab; 32]);
-//! assert_eq!(plain.chars().count(), 25);
-//! // After the handle, the two forms have the same letters.
-//! assert!(sigil.chars().skip(9).eq(plain.chars().skip(3)));
-//! assert_eq!(sigilcode::decode(&plain, 32).unwrap(), [0xab; 32]);
+//! // The handle reads in either case, and the mark may be lost in copying.
+//! let copied = sigil.trim_start_matches('\u{200e}').replacen("abababab", "ABABABAB", 1);
+//! assert_eq!(sigilcode::decode(&copied, 32).unwrap(), [0xab; 32]);
 //! ```
 //!
 //! The specification is the repository's README.md ("The encoding"). Letters
@@ -23,14 +19,12 @@
 //! The handle h is the data's first 32 bits. After it come letters writing
 //! t = m * K + r: m the rest of the data with the marker bits 01 between its
 //! high and low halves, r < K the number that makes h * 2048^n + t a
-//! multiple of K.
+//! multiple of K. The sigil is U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase
+//! hex digits, and the letters.
 //!
-//! - Hex-prefixed: U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase hex digits, the letters.
-//! - Plain: h and the plain form's version bit (0) as 3 letters, the same letters.
-//!
-//! Decoding tells the forms apart by the first character, checks the plain
-//! form's version bit and the multiple of K, which catches every changed character and every swap of characters
-//! one or two apart, and checks that the marker is 01. It skips white space,
+//! Decoding checks the multiple of K, which catches every changed character
+//! and every swap of characters one or two apart, and checks that the marker
+//! is 01. It skips white space,
 //! the mark and four invisible characters copying inserts (skipped.txt), reads
 //! the handle's hex in either case, and refuses everything else.
 //! python/sigilcode.py is the reference implementation and vectors.tsv the
@@ -65,11 +59,6 @@ const KS: [u64; 11] = [
 const MARK: char = '\u{200e}';
 /// The handle's hex digits, 32 bits.
 const HANDLE: usize = 8;
-/// The plain form's letters for the handle: its 32 bits, then the plain
-/// form's version bit.
-const PREFIX: usize = 3;
-/// The plain form's version bit; a later version may write 1.
-const PLAIN_VERSION: u64 = 0;
 
 struct Tables {
     /// The alphabet as runs of consecutive code points: (first code point, its digit, length).
@@ -172,7 +161,7 @@ fn is_skipped(ch: char) -> bool {
 }
 
 /// (n, K, bits) for data of `length` bytes (at least 8): the letters after the
-/// handle, which both forms have, carry bits = 8 * length - 32 of the data;
+/// handle carry bits = 8 * length - 32 of the data;
 /// n = ceil((bits + 14) / 11) letters, and K, the room 2^(11n - bits - 2)'s
 /// check prime.
 fn layout(length: usize) -> (usize, u64, usize) {
@@ -344,22 +333,12 @@ impl Nat {
     }
 }
 
-/// `data`'s sigil in the hex-prefixed form: the mark, the data's first 8 hex
-/// digits, and ceil((8 * len - 18) / 11) letters. Its protection against
+/// `data`'s sigil: the mark, the data's first 8 hex digits, and
+/// ceil((8 * len - 18) / 11) letters. Its protection against
 /// look-alikes holds for data that looks random (a secure hash's output, a
 /// key, a random identifier): hash or jumble structured data before encoding
 /// it (README.md, "Data with structure"). At least 8 bytes.
 pub fn encode(data: &[u8]) -> String {
-    encode_form(data, true)
-}
-
-/// `data`'s sigil in the plain form: the handle's 32 bits and the version bit
-/// as 3 letters, then the hex-prefixed form's letters. At least 8 bytes.
-pub fn encode_plain(data: &[u8]) -> String {
-    encode_form(data, false)
-}
-
-fn encode_form(data: &[u8], hex_prefixed: bool) -> String {
     let length = data.len();
     let (n, k, bits) = layout(length);
     let (width, half) = ((11 * n).max(8 * length), bits / 2);
@@ -375,17 +354,10 @@ fn encode_form(data: &[u8], hex_prefixed: bool) -> String {
     let r = mod_k(k - mod_k(top * place_of_handle(n, k), k), k);
     let (t, carry) = marked.times(k).plus(r);
     debug_assert_eq!(carry, 0, "t fits");
-    let mut out = String::with_capacity(4 + HANDLE + 3 * n);
-    if hex_prefixed {
-        out.push(MARK);
-        for i in (0..HANDLE).rev() {
-            out.push(hex_digit((top >> (4 * i)) & 15));
-        }
-    } else {
-        let head = top << 1 | PLAIN_VERSION;
-        for i in (0..PREFIX).rev() {
-            out.push(letter((head >> (11 * i)) & 2047));
-        }
+    let mut out = String::with_capacity(MARK.len_utf8() + HANDLE + 3 * n);
+    out.push(MARK);
+    for i in (0..HANDLE).rev() {
+        out.push(hex_digit((top >> (4 * i)) & 15));
     }
     for i in (0..n).rev() {
         out.push(letter(t.bits(11 * i, 11)));
@@ -393,45 +365,32 @@ fn encode_form(data: &[u8], hex_prefixed: bool) -> String {
     out
 }
 
-/// The `length` bytes that `sigil` encodes, in either form, or why it encodes
-/// none. The characters of skipped.txt in it are skipped.
+/// The `length` bytes that `sigil` encodes, or why it encodes none. The
+/// characters of skipped.txt in it are skipped.
 pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
-    let mut chars = sigil
-        .chars()
-        .enumerate()
-        .filter(|&(_, ch)| !is_skipped(ch))
-        .peekable();
-    // The form, by the first character: hex digits are no letters.
-    let hex_prefixed = chars.peek().is_some_and(|&(_, ch)| hex_of(ch).1);
+    let chars = sigil.chars().enumerate().filter(|&(_, ch)| !is_skipped(ch));
     let (n, k, bits) = layout(length);
-    let h = if hex_prefixed { HANDLE } else { PREFIX };
     let (width, half) = ((11 * n).max(8 * length), bits / 2);
-    let (mut head, mut t) = (0u64, Nat::zero(width));
+    let (mut top, mut t) = (0u64, Nat::zero(width));
     let (mut count, mut refused) = (0, None);
     for (i, ch) in chars {
-        let (value, hit) = if count < h && hex_prefixed {
-            hex_of(ch)
-        } else {
-            digit_of(ch)
-        };
-        if count < h {
-            head = if hex_prefixed {
-                head << 4 | value
-            } else {
-                head << 11 | value
-            };
-        } else if count < h + n {
-            t.or_at(11 * (h + n - 1 - count), value);
+        // Which characters are the handle's is public: their places alone.
+        let in_handle = count < HANDLE;
+        let (value, hit) = if in_handle { hex_of(ch) } else { digit_of(ch) };
+        if in_handle {
+            top = top << 4 | value;
+        } else if count < HANDLE + n {
+            t.or_at(11 * (HANDLE + n - 1 - count), value);
         }
         if !hit && refused.is_none() {
-            refused = Some((i + 1, ch, count < h && hex_prefixed));
+            refused = Some((i + 1, ch, in_handle));
         }
         count += 1;
     }
-    if count != h + n {
+    if count != HANDLE + n {
         return Err(DecodeError::Length {
             found: count,
-            expected: h + n,
+            expected: HANDLE + n,
         });
     }
     if let Some((position, character, in_handle)) = refused {
@@ -441,11 +400,6 @@ pub fn decode(sigil: &str, length: usize) -> Result<Vec<u8>, DecodeError> {
             in_handle,
         });
     }
-    // Plain, the handle's letters end in the plain form's version bit.
-    if !hex_prefixed && head & 1 != PLAIN_VERSION {
-        return Err(DecodeError::Marker);
-    }
-    let top = if hex_prefixed { head } else { head >> 1 };
     // t - r, where r makes top * 2048^n + t a multiple of K: a multiple of K
     // itself exactly when the check passes, and then m * K.
     let r = mod_k(k - mod_k(top * place_of_handle(n, k), k), k);
@@ -686,18 +640,13 @@ mod test {
         );
     }
 
-    /// Encoding and decoding agree at every length from 8 to 300 bytes, in both forms.
+    /// Encoding and decoding agree at every length from 8 to 300 bytes.
     #[test]
     fn round_trips() {
         for length in 8..=300usize {
             let data: Vec<u8> = (0..length).map(|i| (i * 131 + length * 7) as u8).collect();
             assert_eq!(
                 super::decode(&super::encode(&data), length).unwrap(),
-                data,
-                "{length}"
-            );
-            assert_eq!(
-                super::decode(&super::encode_plain(&data), length).unwrap(),
                 data,
                 "{length}"
             );

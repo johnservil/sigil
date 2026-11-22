@@ -1,5 +1,48 @@
 # Changes
 
+## Sigil 0.2, November 2026: a handle of hex digits, on trial
+
+Sigil 0.2 is a release on trial before 1.0, made to be used and judged
+(Zooko, November 22, 2026). Its format may still change before 1.0, and a
+later version need not read 0.2's sigils. 0.2 reads no 0.1 sigil, and 0.1
+reads none of 0.2's.
+
+What changed:
+
+- **A handle to say and type** (Kris Nuttycombe's idea): a sigil begins
+  with the value's first 8 hex digits, the digits git, `sha256sum` and
+  `b3sum` print, and letters carry the rest. A 256-bit hash takes 30
+  characters, 8 hex digits and 22 letters, where 0.1 took 25 letters. A
+  handle finds a value and never proves one: its 8 digits take about 2^32
+  tries to match ([REQUIREMENTS.md](REQUIREMENTS.md), "Harms the user
+  guards against").
+- **The hex digits take part in the check,** so a changed digit, like a
+  changed letter, never decodes. Decoding reads the handle in either case.
+- **U+200E LEFT-TO-RIGHT MARK** is a sigil's first code point, invisible:
+  it keeps the digits in place beside right-to-left text. Decoding skips it.
+- **A new alphabet,** still 2,048 letters from fifteen scripts. Cham's
+  letters are gone: Unicode 15.1 changed their line-breaking rules, so
+  current software may draw a 0.1 sigil across two lines. The letters
+  follow twenty font tests on five systems, each kept as it was sent
+  (`alphabet/font-tests`).
+- **At least 8 bytes.** A value shorter than 8 bytes has no sigil.
+- **One form.** A second form, of letters only, was tried beside this one
+  and set aside: with two forms every value had two words, and a search
+  for one missed the other.
+- The Rust crate's `DecodeError::Character` says whether the character
+  stood in the handle (`in_handle`).
+
+What 0.2 does not have yet:
+
+- **0.1's proofs.** For 0.1's format Lean proved that decoding inverts
+  encoding, and that the check catches every changed letter and every swap
+  of letters one or two apart. For 0.2's format Lean has the specification,
+  which passes every vector, the layout's proof, and the facts a round-trip
+  proof is built from. The rest is tested, not proved, and waits until the
+  format settles ([QUALITY.md](QUALITY.md)).
+- **A settled alphabet.** More font tests, on Windows and Android above
+  all, may still change letters before 1.0.
+
 ## Sigil 0.1.2+5404f5e7b0912b58eb7d34006c7fb5c73cd4ecc7, November 2026: a warning
 
 The README, here and on crates.io, warns of 0.1's known flaw: Unicode 15.1

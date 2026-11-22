@@ -86,10 +86,10 @@ theorem isPrime_iff (k : Nat) : isPrime k = true ↔ Prime k := by
 
 /-! ## The layout -/
 
-/-- The room's exponent is 12 to 22 at every length, and with it the letter count. -/
-theorem roomBits_range (L : Nat) : 12 ≤ roomBits L ∧ roomBits L ≤ 22 ∧
-    11 * letters L = 8 * L + 2 + roomBits L := by
-  simp only [roomBits, letters]; omega
+/-- The room's exponent is 12 to 22 for every count of bits, and with it the letter count. -/
+theorem roomBitsFor_range (b : Nat) : 12 ≤ roomBitsFor b ∧ roomBitsFor b ≤ 22 ∧
+    11 * lettersFor b = b + 2 + roomBitsFor b := by
+  simp only [roomBitsFor, lettersFor]; omega
 
 set_option maxHeartbeats 10000000 in
 /-- Each check prime is prime, larger than `N`, and at most its room. -/
@@ -98,50 +98,51 @@ theorem checkPrimes_facts : ∀ i, i < 11 →
       checkPrimes.getD i 0 ≤ 2 ^ (i + 12) := by
   decide +kernel
 
-theorem layout_K (L : Nat) : (layout L).2 = checkPrimes.getD (roomBits L - 12) 0 := by
-  simp only [layout]
+theorem layoutFor_K (b : Nat) : (layoutFor b).2 = checkPrimes.getD (roomBitsFor b - 12) 0 := by
+  simp only [layoutFor]
 
-theorem K_prime (L : Nat) : Prime (layout L).2 := by
-  have := roomBits_range L
-  exact (isPrime_iff _).mp (checkPrimes_facts (roomBits L - 12) (by omega)).1
+theorem K_prime (b : Nat) : Prime (layoutFor b).2 := by
+  have := roomBitsFor_range b
+  exact (isPrime_iff _).mp (checkPrimes_facts (roomBitsFor b - 12) (by omega)).1
 
 /-- The layout's `K` is larger than `N`. -/
-theorem N_lt_K (L : Nat) : N < (layout L).2 := by
-  have := roomBits_range L
-  exact (checkPrimes_facts (roomBits L - 12) (by omega)).2.1
+theorem N_lt_K (b : Nat) : N < (layoutFor b).2 := by
+  have := roomBitsFor_range b
+  exact (checkPrimes_facts (roomBitsFor b - 12) (by omega)).2.1
 
 theorem N_pow (n : Nat) : N ^ n = 2 ^ (11 * n) := by
   rw [show N = 2 ^ 11 from rfl, ← Nat.pow_mul]
 
-/-- `K` times the marked data's bound fits in the sigil's `n` letters. -/
-theorem K_fits (L : Nat) : (layout L).2 * 2 ^ (8 * L + 2) ≤ N ^ (layout L).1 := by
-  have hr := roomBits_range L
-  have hK := (checkPrimes_facts (roomBits L - 12) (by omega)).2.2
-  rw [show roomBits L - 12 + 12 = roomBits L by omega] at hK
-  rw [layout_K, N_pow, show (layout L).1 = letters L from rfl, hr.2.2,
-    Nat.pow_add 2 (8 * L + 2) (roomBits L), Nat.mul_comm (2 ^ (8 * L + 2)) (2 ^ roomBits L)]
+/-- `K` times the marked bits' bound fits in the `n` letters. -/
+theorem K_fits (b : Nat) : (layoutFor b).2 * 2 ^ (b + 2) ≤ N ^ (layoutFor b).1 := by
+  have hr := roomBitsFor_range b
+  have hK := (checkPrimes_facts (roomBitsFor b - 12) (by omega)).2.2
+  rw [show roomBitsFor b - 12 + 12 = roomBitsFor b by omega] at hK
+  rw [layoutFor_K, N_pow, show (layoutFor b).1 = lettersFor b from rfl, hr.2.2,
+    Nat.pow_add 2 (b + 2) (roomBitsFor b), Nat.mul_comm (2 ^ (b + 2)) (2 ^ roomBitsFor b)]
   exact Nat.mul_le_mul_right _ hK
 
-/-- Fewer letters leave no room for any prime above `N` beside the marked data. -/
-theorem layout_minimal (L m p : Nat) (hm : m < (layout L).1) (_hp : Prime p)
-    (hfit : p * 2 ^ (8 * L + 2) ≤ N ^ m) : p ≤ N := by
-  have hr := roomBits_range L
-  have hm' : 11 * m + 11 ≤ 8 * L + 2 + 22 := by
-    have : m + 1 ≤ letters L := hm
+/-- Fewer letters leave no room for any prime above `N` beside the marked bits. -/
+theorem layout_minimal (b m p : Nat) (hm : m < (layoutFor b).1) (_hp : Prime p)
+    (hfit : p * 2 ^ (b + 2) ≤ N ^ m) : p ≤ N := by
+  have hr := roomBitsFor_range b
+  have hm' : 11 * m + 11 ≤ b + 2 + 22 := by
+    have : m + 1 ≤ lettersFor b := hm
     omega
   rw [N_pow] at hfit
-  have : N ^ m ≤ 2 ^ 11 * 2 ^ (8 * L + 2) := by
+  have : N ^ m ≤ 2 ^ 11 * 2 ^ (b + 2) := by
     rw [N_pow, ← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega)
   rw [N_pow] at this
   have h := Nat.le_trans hfit this
   exact Nat.le_of_mul_le_mul_right h (Nat.two_pow_pos _)
 
-/-- The layout's full mathematical contract: a prime above N that fits beside the marked data,
-using the fewest possible letters. Quantification covers every byte length. -/
+/-- The layout's contract, for the letters after the handle of data of `L` bytes: a prime above
+`N` that fits beside the marked bits, using the fewest possible letters. Quantification covers
+every byte length. -/
 theorem layout_contract (L : Nat) :
     let (n, K) := layout L
-    Prime K ∧ N < K ∧ K * 2 ^ (8 * L + 2) ≤ N ^ n ∧
-    (∀ m, m < n → ∀ p, Prime p → p * 2 ^ (8 * L + 2) ≤ N ^ m → p ≤ N) :=
-  ⟨K_prime L, N_lt_K L, K_fits L, fun m hm p hp hfit => layout_minimal L m p hm hp hfit⟩
+    Prime K ∧ N < K ∧ K * 2 ^ (restBits L + 2) ≤ N ^ n ∧
+    (∀ m, m < n → ∀ p, Prime p → p * 2 ^ (restBits L + 2) ≤ N ^ m → p ≤ N) :=
+  ⟨K_prime _, N_lt_K _, K_fits _, fun m hm p hp hfit => layout_minimal _ m p hm hp hfit⟩
 
 end Sigil

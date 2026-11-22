@@ -54,5 +54,6 @@ jobs:
     # Every proof, and the specification on the vectors; the kernel-checked
     # known answers (Sigil.KnownAnswers) need more memory than the runner has,
     # and run by hand with the certificate tests.
-    - run: lake build Sigil.Spec Sigil.Layout Sigil.Theorems Sigil.Errors Tests && lake exe tests ../vectors.tsv
+    - run: lake build Sigil Tests && lake exe tests ../vectors.tsv && lake env lean --trust=0 Audit.lean
       working-directory: lean
+    - run: python3 tools/test_certificate.py

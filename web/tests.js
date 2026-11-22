@@ -8,7 +8,7 @@
   try {
     const vectors = await (await fetch('../vectors.json')).json();
     for (const v of vectors.good) {
-      check(SigilCode.encode(bytes(v.data), v.form === 'hex-prefixed') === v.text, `bundle encode ${v.form} ${v.data}`);
+      check(SigilCode.encode(bytes(v.data)) === v.text, `bundle encode ${v.data}`);
       check(hexOf(SigilCode.decode(v.text, v.data.length / 2)) === v.data, 'bundle decode');
     }
     for (const v of vectors.variants) check(hexOf(SigilCode.decode(v.text, v.data.length / 2)) === v.data, 'bundle variant');
@@ -111,14 +111,14 @@
     await new Promise((resolve) => { frame.onload = resolve; });
     const doc = frame.contentDocument;
     const field = (id) => doc.getElementById(id);
-    check(field('out-prefixed').textContent === SigilCode.encode(bytes(full)) && field('out-plain').textContent === SigilCode.encode(bytes(full), false) && field('out-hex').textContent === full, 'playground initial answer: hex, hex-prefixed, plain');
+    check(field('out-sigil').textContent === SigilCode.encode(bytes(full)) && field('out-hex').textContent === full, 'playground initial answer: the hex and its sigil');
     const ethiopic = await doc.fonts.load('32px "Noto Sans Ethiopic"', 'ሀ');
     const canadian = await doc.fonts.load('32px "Noto Sans Canadian Aboriginal"', 'ᕖ');
     check(ethiopic.length > 0 && canadian.length > 0, 'bundled script fonts load');
     const zeros = '00'.repeat(8);
     field('hex').value = zeros;
     field('hex').dispatchEvent(new Event('input'));
-    check(field('out-prefixed').textContent === SigilCode.encode(bytes(zeros)), 'playground eight zero bytes');
+    check(field('out-sigil').textContent === SigilCode.encode(bytes(zeros)), 'playground eight zero bytes');
     check(field('length').value === '8' && field('decoded').textContent === zeros, 'playground roundtrip');
     const chars = Array.from(SigilCode.encode(bytes(zeros)));
     const last = chars.at(-1), other = Array.from(SigilCode.encode(bytes('ff'.repeat(8)))).at(-1);
@@ -127,13 +127,13 @@
     check(field('decode-status').textContent.startsWith('check:'), 'playground rejects changed sigil');
     field('hex').value = '00';
     field('hex').dispatchEvent(new Event('input'));
-    check(doc.querySelector('[data-copy=plain]').disabled && field('encode-status').textContent.includes('at least 8 bytes'), 'playground refuses a short value');
+    check(doc.querySelector('[data-copy=sigil]').disabled && field('encode-status').textContent.includes('at least 8 bytes'), 'playground refuses a short value');
     field('hex').value = 'xyz';
     field('hex').dispatchEvent(new Event('input'));
-    check(doc.querySelector('[data-copy=hex]').disabled && field('out-prefixed').textContent === '' && field('out-hex').textContent === '', 'invalid input clears stale output');
+    check(doc.querySelector('[data-copy=hex]').disabled && field('out-sigil').textContent === '' && field('out-hex').textContent === '', 'invalid input clears stale output');
     field('random').click();
-    check(field('hex').value.length === 64 && Array.from(field('out-prefixed').textContent).length === 31 && field('n-prefixed').textContent === '30 characters', 'random example, hex-prefixed: the mark, 8 hex digits, 22 letters');
-    check(Array.from(field('out-plain').textContent).length === 25 && field('n-hex').textContent === '64 characters' && field('decoded').textContent === field('hex').value, 'random example, plain: 25 letters, decoded');
+    check(field('hex').value.length === 64 && Array.from(field('out-sigil').textContent).length === 31 && field('n-sigil').textContent === '30 characters', 'random example: the mark, 8 hex digits, 22 letters');
+    check(field('n-hex').textContent === '64 characters' && field('decoded').textContent === field('hex').value, 'random example: 64 hex digits, decoded');
     field('toggle').click();
     check(!!doc.querySelector('#hashes [data-sigil-hex]'), 'playground toggle');
     field('toggle').click();

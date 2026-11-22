@@ -10,11 +10,11 @@ first.
 Terms: the **data** is the value, L bytes long, at least 8. A **word** is its sigil, and
 a **character** is one thing a person sees in it. Encoder and decoder both
 know L, as a program that stores 32-byte hashes does. The **handle** is the
-data's first 32 bits, at a word's start. A word has one of two **forms**:
-hex-prefixed, whose handle is 8 hex digits a person can say and type (D1), and
-plain, whose handle is 3 letters; after the handle both forms have the same
-letters. (On this branch both are on trial; Zooko decides whether 0.2 keeps
-the plain form.)
+data's first 32 bits, at a word's start: 8 hex digits a person can say and
+type (D1). Letters carry the rest. (Sigil 0.2 tries this form alone, as a
+release on trial: Zooko, November 22, 2026. A form of letters only, whose
+handle was 3 letters, was tried beside it and set aside: with two forms
+every value had two words, and a 0.1 word could decode as the plain one.)
 
 ## Harms the user guards against: confusion and disclosure
 
@@ -72,12 +72,12 @@ So a handle, or any part of a word, finds a value and never proves one:
 
 **The data**
 
-- **R1. Lossless.** Every value of every length L ≥ 8 has one word in each
-  form, the one the encoder writes, and decoding that word gives the value back.
+- **R1. Lossless.** Every value of every length L ≥ 8 has one word, the one
+  the encoder writes, and decoding that word gives the value back.
   Decoding also accepts exactly the other spellings that R3 and R5 allow,
   and nothing else. A value shorter than 8 bytes has no sigil.
-- **R2. The same size however it is counted.** Every word of L bytes in a
-  form has the same number of characters, code points, UTF-16 units, terminal cells and
+- **R2. The same size however it is counted.** Every word of L bytes
+  has the same number of characters, code points, UTF-16 units, terminal cells and
   UTF-8 bytes, so no count reveals anything about the data.
 
 **Handling by software**
@@ -109,10 +109,8 @@ So a handle, or any part of a word, finds a value and never proves one:
   sees where the hex ends.
 - **R9. Its own.** A word of another format, or of a later version that
   marks itself as one, never decodes, and this format's words never decode
-  as the other's. A plain word of 32 bytes has as many letters as a 0.1
-  word, so a 0.1 word read as plain 0.2 decodes about once in 2^19, where
-  its check, its version bit and its marker happen to pass; a hex-prefixed word
-  never does.
+  as the other's. A 0.1 word never decodes as a 0.2 word, nor a 0.2 word
+  as 0.1's: 0.1 takes no hex digit, and 0.2 requires 8.
 
 **Timing and cost**
 
@@ -148,9 +146,7 @@ So a handle, or any part of a word, finds a value and never proves one:
   value, worse than none. It costs a second character set in one word, and
   five characters for a 32-byte value. It also makes the front of a word
   cheaper to forge: 8 hex digits hold 32 bits, where 8 letters would hold
-  88, and people check fronts. The plain form writes the same 32 bits as 3
-  letters, and after them both forms have the same letters, so a reader of
-  either form recognizes the other's.
+  88, and people check fronts.
 - **D2. Shorter words**, in characters and as they look: more bits in each
   character a person sees, by a larger alphabet, or by marks on letters
   that R3 leaves in place.

@@ -3,22 +3,20 @@
 Sigil writes bytes as a sigil: one word that a person can copy with a
 double-click, recognize at a glance, and read back from a picture. A 256-bit
 hash becomes its first 8 hex digits and 22 letters, no two of which look
-alike; in the plain form, 3 letters and the same 22.
+alike.
 
-> **This is Sigil 0.2, unreleased.** Its sigils and 0.1's never decode as
-> each other's.
+> **Sigil 0.2 is a release on trial before 1.0.** Its sigils and 0.1's never
+> decode as each other's, and the format may still change before 1.0.
 
 ```
 BLAKE3("") in hex    af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             as a sigil ‎af1349b9ꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
-            plain      ᛄᗯᒅꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
 ```
 
 ```rust
 let digest = [0xffu8; 32];
 let sigil = sigilcode::encode(&digest);              // 8 hex digits and 22 letters
-let plain = sigilcode::encode_plain(&digest);        // 3 letters and the same 22
-let back = sigilcode::decode(&sigil, 32).unwrap();   // either form; the length in bytes, agreed in advance
+let back = sigilcode::decode(&sigil, 32).unwrap();   // the length in bytes, agreed in advance
 assert_eq!(back, digest);
 ```
 

@@ -5,8 +5,7 @@ must pass, from this (the reference) implementation.
     python3 python/vectors.py --check     # checks them
 
 Deterministic: each value is SHA-256 of its length and index, so the file is
-the same on every machine. "good" lists data (hex), its form (hex-prefixed or
-plain) and its text; "bad" lists
+the same on every machine. "good" lists data (hex) and its text; "bad" lists
 texts, the length asked for, and the error kind each must give; "variants" lists
 copies that differ from a codeword (skipped characters inserted) with the data
 each decodes to.
@@ -59,56 +58,50 @@ def vectors():
     good, bad, variants = [], [], []
     for length in LENGTHS:
         datas = [bytes(length), b"\xff" * length] + [value(length, i) for i in range(3)]
-        for hex_prefixed in (True, False):
-            form = "hex-prefixed" if hex_prefixed else "plain"
-            for data in datas:
-                good.append({"form": form, "data": data.hex(), "text": B.encode(data, hex_prefixed)})
-            n, k = B.layout(length)
-            text = B.encode(datas[2], hex_prefixed)
-            start = L if hex_prefixed else B.PREFIX  # the first letter after the handle
-            handle, rest, bits = parts(datas[2])
-            r = B.offset(handle, n, k)
-            write = lambda t: B.word(handle, t, n, hex_prefixed)
-            bad += [
-                {"text": text[:-1], "length": length, "error": "length"},
-                {"text": text + text[-1], "length": length, "error": "length"},
-                {"text": text[:-1] + " " + "\u200b", "length": length, "error": "length"},
-                {"text": text[:start + 1] + "\u202e" + text[start + 1:], "length": length, "error": "length"},
-            ]
-            bad += [{"text": text[:start] + c + text[start + 1:], "length": length, "error": "character"} for c in REFUSED[1:]]
-            # A hex digit among the letters, and, hex-prefixed, a non-hex character in the handle.
-            bad.append({"text": text[:start + 1] + "a" + text[start + 2:], "length": length, "error": "character"})
-            if hex_prefixed:
-                bad.append({"text": text[:L - 1] + text[L:], "length": length, "error": "length"})
-                bad += [{"text": text[:2] + c + text[3:], "length": length, "error": "character"} for c in REFUSED_IN_HANDLE]
-            else:
-                # The handle's letters with the plain form's version bit of another version.
-                bad.append({"text": B.letters(handle << 1 | (1 - B.PLAIN_VERSION), B.PREFIX) + text[B.PREFIX:], "length": length, "error": "marker"})
-            # A value of the check too large for the length, and the other
-            # markers (00, which stays unused, and 10 and 11, a successor's).
-            top = ((1 << 11 * n) - 1 - r) // k * k + r
-            assert top // k >> (bits + 2), "the largest checked value is out of range"
-            bad.append({"text": write(top), "length": length, "error": "range"})
-            bad += [{"text": write(B.marked(rest, bits, m) * k + r), "length": length, "error": "marker"}
-                    for m in (0b00, 0b10, 0b11)]
-            # One letter changed, one hex digit changed, and two neighbours
-            # swapped: the check catches each.
-            bad.append({"text": text[:-1] + B.ALPHABET[(B.DIGIT[text[-1]] + 1) % B.N], "length": length, "error": "check"})
-            if hex_prefixed:
-                bad.append({"text": text[:L - 1] + "0123456789abcdef"[(int(text[L - 1], 16) + 1) % 16] + text[L:],
-                            "length": length, "error": "check"})
-            j = next((j for j in range(start, len(text) - 1) if text[j] != text[j + 1]), None)
-            if j is not None:
-                bad.append({"text": text[:j] + text[j + 1] + text[j] + text[j + 2:], "length": length, "error": "check"})
-            # Copies that differ from the codeword and decode as it does:
-            # skipped characters inserted; hex-prefixed, the mark gone, the handle
-            # in uppercase.
-            for insert in SPACES:
-                j = start + 1 + length % (len(text) - start - 1)
-                variants.append({"data": datas[2].hex(), "text": insert + text[:j] + insert + text[j:] + insert})
-            if hex_prefixed:
-                variants.append({"data": datas[2].hex(), "text": text[1:]})
-                variants.append({"data": datas[2].hex(), "text": text[:1] + text[1:L].upper() + text[L:]})
+        for data in datas:
+            good.append({"data": data.hex(), "text": B.encode(data)})
+        n, k = B.layout(length)
+        text = B.encode(datas[2])
+        handle, rest, bits = parts(datas[2])
+        r = B.offset(handle, n, k)
+        write = lambda t: B.word(handle, t, n)
+        bad += [
+            {"text": text[:-1], "length": length, "error": "length"},
+            {"text": text + text[-1], "length": length, "error": "length"},
+            {"text": text[:-1] + " " + "\u200b", "length": length, "error": "length"},
+            {"text": text[:L + 1] + "\u202e" + text[L + 1:], "length": length, "error": "length"},
+            # A hex digit of the handle gone.
+            {"text": text[:L - 1] + text[L:], "length": length, "error": "length"},
+        ]
+        bad += [{"text": text[:L] + c + text[L + 1:], "length": length, "error": "character"} for c in REFUSED[1:]]
+        # A hex digit among the letters, and a character that is no hex digit in the handle.
+        bad.append({"text": text[:L + 1] + "a" + text[L + 2:], "length": length, "error": "character"})
+        bad += [{"text": text[:2] + c + text[3:], "length": length, "error": "character"} for c in REFUSED_IN_HANDLE]
+        # A string of the right length with letters where the handle's digits
+        # belong (the shape of an earlier format's word).
+        bad.append({"text": text[L] * B.HANDLE + text[L:], "length": length, "error": "character"})
+        # A value of the check too large for the length, and the other
+        # markers (00, which stays unused, and 10 and 11, a successor's).
+        top = ((1 << 11 * n) - 1 - r) // k * k + r
+        assert top // k >> (bits + 2), "the largest checked value is out of range"
+        bad.append({"text": write(top), "length": length, "error": "range"})
+        bad += [{"text": write(B.marked(rest, bits, m) * k + r), "length": length, "error": "marker"}
+                for m in (0b00, 0b10, 0b11)]
+        # One letter changed, one hex digit changed, and two neighbours
+        # swapped: the check catches each.
+        bad.append({"text": text[:-1] + B.ALPHABET[(B.DIGIT[text[-1]] + 1) % B.N], "length": length, "error": "check"})
+        bad.append({"text": text[:L - 1] + "0123456789abcdef"[(int(text[L - 1], 16) + 1) % 16] + text[L:],
+                    "length": length, "error": "check"})
+        j = next((j for j in range(L, len(text) - 1) if text[j] != text[j + 1]), None)
+        if j is not None:
+            bad.append({"text": text[:j] + text[j + 1] + text[j] + text[j + 2:], "length": length, "error": "check"})
+        # Copies that differ from the codeword and decode as it does: skipped
+        # characters inserted, the mark gone, the handle in uppercase.
+        for insert in SPACES:
+            j = L + 1 + length % (len(text) - L - 1)
+            variants.append({"data": datas[2].hex(), "text": insert + text[:j] + insert + text[j:] + insert})
+        variants.append({"data": datas[2].hex(), "text": text[1:]})
+        variants.append({"data": datas[2].hex(), "text": text[:1] + text[1:L].upper() + text[L:]})
     return {"good": good, "variants": variants, "bad": bad}
 
 
@@ -118,11 +111,10 @@ def escape(t):
 
 def tsv(v):
     """The same vectors as lines of tab-separated fields, for implementations
-    without a JSON reader: `good FORM DATA TEXT` (FORM hex-prefixed or plain),
-    `variant DATA TEXT` (decode only)
+    without a JSON reader: `good DATA TEXT`, `variant DATA TEXT` (decode only)
     and `bad LENGTH ERROR TEXT`; in a text, a backslash, tab, line feed and
     carriage return are written \\\\, \\t, \\n and \\r."""
-    rows = [f"good\t{g['form']}\t{g['data']}\t{escape(g['text'])}" for g in v["good"]]
+    rows = [f"good\t{g['data']}\t{escape(g['text'])}" for g in v["good"]]
     rows += [f"variant\t{g['data']}\t{escape(g['text'])}" for g in v["variants"]]
     rows += [f"bad\t{b['length']}\t{b['error']}\t{escape(b['text'])}" for b in v["bad"]]
     return "\n".join(rows) + "\n"

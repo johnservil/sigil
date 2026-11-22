@@ -37,7 +37,7 @@ def nats(values):
 
 
 def encoding(data):
-    assert data, "Sigil encodes at least one byte"
+    assert len(data) >= 8, "Sigil encodes at least 8 bytes"
     answer = S.encode(data)
     return (HEADER +
             f"theorem answer :\n"
@@ -47,7 +47,7 @@ def encoding(data):
 
 
 def decoding(text, length):
-    assert length >= 1, "Sigil encodes at least one byte"
+    assert length >= 8, "Sigil encodes at least 8 bytes"
     points = list(map(ord, text))
     n, _ = S.layout(length)
     kept = [(i, ch) for i, ch in enumerate(text, 1) if not S.skipped(ch)]
@@ -56,10 +56,12 @@ def decoding(text, length):
         expected = f".ok {nats(data)}"
     except S.DecodeError as e:
         if e.kind == "length":
-            error = f".length {len(kept)} {n}"
+            error = f".length {len(kept)} {S.HANDLE + n}"
         elif e.kind == "character":
-            position, ch = next((i, ch) for i, ch in kept if ch not in S.DIGIT)
-            error = f".character {position} {ord(ch)}"
+            # The first character left that is no hex digit in the handle, or no letter after it.
+            position, ch, in_handle = next((i, ch, j < S.HANDLE) for j, (i, ch) in enumerate(kept)
+                                           if ch not in (S.HEX if j < S.HANDLE else S.DIGIT))
+            error = f".character {position} {ord(ch)} {'true' if in_handle else 'false'}"
         else:
             assert e.kind in ("check", "range", "marker"), "unknown decoding error"
             error = f".{e.kind}"

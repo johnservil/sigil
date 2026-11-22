@@ -13,7 +13,10 @@ explains how to check proofs and particular answers today.
 
 **Proved** below means a theorem about the Lean definitions within the stated
 scope. The optimized Rust and its executable bytes still have tests; their
-correctness proofs remain open.
+correctness proofs remain open. **Proved for 0.1** means a theorem about
+0.1's format, at the tag `v0.1.2+5404f5e7b0912b58eb7d34006c7fb5c73cd4ecc7`,
+that is not carried to 0.2's format yet: 0.2 is a release on trial, and its
+proofs wait until the format settles.
 
 | Property | Current evidence and scope |
 |---|---|
@@ -24,14 +27,14 @@ correctness proofs remain open.
 | Layout chooses a prime K above N, with sufficient capacity | Proved for every byte length (`layout_contract`) |
 | The letter count is minimal, and K is the documented check prime | Minimality proved for every byte length (`layout_contract`); each K is its table entry, whose choice by the two-letter rule is checked by the Python reference and the Rust test `ks`, without a Lean proof |
 | Bytes and base-N digits convert back and forth | Proved |
-| Encoding preserves all input bytes | Lean's decoder inverts its encoder (`decode_encode`) |
-| Every permitted spelling is accepted | Canonical letters proved; skipped-character variants tested |
-| Every forbidden spelling receives the prescribed error | Canonical check, range and marker proved (`decode_alphabet_digits`); full parsing and error characterization remains |
-| Every single-digit substitution is detected | Proved for the AN code and for the Lean decoder on canonical alphabet text (`single_change_decode_rejected`) |
-| Every swap of unequal neighbours or digits two apart is detected | Proved for the AN code (`adjacent_swap_detected`, `two_apart_swap_detected`); `decode_nonmultiple` connects failed divisibility to decoder rejection |
-| One erased letter has a unique valid replacement, given a valid original | Proved (`erased_digit_unique`) |
+| Encoding preserves all input bytes | Tested at every length from 8 to 300 bytes and on the shared vectors. Proved for 0.1 (Lean's decoder inverts its encoder); the parts of that proof that do not depend on the layout are kept (`Sigil/Facts.lean`) |
+| Every permitted spelling is accepted | Canonical letters and hex digits proved to read back; the other spellings tested (skipped characters inserted, the mark gone, the handle in uppercase) |
+| Every forbidden spelling receives the prescribed error | Tested on the vectors' 851 errors. Proved for 0.1 on canonical letters (check, range and marker); full parsing and error characterization remains |
+| Every single-digit substitution is detected | Tested: every one of 903,080 changed characters in 20 sigils fails to decode. Proved for 0.1; in 0.2 the handle's digits take part in the check too |
+| Every swap of unequal neighbours or digits two apart is detected | Tested: 1,128 swaps in 20 sigils (a swap across the handle's end is refused as a character). Proved for 0.1 |
+| One erased letter has a unique valid replacement, given a valid original | Tested. Proved for 0.1 |
 | `decode_readings` returns the one valid data, or reports ambiguity | Tests; enumeration specification and proof remain |
-| Known answers match the specification | Eleven kernel-checked cases; another 1,452 shared vectors run through compiled Lean |
+| Known answers match the specification | 1,554 shared vectors run through compiled Lean; on every push Lean's kernel checks particular encodings, decodings and exact errors, and refuses deliberately wrong ones (`tools/test_certificate.py`) |
 | Optimized Rust implements the specification, including failures | Tests; refinement proof remains |
 | Bob's actual executable implements the specification | Executable-byte proof remains |
 | Every result Bob uses is checked for its specific input before use | Kernel-checking machinery exists for reference-proposed answers; accepting arbitrary executable results and the checked-use workflow remain to implement |
@@ -42,14 +45,16 @@ correctness proofs remain open.
 | Execution reveals no secrets through timing or other unintended channels | The Rust is written to run in constant time (no branch, table index or division on the data) and measured within 2% across values; a proof needs an explicit leakage model, including allocation and surrounding code |
 | Comparing by eye is as safe as claimed | No attack cost is claimed: how reliably people tell the letters apart is unmeasured |
 
-The format uses N = 2,048 letters and encodes the input's numeric value,
-with the marker bits between its halves, multiplied by K. `Sigil.Prime` states mathematical primality explicitly:
+The format uses N = 2,048 letters. After the handle, the input's first 32
+bits as hex digits, the letters write the rest of the input's bits, with the
+marker bits between their halves, multiplied by K, plus the number below K
+that makes the handle and the letters together a multiple of K. `Sigil.Prime` states mathematical primality explicitly:
 at least two, with only one and itself as natural-number divisors.
 `isPrime_iff` connects this to trial division; `layout_contract` states the
 layout guarantees together.
 
-The universal error-control proofs cover every digit value, position and
-byte length. Mathematical uniqueness of an erased digit and correctness of
+The universal error-control proofs were made for 0.1's format, for every
+digit value, position and byte length; they are not carried to 0.2's yet. Mathematical uniqueness of an erased digit and correctness of
 the enumeration program are separate obligations.
 
 Round-trip correctness also leaves a separate obligation: the encoder and
@@ -207,9 +212,8 @@ make it redundant for the same functional claims. Further dynamic-tool
 integration is deferred until its reliance set and workflow earn their cost.
 
 Today Bob can kernel-check particular encoding and decoding answers and
-the specification's universal mathematical guarantees. The Lean definitions
-also have a value for an empty byte list; the public implementations require
-at least one byte.
+the layout's universal guarantee. The Lean definitions also have a value for
+data shorter than 8 bytes; the public implementations require at least 8.
 
 An Aeneas scratch experiment has translated a carry-propagating Rust
 multiply-add loop into Lean and built it against the Aeneas library. That

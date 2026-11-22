@@ -34,7 +34,8 @@ fn main() {
         let sigil = sigilcode::encode(&values[2].1);
         let letters: Vec<char> = sigil.chars().collect();
         let mut readings: Vec<String> = letters.iter().map(char::to_string).collect();
-        readings[3] = format!("{}{}{}", alphabet[7], letters[3], alphabet[1500]);
+        // Character 13 is a letter: the mark and the handle's 8 digits come first.
+        readings[13] = format!("{}{}{}", alphabet[7], letters[13], alphabet[1500]);
         let readings: Vec<&str> = readings.iter().map(String::as_str).collect();
         report(
             &format!("decode_readings {length} bytes, 3 readings of one letter"),

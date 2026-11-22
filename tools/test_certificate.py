@@ -34,7 +34,7 @@ class Certificates(unittest.TestCase):
             self.assertIn("error:", result.stdout + result.stderr)
 
     def test_encode(self):
-        for data in [b"\0", b"\xff", bytes(range(32))]:
+        for data in [bytes(8), b"\xff" * 8, bytes(range(32))]:
             with self.subTest(data=data.hex()):
                 self.check(C.encoding(data))
 
@@ -44,30 +44,31 @@ class Certificates(unittest.TestCase):
         self.check(C.decoding("\u200b " + text[:5] + "\u2060" + text[5:] + "\n", 32))
 
     def test_exact_errors(self):
-        zero = C.S.encode(b"\0")
-        self.check(C.decoding("", 1))
-        self.check(C.decoding("\u200b_" + zero[1], 1))
-        self.check(C.decoding(C.S.ALPHABET[-1] * 2, 1))
-        self.check(C.decoding(zero[0] + "\u202e", 1))
+        zero = C.S.encode(bytes(8))  # the mark, 8 hex digits, 5 letters
+        self.check(C.decoding("", 8))
+        self.check(C.decoding("\u200b" + zero[:3] + "_" + zero[4:], 8))
+        self.check(C.decoding(zero[:9] + C.S.ALPHABET[-1] * 5, 8))
+        self.check(C.decoding(zero[:-1] + "\u202e", 8))
 
     def test_wrong_answers_rejected(self):
-        # The zero byte's sigil, with its last letter changed: Lean refuses it.
-        zero = C.S.encode(b"\0")
+        # Eight zero bytes' sigil, with its last letter changed: Lean refuses it.
+        zero = C.S.encode(bytes(8))
         right = f"({C.nats(map(ord, zero))} : List Nat)"
-        wrong = f"({C.nats([ord(zero[0]), ord(zero[1]) + 1])} : List Nat)"
-        source = C.encoding(b"\0")
+        wrong = f"({C.nats(list(map(ord, zero[:-1])) + [ord(zero[-1]) + 1])} : List Nat)"
+        source = C.encoding(bytes(8))
         self.assertIn(right, source)
         self.check(source.replace(right, wrong), False)
         # Change the accepted data and the exact error, independently.
-        source = C.decoding(zero, 1)
-        self.check(source.replace(".ok [0]", ".ok [1]"), False)
-        changed = zero[0] + C.S.ALPHABET[(C.S.DIGIT[zero[1]] + 1) % C.S.N]
-        source = C.decoding(changed, 1)
+        source = C.decoding(zero, 8)
+        self.assertIn(".ok [0, 0, 0, 0, 0, 0, 0, 0]", source)
+        self.check(source.replace(".ok [0, 0, 0, 0, 0, 0, 0, 0]", ".ok [1, 0, 0, 0, 0, 0, 0, 0]"), False)
+        changed = zero[:-1] + C.S.ALPHABET[(C.S.DIGIT[zero[-1]] + 1) % C.S.N]
+        source = C.decoding(changed, 8)
         self.assertIn(".error (.check)", source)
         self.check(source.replace(".error (.check)", ".error (.range)"), False)
 
     def test_untrusted_text_is_only_numerals(self):
-        source = C.decoding("-/\naxiom malicious : False\n/-", 1)
+        source = C.decoding("-/\naxiom malicious : False\n/-", 8)
         self.assertNotIn("malicious", source)
         self.check(source)
 

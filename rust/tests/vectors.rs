@@ -36,19 +36,14 @@ fn vectors() {
         let f: Vec<&str> = line.split('\t').collect();
         match f[0] {
             "good" => {
-                let data = bytes(f[2]);
-                let text = unescape(f[3]);
-                let encoded = if f[1] == "hex-prefixed" {
-                    sigilcode::encode(&data)
-                } else {
-                    sigilcode::encode_plain(&data)
-                };
-                assert_eq!(encoded, text, "encode {} {}", f[1], f[2]);
+                let data = bytes(f[1]);
+                let text = unescape(f[2]);
+                assert_eq!(sigilcode::encode(&data), text, "encode {}", f[1]);
                 assert_eq!(
                     sigilcode::decode(&text, data.len()).unwrap(),
                     data,
                     "decode {}",
-                    f[3]
+                    f[2]
                 );
                 good += 1;
             }
@@ -71,7 +66,7 @@ fn vectors() {
             _ => panic!("a line of vectors.tsv: {line}"),
         }
     }
-    assert_eq!((good, variants, bad), (370, 962, 1480));
+    assert_eq!((good, variants, bad), (185, 518, 851));
 }
 
 #[test]
@@ -80,10 +75,10 @@ fn readings() {
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../vectors.tsv")).unwrap();
     let line = tsv
         .lines()
-        .find(|l| l.starts_with("good\thex-prefixed\t") && l.split('\t').nth(2).unwrap().len() == 64)
+        .find(|l| l.starts_with("good\t") && l.split('\t').nth(1).unwrap().len() == 64)
         .unwrap();
     let f: Vec<&str> = line.split('\t').collect();
-    let chars: Vec<String> = f[3].chars().map(String::from).collect(); // the mark, 8 hex digits, the letters
+    let chars: Vec<String> = f[2].chars().map(String::from).collect(); // the mark, 8 hex digits, the letters
     let alphabet =
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../alphabet.txt")).unwrap();
     // One character uncertain: a letter read three ways (two of them wrong),
@@ -112,7 +107,7 @@ fn readings() {
         let readings: Vec<&str> = readings.iter().map(String::as_str).collect();
         assert_eq!(
             sigilcode::decode_readings(&readings, 32).unwrap(),
-            bytes(f[2]),
+            bytes(f[1]),
             "at {at}"
         );
     }
@@ -173,11 +168,7 @@ fn random_inputs() {
     for _ in 0..20_000 {
         let length = 8 + rng.below(80) as usize;
         let data: Vec<u8> = (0..length).map(|_| rng.next() as u8).collect();
-        let sigil = if rng.below(2) == 0 {
-            sigilcode::encode(&data)
-        } else {
-            sigilcode::encode_plain(&data)
-        };
+        let sigil = sigilcode::encode(&data);
         assert_eq!(sigilcode::decode(&sigil, length).unwrap(), data);
         // Corrupt the sigil: change, insert, delete or swap a few characters.
         let mut text: Vec<char> = sigil.chars().collect();
@@ -199,15 +190,10 @@ fn random_inputs() {
             length
         };
         if let Ok(decoded) = sigilcode::decode(&text, asked) {
-            // Re-encoded in the text's form, it is the text's characters, the
-            // skipped ones aside (lowercase: random corruption adds no case).
+            // Re-encoded, it is the text's characters, the skipped ones
+            // aside (lowercase: random corruption adds no case).
             let kept: String = text.chars().filter(|c| !skipped.contains(c)).collect();
-            let hex_prefixed = kept.chars().next().is_some_and(|c| c.is_ascii_hexdigit());
-            let again = if hex_prefixed {
-                sigilcode::encode(&decoded)
-            } else {
-                sigilcode::encode_plain(&decoded)
-            };
+            let again = sigilcode::encode(&decoded);
             assert_eq!(
                 again.replace('\u{200e}', ""),
                 kept,

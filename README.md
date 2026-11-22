@@ -5,17 +5,15 @@ double-click, recognize at a glance, and read back from a picture. A 256-bit
 hash becomes its first 8 hex digits and 22 letters, no two of which look
 alike.
 
-> **This branch is Sigil 0.2, unreleased.** Its sigils and 0.1's never
-> decode as each other's. Two forms are on trial: hex-prefixed, which begins with
-> the value's first 8 hex digits, which start with git's short hash, and
-> plain, which writes those digits as 3 letters. After them both forms have
-> the same letters.
+> **Sigil 0.2 is a release on trial before 1.0.** A sigil now begins with the
+> value's first 8 hex digits, which start with git's short hash. Its sigils
+> and 0.1's never decode as each other's. The format may still change before
+> 1.0, and a later version need not read these sigils.
 
 ```
 BLAKE3("") in hex       af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
             in base64    rxNJufX5oaagQE3qNtzJSZvLJcmtwRK3zJqTyuQfMmI
             as a sigil   ‎af1349b9ꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
-            plain        ᛄᗯᒅꛡኾपⷃꢢꔹടꗐᘦꚧꢯꗔᚵᖣꗘᒬᔑৎሱसቝᗰ
 ```
 
 Its 2,048 letters come from fifteen scripts: Canadian syllabics, Ethiopic,
@@ -48,7 +46,7 @@ and identifiers in a status line, a chat, an email, a web page or a printout.
 | hex | 64 | 4 | the whole value | goes unnoticed |
 | base32 | 52 | 5 | the whole value | goes unnoticed |
 | base64 | 43 | 6 (`I` `l` `1` and `O` `0` look alike) | part of it, wherever `+`, `/` or `-` falls | goes unnoticed |
-| **sigil** | **30: 8 hex digits, 22 letters** (plain: 25 letters) | **4 in the handle, 11 in each letter** | **the whole value** | **is caught, and repaired from a few readings** |
+| **sigil** | **30: 8 hex digits, 22 letters** | **4 in the handle, 11 in each letter** | **the whole value** | **is caught, and repaired from a few readings** |
 
 Its properties work together:
 
@@ -86,7 +84,8 @@ Other encodings serve other channels:
 - **Typed by hand or read aloud:** hex, or z-base-32, whose letters are
   chosen for people to type.
 - **Bytes at a premium** (URLs, database columns): base64, at 43 bytes. A
-  sigil's letters take 3 bytes each in UTF-8: 77 for 256 bits, 75 plain.
+  sigil of 256 bits takes 77: 3 for its mark, 8 for its hex digits and 3 for
+  each letter.
 - **ASCII only:** hex or base64.
 
 ## Ways to use it
@@ -120,8 +119,8 @@ Rust (`rust/`, crate `sigilcode`, no runtime dependencies), in time linear
 in the data's length and constant whatever its value:
 
 ```rust
-let sigil = sigilcode::encode(&digest);        // hex-prefixed; encode_plain for letters only
-let back = sigilcode::decode(&sigil, 32)?;     // either form; Err(DecodeError)
+let sigil = sigilcode::encode(&digest);        // 8 hex digits and 22 letters
+let back = sigilcode::decode(&sigil, 32)?;     // or Err(DecodeError)
 ```
 
 Python (`python/sigilcode.py`, the reference implementation):
@@ -129,8 +128,7 @@ Python (`python/sigilcode.py`, the reference implementation):
 ```python
 import sigilcode
 sigil = sigilcode.encode(digest)            # 8 hex digits and 22 letters for 32 bytes
-plain = sigilcode.encode(digest, handle=False)   # 3 letters, then the same 22
-digest = sigilcode.decode(sigil, 32)        # either form; raises sigilcode.DecodeError
+digest = sigilcode.decode(sigil, 32)        # raises sigilcode.DecodeError
 digest = sigilcode.decode_readings(readings, 32)   # readings: each letter's possible readings
 ```
 
@@ -145,8 +143,8 @@ TypeScript (`typescript/sigilcode.ts`, in browsers and Node):
 
 ```typescript
 import { encode, decode, decodeReadings, DecodeError } from "sigilcode";
-const sigil = encode(digest);               // digest: a Uint8Array; encode(digest, false) is plain
-const back = decode(sigil, 32);             // either form; throws DecodeError
+const sigil = encode(digest);               // digest: a Uint8Array
+const back = decode(sigil, 32);             // throws DecodeError
 ```
 
 Python's and JavaScript's big integers take time that depends on their
@@ -250,7 +248,7 @@ recognition (OCR). Three properties serve it:
   look-alikes (UTS #39).
 - **The check confirms a reading.** Every misread letter, and every swap of
   neighbours or of characters two apart, fails the check; a random string
-  decodes once in 2^18 tries for a 256-bit value (2^19 plain). A reader
+  decodes once in 2^18 tries for a 256-bit value. A reader
   unsure of a character passes its possible readings to `decode_readings`,
   which returns the data the one valid reading encodes. Exactly one reading
   of a character decodes, so `decode_readings` recovers any one character,
@@ -263,7 +261,7 @@ recognition (OCR). Three properties serve it:
 Sigil encodes data of L bytes, L ≥ 8, with its alphabet of N = 2,048 letters
 (`alphabet.txt`, in ascending code point order: letter k is digit k), so each
 letter carries 11 bits. The **handle** h is the data's first 32 bits; letters
-after it carry the other b = 8L − 32 bits, the same letters in both forms.
+after it carry the other b = 8L − 32 bits.
 
 1. **Mark.** Read the letters' b bits as a number d, and put the two marker
    bits `01` between its high and low halves: m = (4 · d_high + 1) · 2^(b/2)
@@ -279,40 +277,30 @@ after it carry the other b = 8L − 32 bits, the same letters in both forms.
 3. **Write.** t = m · K + r, where r < K makes the number h · 2048^n + t a
    multiple of K: r = (−h · 2048^n) mod K. The letters write t in base 2,048
    with exactly n digits, most significant first.
-4. **The handle, in either form.** Hex-prefixed: U+200E LEFT-TO-RIGHT MARK, then
-   h as 8 lowercase hex digits. Plain: 2h + v as 3 letters (33 bits), where
-   v is the plain form's version bit, 0 in this version.
+4. **The handle.** Before the letters go U+200E LEFT-TO-RIGHT MARK, then h
+   as 8 lowercase hex digits.
 
 | data | 64-bit | 80-bit | 128-bit | 160-bit | 192-bit | 256-bit | 512-bit |
 |---|---|---|---|---|---|---|---|
 | n (letters after the handle) | 5 | 6 | 10 | 13 | 16 | 22 | 45 |
 | K | 2,096,881 | 65,519 | 4,093 | 8,179 | 16,381 | 65,519 | 8,179 |
-| hex-prefixed: characters (with 8 hex digits) | 13 | 14 | 18 | 21 | 24 | 30 | 53 |
+| characters (8 hex digits and n letters) | 13 | 14 | 18 | 21 | 24 | 30 | 53 |
 | a random string decodes once in | 2^23 | 2^18 | 2^14 | 2^15 | 2^16 | 2^18 | 2^15 |
-| plain: letters (with 3 for the handle) | 8 | 9 | 13 | 16 | 19 | 25 | 48 |
-| a random string decodes once in | 2^24 | 2^19 | 2^15 | 2^16 | 2^17 | 2^19 | 2^16 |
 
 A decoder told L first drops every character in `skipped.txt`: white space
 (Unicode's White_Space, which includes every kind of line break), the soft
 hyphen, zero-width space, word joiner and byte order mark, which copying
-text can insert, and the left-to-right mark. The first character left tells
-the form: a hex digit begins a handle, and hex digits are no letters. The
-decoder requires exactly 8 + n characters left (hex-prefixed) or 3 + n (plain),
-else the error is `length`; each a hex digit of either case in the handle
-and a letter of the alphabet elsewhere, else `character`; plain, the version
-bit v of this version, else `marker`; the number h · 2048^n + t a multiple
-of K, else `check`; m = ⌊t / K⌋ below 2^(b + 2), else `range`; and m's
+text can insert, and the left-to-right mark. The decoder requires exactly
+8 + n characters left, else the error is `length`; each of the first 8 a hex
+digit of either case, and each after them a letter of the alphabet, else
+`character`; the number h · 2048^n + t a multiple of K, else `check`; m = ⌊t / K⌋ below 2^(b + 2), else `range`; and m's
 marker bits `01`, else `marker`. The data is h's 32 bits, then m with the
 marker taken out.
 
-**The markers.** Sigil 0.1 and 0.2 both use `01`. A hex-prefixed sigil never
-reads as 0.1's, since 0.1 has no hex digits; a 0.1 sigil of 32 bytes has as
-many letters as a plain 0.2 one, and decodes as one about once in 2^19. A
+**The markers.** Sigil 0.1 and 0.2 both use `01`, and neither reads the
+other's sigils: 0.1 takes no hex digit, and 0.2 requires 8 of them. A
 format that succeeds Sigil's puts another value there, `10` or `11`, and
-then its strings never decode as Sigil's, nor Sigil's as its. The plain
-form carries one marker more, its version bit v, beside the handle: a later
-version that writes 1 there has plain sigils that never decode as this
-one's, whatever their letters. The
+then its strings never decode as Sigil's, nor Sigil's as its. The
 value `00` stays unused, so that no format's zero data is a string of the
 first letter. In the middle, the marker leaves the first and last letters 11
 bits each, where people compare by eye. It also catches, about three times
@@ -372,21 +360,25 @@ the other's.
 
 - **The encoding:** all four implementations (Python, Rust, TypeScript and
   the Lean specification) pass `vectors.json` (or its twin, `vectors.tsv`):
-  220 encodings, 484 variants (copies with skipped characters inserted) and
-  748 errors, each of the kind it must give.
+  185 encodings, 518 variants (copies with skipped characters inserted, the
+  mark gone or the handle in uppercase) and 851 errors, each of the kind it
+  must give.
 - **The check** (`python/test.py`): in 20 random 256-bit sigils, each of
-  the 1,023,500 single changed letters and 939 swaps of letters one or two
-  apart fails the check. One unread letter comes back alone every time.
-  Over 20,000 random 256-bit sigils, the first and last letters each take all
-  2,048 values.
+  the 903,080 single changed characters (a hex digit for a hex digit, a
+  letter for a letter) and 1,128 swaps of characters one or two apart fails
+  to decode. One unread letter or hex digit comes back alone every time.
+  Over 20,000 random 256-bit sigils, the first letter after the handle takes
+  2,047 of the 2,048 values and the last all of them.
 - **A specification in Lean** (`lean/`): "The encoding" as Lean
-  definitions, over the alphabet that `alphabet/alphabet.py` writes.
-  Lean proves that decoding any data's sigil gives the data back
-  (`decode_encode`), its kernel checking every step, and the layout's
-  contract: K is a prime above N that fits beside the marked data, in the
-  fewest letters. It also proves single-letter-error detection, neighbour and
-  two-apart swap detection, and uniqueness of an erased letter, for all
-  lengths and positions. Every proof rests on Lean's three standard axioms.
+  definitions, over the alphabet that `alphabet/alphabet.py` writes. It
+  passes every vector, and Lean proves the layout's contract, its kernel
+  checking every step: K is a prime above N that fits beside the marked
+  bits, in the fewest letters. It also proves the facts a round-trip proof
+  is built from (`lean/Sigil/Facts.lean`). For 0.1's format Lean also proved that
+  decoding any data's sigil gives the data back, and that the check catches
+  every changed letter and every swap of letters one or two apart. Those
+  proofs are not carried to 0.2's format yet: 0.2 is on trial, and they wait
+  until it settles ([QUALITY.md](QUALITY.md)).
   [Check an answer for yourself](lean/README.md) with explicit byte and
   code-point literals. [Bob's verification checklist](VERIFICATION.md)
   records the properties, proof coverage and reliances he can reduce.

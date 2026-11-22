@@ -1,12 +1,10 @@
 """Sigil: bytes of a known length written as a sigil, one word that a
 double-click selects whole, of letters with no two alike, and a check that
-confirms a reading or picks the right one of several. A sigil has one of two
-forms: hex-prefixed, which begins with the value's first 8 hex digits, and plain,
-which writes those 32 bits as 3 letters; after them both forms have the same
-letters.
+confirms a reading or picks the right one of several. A sigil begins with
+the value's first 8 hex digits, the handle; letters carry the rest.
 
-    encode(data, handle=True) -> str              # the sigil, hex-prefixed or plain
-    decode(sigil, length) -> bytes                # either form; or raises DecodeError
+    encode(data) -> str                           # the sigil
+    decode(sigil, length) -> bytes                # or raises DecodeError
     decode_readings(readings, length) -> bytes    # the one reading that decodes
 
 This is the reference implementation; the specification is README.md ("The
@@ -15,14 +13,10 @@ encoding"). Base N = 2,048, 11 bits a letter; K is a prime larger than N.
 The handle h is the data's first 32 bits. After it come n = ceil((8 * length
 - 18) / 11) letters writing t = m * K + r: m is the rest of the data with the
 marker bits 01 between its high and low halves, and r < K the number that
-makes h * N^n + t a multiple of K.
+makes h * N^n + t a multiple of K. The sigil is U+200E LEFT-TO-RIGHT MARK,
+h as 8 lowercase hex digits, and the letters.
 
-- Hex-prefixed: U+200E LEFT-TO-RIGHT MARK, h as 8 lowercase hex digits, the letters.
-- Plain: h and the plain form's version bit, 0, as 3 letters (33 bits), the
-  same letters.
-
-A decoder tells the forms apart by the first character (hex digits are no
-letters), checks the plain form's version bit, checks the multiple of K, which catches every changed character
+A decoder checks the multiple of K, which catches every changed character
 and every swap of characters one or two apart, and checks that the marker
 is 01. Decoding skips the characters of skipped.txt (white space, the mark,
 and four invisible characters copying inserts), reads the handle's hex in
@@ -46,15 +40,13 @@ SKIPPED = [tuple(int(x, 16) for x in line.split("..")) for line in (ROOT / "skip
 MARKER = 0b01
 MARK = "\u200e"
 HANDLE = 8  # hex digits, 32 bits
-PREFIX = 3  # the plain form's letters for the handle: its 32 bits, then the version bit
-PLAIN_VERSION = 0  # the plain form's version bit; a later version may write 1
 HEX = {c: int(c, 16) for c in "0123456789abcdefABCDEF"}
 
 
 class DecodeError(ValueError):
     """A sigil that encodes no data of the length asked for. `kind` is
-    "length" (the wrong number of letters), "character" (one outside the
-    alphabet), "check" (the check fails: a letter was misread or changed),
+    "length" (the wrong number of characters), "character" (one that is no
+    hex digit in the handle, or outside the alphabet after it), "check" (the check fails: a letter was misread or changed),
     "range" (a value too large for the length), "marker" (a string of another
     format, or a changed letter), or, from decode_readings, "ambiguous" (the
     readings leave several data)."""
@@ -99,7 +91,7 @@ def layout(length):
     """(n, K) for data of `length` bytes (at least 8): the letters after the
     handle, which carry bits = 8 * length - 32 of the data, the fewest whose
     room 2^(11n - bits - 2) holds a prime larger than N (2,053 or more), and
-    K, check_prime(room). Both forms have these letters."""
+    K, check_prime(room)."""
     assert length >= 8, "Sigil encodes at least 8 bytes"
     rest = 8 * length - 4 * HANDLE
     n = -(-(rest + 14) // 11)
@@ -125,16 +117,14 @@ def letters(t, n):
     return "".join(ALPHABET[(t >> 11 * i) & 2047] for i in reversed(range(n)))
 
 
-def word(handle, t, n, hex_prefixed=True):
-    """The sigil of a handle and the letters' value t, in either form."""
-    head = MARK + f"{handle:08x}" if hex_prefixed else letters(handle << 1 | PLAIN_VERSION, PREFIX)
-    return head + letters(t, n)
+def word(handle, t, n):
+    """The sigil of a handle and the letters' value t."""
+    return MARK + f"{handle:08x}" + letters(t, n)
 
 
-def encode(data: bytes, handle=True) -> str:
-    """`data`'s sigil: hex-prefixed, the mark, the handle's 8 hex digits and
-    layout(len(data))[0] letters of the alphabet; or plain, the handle as 3
-    letters and the same letters. Its protection against look-alikes holds
+def encode(data: bytes) -> str:
+    """`data`'s sigil: the mark, the handle's 8 hex digits and
+    layout(len(data))[0] letters of the alphabet. Its protection against look-alikes holds
     for data that looks random (a secure hash's output, a key, a random
     identifier): hash or jumble structured data before encoding it
     (README.md, "Data with structure")."""
@@ -142,7 +132,7 @@ def encode(data: bytes, handle=True) -> str:
     d = int.from_bytes(data, "big")
     bits = 8 * len(data) - 4 * HANDLE
     top = d >> bits
-    return word(top, marked(d & ((1 << bits) - 1), bits, MARKER) * k + offset(top, n, k), n, handle)
+    return word(top, marked(d & ((1 << bits) - 1), bits, MARKER) * k + offset(top, n, k), n)
 
 
 def skipped(ch):
@@ -153,27 +143,20 @@ def decode(sigil: str, length: int) -> bytes:
     """The `length` bytes `sigil` encodes; the characters of skipped.txt in
     it are skipped."""
     chars = [(i, ch) for i, ch in enumerate(sigil) if not skipped(ch)]
-    # The form, by the first character: hex digits are no letters.
-    hex_prefixed = bool(chars) and chars[0][1] in HEX
     n, k = layout(length)
-    h = HANDLE if hex_prefixed else PREFIX
-    if len(chars) != h + n:
-        raise DecodeError("length", f"{len(chars)} characters; {length} bytes take {h + n}"
-                          f"{' with the hex handle' if hex_prefixed else ''}")
-    head = t = 0
+    if len(chars) != HANDLE + n:
+        raise DecodeError("length", f"{len(chars)} characters; {length} bytes take {HANDLE + n}: "
+                          f"{HANDLE} hex digits and {n} letters")
+    handle = t = 0
     for j, (i, ch) in enumerate(chars):
-        if j < h and hex_prefixed and ch not in HEX:
-            raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a hex digit of the handle")
-        if (j >= h or not hex_prefixed) and ch not in DIGIT:
-            raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a letter of the alphabet")
-        if j < h:
-            head = head << 4 | HEX[ch] if hex_prefixed else head << 11 | DIGIT[ch]
+        if j < HANDLE:
+            if ch not in HEX:
+                raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a hex digit of the handle")
+            handle = handle << 4 | HEX[ch]
         else:
+            if ch not in DIGIT:
+                raise DecodeError("character", f"character {i + 1} (U+{ord(ch):04X}) is not a letter of the alphabet")
             t = t << 11 | DIGIT[ch]
-    # Plain, the handle's letters end in the plain form's version bit.
-    if not hex_prefixed and head & 1 != PLAIN_VERSION:
-        raise DecodeError("marker", "its version bit is not Sigil 0.2's: a string of another version, or a changed letter")
-    handle = head if hex_prefixed else head >> 1
     if (handle * pow(N, n, k) + t) % k:
         raise DecodeError("check", "the check fails: a character was misread or changed")
     m, bits = t // k, 8 * length - 4 * HANDLE

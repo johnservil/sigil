@@ -8,7 +8,7 @@
 <main>
   <header><a href="https://github.com/johnservil/sigil">Sigil</a><span>bytes, dressed for humans</span></header>
   <h1>A hash can look like this.</h1>
-  <p class="intro">One word, selected whole by a double-click. This is a preview of Sigil 0.2, with two forms on trial; sigils made here may change before its release.</p>
+  <p class="intro">One word, selected whole by a double-click: a value's first 8 hex digits, then letters. This is Sigil 0.2, a release on trial before 1.0: the format may still change.</p>
   <section class="card">
     <label for="hex">Your bytes, in hex</label>
     <textarea id="hex" rows="2" spellcheck="false" autocapitalize="off" autocomplete="off">af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262</textarea>
@@ -16,10 +16,8 @@
     <div class="forms" aria-live="polite">
       <div class="form"><div class="form-head"><span><strong>Hex</strong> <span class="count" id="n-hex"></span><br><span class="what">two digits a byte</span></span><button type="button" data-copy="hex">Copy</button></div>
         <div class="value hex" id="out-hex" translate="no"></div></div>
-      <div class="form"><div class="form-head"><span><strong>Sigil, hex-prefixed</strong> <span class="count" id="n-prefixed"></span><br><span class="what">its first 8 hex digits, then letters</span></span><button type="button" data-copy="prefixed">Copy</button></div>
-        <div class="value" id="out-prefixed" translate="no"></div></div>
-      <div class="form"><div class="form-head"><span><strong>Sigil, plain</strong> <span class="count" id="n-plain"></span><br><span class="what">letters only</span></span><button type="button" data-copy="plain">Copy</button></div>
-        <div class="value" id="out-plain" translate="no"></div></div>
+      <div class="form"><div class="form-head"><span><strong>Sigil</strong> <span class="count" id="n-sigil"></span><br><span class="what">its first 8 hex digits, then letters</span></span><button type="button" data-copy="sigil">Copy</button></div>
+        <div class="value" id="out-sigil" translate="no"></div></div>
     </div>
   </section>
   <details class="card">
@@ -39,7 +37,7 @@
       <p><strong>Full Git commit</strong><br><a href="https://github.com/johnservil/sigil/commit/716c98ca9f4336a45f51c15eeff0c9608c1002ae" id="commit">716c98ca9f4336a45f51c15eeff0c9608c1002ae</a></p>
       <p><strong>Abbreviated Git commit</strong><br><a href="https://github.com/johnservil/sigil/commit/716c98ca9f4336a45f51c15eeff0c9608c1002ae">716c98c</a> stays as it is: it is the full commit's sigil's handle.</p>
     </div>
-    <p><a href="https://github.com/johnservil/sigil/tree/v0.2/web">Try the browser extension on GitHub →</a></p>
+    <p><a href="https://github.com/johnservil/sigil/tree/main/web">Try the browser extension on GitHub →</a></p>
   </section>
   <footer>
     <p>Conversion happens in your browser, and nothing you enter leaves it. This is an experimental display and encoding tool, with tested JavaScript and <a href="https://github.com/johnservil/sigil/blob/main/VERIFICATION.md">a separate Lean specification and proofs</a>.</p>
