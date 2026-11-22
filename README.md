@@ -181,8 +181,10 @@ shows them: browsers may guess that a page of sigils is in another language
 and offer to translate it, which replaces every sigil with question marks.
 Fonts give letters different widths, so a page that wants every sigil of a
 size equally wide draws each letter in a box of fixed width. A page that shows a
-sigil in an element of its own (a result, a field) marks that element
-`user-select: all`, so one tap or click selects the sigil and nothing near it. Emacs on macOS
+sigil in an element of its own (a result, a field) leaves its selection to
+the browser: a double-click or a long press takes the whole sigil. With
+`user-select: all` one click takes it, but a drag across it then flickers,
+in Chromium, between the whole sigil and the part under the pointer. Emacs on macOS
 draws Tifinagh, Vai, Bamum and Saurashtra letters as boxes: their fonts are
 among macOS's hidden supplemental fonts, which browsers use and Emacs does
 not search. Copying them from `/System/Library/Fonts/Supplemental` to
