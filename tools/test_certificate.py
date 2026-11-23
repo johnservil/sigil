@@ -4,7 +4,9 @@ Run from the repository root after `(cd lean && lake build)`:
     python3 tools/test_certificate.py
 """
 import importlib.util
+import os
 from pathlib import Path
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -15,13 +17,31 @@ C = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(C)
 
 
+# A certificate that Lean's kernel cannot check quickly grows without end: one such check, left
+# running, took 18 GB. So Lean is told its limit, and when the time is up every process of the
+# check is stopped: `lake env` starts Lean as a child, which outlives a `lake` that alone is killed.
+MEMORY_MB = 4096
+SECONDS = 120
+
+
+def run(command):
+    process = subprocess.Popen(command, cwd=ROOT / "lean", text=True, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, start_new_session=True)
+    try:
+        out, err = process.communicate(timeout=SECONDS)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.communicate()
+        raise
+    return subprocess.CompletedProcess(command, process.returncode, out, err)
+
+
 class Certificates(unittest.TestCase):
     def check(self, source, accepts=True):
         with tempfile.TemporaryDirectory(prefix="sigil-answer-") as tmp:
             path = Path(tmp) / "Answer.lean"
             path.write_text(source, encoding="utf-8")
-            result = subprocess.run(["lake", "env", "lean", "--trust=0", str(path)], cwd=ROOT / "lean",
-                                    text=True, capture_output=True, timeout=120)
+            result = run(["lake", "env", "lean", "--trust=0", f"--memory={MEMORY_MB}", str(path)])
         if accepts:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertNotIn("warning:", result.stdout + result.stderr)
